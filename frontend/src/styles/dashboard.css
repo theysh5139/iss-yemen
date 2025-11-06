@@ -1,0 +1,114 @@
+.dashboard-container {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #eef2f7 100%);
+  padding: 40px 20px;
+}
+
+.dashboard-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 25px 80px rgba(74, 111, 165, 0.15);
+  width: 100%;
+  max-width: 600px;
+  padding: 48px 40px;
+  animation: slideInUp 0.6s ease-out;
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 40px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 30px;
+}
+
+.dashboard-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a2a4a;
+  margin: 0 0 12px 0;
+  background: linear-gradient(135deg, #4a6fa5, #1a2a4a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dashboard-header p {
+  font-size: 16px;
+  color: #7f8c8d;
+  margin: 0;
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.user-info-card {
+  background: linear-gradient(135deg, #f0f4f8 0%, #f8f9fa 100%);
+  border-radius: 12px;
+  padding: 24px;
+  border-left: 4px solid #4a6fa5;
+}
+
+.user-info-card h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: #1a2a4a;
+  font-weight: 600;
+}
+
+.user-info-card p {
+  margin: 10px 0;
+  color: #2c3e50;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.logout-button {
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.2);
+}
+
+.logout-button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(231, 76, 60, 0.35);
+  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+}
+
+.logout-button:active {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 480px) {
+  .dashboard-card {
+    padding: 36px 24px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 24px;
+  }
+}
+
+/* Animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

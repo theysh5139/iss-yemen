@@ -1,0 +1,17 @@
+/* Modern app-wide styles with animations */
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #f8f9fa 0%, #eef2f7 100%);
+  min-height: 100vh;
+}
+
+main {
+  min-height: calc(100vh - 80px);
+  padding: 2rem 1rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
