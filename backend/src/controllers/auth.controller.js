@@ -33,16 +33,36 @@ export async function signup(req, res, next) {
       email
     )}`;
 
-    await sendEmail({
-      to: email,
-      subject: 'Verify your email',
-      text: `Welcome! Verify your email: ${verifyUrl}`,
-      html: `<p>Welcome!</p><p>Verify your email: <a href="${verifyUrl}">${verifyUrl}</a></p>`
-    });
+    // Attempt to send verification email
+    let emailSent = false;
+    let verifyUrlInResponse = null;
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Verify your email',
+        text: `Welcome! Verify your email: ${verifyUrl}`,
+        html: `<p>Welcome!</p><p>Verify your email: <a href="${verifyUrl}">${verifyUrl}</a></p>`
+      });
+      emailSent = true;
+      // Include verifyUrl in response only in development/mock mode
+      if (process.env.NODE_ENV !== 'production') {
+        verifyUrlInResponse = verifyUrl;
+      }
+    } catch (emailError) {
+      // Log the error but don't fail the signup - user can request resend later
+      console.error('Failed to send verification email during signup:', emailError.message);
+      // In development, still include the URL so they can manually verify
+      if (process.env.NODE_ENV !== 'production') {
+        verifyUrlInResponse = verifyUrl;
+      }
+    }
 
     return res.status(201).json({
-      message: 'Signup successful. Please verify your email.',
-      user: { id: user._id.toString(), email: user.email, name: user.name, emailVerified: user.isEmailVerified() }
+      message: emailSent 
+        ? 'Signup successful. Please verify your email.' 
+        : 'Signup successful, but verification email could not be sent. Please use resend verification.',
+      user: { id: user._id.toString(), email: user.email, name: user.name, emailVerified: user.isEmailVerified() },
+      ...(verifyUrlInResponse && { verifyUrl: verifyUrlInResponse })
     });
   } catch (err) {
     next(err);
@@ -118,12 +138,18 @@ export async function requestPasswordReset(req, res, next) {
 
       const baseUrl = process.env.CLIENT_BASE_URL || 'http://localhost:5173';
       const link = `${baseUrl}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
-      await sendEmail({
-        to: user.email,
-        subject: 'Reset your password',
-        text: `Reset your password using this link: ${link}`,
-        html: `<p>Reset your password:</p><p><a href="${link}">${link}</a></p>`
-      });
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: 'Reset your password',
+          text: `Reset your password using this link: ${link}`,
+          html: `<p>Reset your password:</p><p><a href="${link}">${link}</a></p>`
+        });
+      } catch (emailError) {
+        console.error('Failed to send password reset email:', emailError.message);
+        // Still return success for privacy (don't reveal if email exists)
+        // But log the error for debugging
+      }
     }
     return res.json({ message: 'If the email exists, reset instructions have been sent' });
   } catch (err) {
@@ -176,15 +202,29 @@ export async function resendVerification(req, res, next) {
 
     const baseUrl = process.env.SERVER_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
     const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
-    await sendEmail({
-      to: email,
-      subject: 'Verify your email',
-      text: `Verify your email: ${verifyUrl}`,
-      html: `<p>Verify your email: <a href="${verifyUrl}">${verifyUrl}</a></p>`
-    });
+    
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Verify your email',
+        text: `Verify your email: ${verifyUrl}`,
+        html: `<p>Verify your email: <a href="${verifyUrl}">${verifyUrl}</a></p>`
+      });
 
-    const includeLink = process.env.NODE_ENV !== 'production';
-    return res.json({ message: 'Verification link sent', verifyUrl: includeLink ? verifyUrl : undefined });
+      const includeLink = process.env.NODE_ENV !== 'production';
+      return res.json({ 
+        message: 'Verification link sent', 
+        verifyUrl: includeLink ? verifyUrl : undefined 
+      });
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError.message);
+      // In development, still return the URL so they can manually test
+      const includeLink = process.env.NODE_ENV !== 'production';
+      return res.status(500).json({ 
+        message: 'Failed to send verification email. Please check server logs.',
+        verifyUrl: includeLink ? verifyUrl : undefined // Include URL in dev mode for testing
+      });
+    }
   } catch (err) {
     next(err);
   }

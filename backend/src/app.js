@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 
 import authRoutes from './routes/auth.routes.js';
+import testRoutes from './routes/test.routes.js';
 import mongoose from 'mongoose';
 
 const app = express();
@@ -35,6 +36,12 @@ app.get('/api/health/db', (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+
+// Test routes (useful for debugging email configuration)
+// In production, you might want to protect these routes or remove them
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/test', testRoutes);
+}
 
 app.use((err, _req, res, _next) => {
   // eslint-disable-next-line no-console

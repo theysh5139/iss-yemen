@@ -1,0 +1,27 @@
+# Copy these lines to your backend/.env file
+# Replace the values with your actual credentials
+
+# ============================================
+# Email Configuration - REAL MODE
+# ============================================
+EMAIL_MODE=real
+
+# Gmail SMTP Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-16-character-app-password-here
+SMTP_FROM=your-email@gmail.com
+SMTP_FROM_NAME=ISS Yemen Club
+
+# ============================================
+# Instructions:
+# ============================================
+# 1. Replace 'your-email@gmail.com' with your Gmail address
+# 2. Replace 'your-16-character-app-password-here' with your Gmail App Password
+#    (Get it from: https://myaccount.google.com/apppasswords)
+# 3. Make sure to remove spaces from the app password!
+# 4. Save the file
+# 5. Restart your backend server (npm run dev)
+
