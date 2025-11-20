@@ -1,62 +1,31 @@
-# ISS Yemen Club Web App
+# Admin Portal (React)
 
-Monorepo with backend (Express + MongoDB) and frontend (React + Vite).
+Implements the admin use-cases:
+- A04: Create, edit, cancel/reactivate events
+- A05: View event registrations per event (and add test registrations)
+- A06: Manage members (list, deactivate/reactivate, add)
 
-## Prerequisites
-- Node.js 18+
-- npm
-- MongoDB (local or Atlas)
+Data is stored in `localStorage` for simplicity. No backend required.
 
-## Setup
+## Run locally
 
-### 1) Install dependencies (both apps)
+1. Install Node.js 18+.
+2. Install deps:
+
 ```bash
-npm run install:all
+npm install
 ```
 
-### 2) Configure environment variables
-Create `backend/.env`:
-```
-PORT=5000
-MONGO_URI=mongodb://localhost:27017/iss_yemen_club
-SERVER_BASE_URL=http://localhost:5000
-CLIENT_BASE_URL=http://localhost:5173
-JWT_SECRET=change_me
-```
-(Optional) `frontend/.env` if your backend URL differs:
-```
-VITE_API_BASE_URL=http://localhost:5000
-```
+3. Start dev server:
 
-### 3) Run both servers
 ```bash
 npm run dev
 ```
-- Backend: http://localhost:5000
-- Frontend: http://localhost:5173
 
-Health endpoints:
-- API: `GET /health` → `{ ok: true }`
-- DB: `GET /api/health/db` → `{ state, readyState }`
+Open the URL printed in the console (usually `http://localhost:5173`).
 
-## Development Notes
-- Auth: JWT (HTTP-only cookie), bcrypt for password hashing
-- Email + password signup with email verification (mock email logs)
-- Login, logout, forgot/reset password implemented
+## Notes
+- First run seeds example events and members.
+- You can clear browser storage to reset the app.
 
-## Scripts
-- `npm run install:all` – install deps for backend & frontend
-- `npm run dev` – run both apps (concurrently)
-- `npm start` – run both apps in production mode
 
-## Manual Test Flow
-1. Sign up at `/signup` → check backend console for verification link → open it.
-2. Log in at `/login` → redirected to `/dashboard`.
-3. Log out at `/dashboard`.
-4. Forgot password at `/forgot-password` → open reset link from console → set new password at `/reset-password`.
-
-## Production
-- Set strong `JWT_SECRET` and secure cookies over HTTPS (NODE_ENV=production).
-- Use a real email service (e.g., Nodemailer + SMTP, SendGrid) instead of the mock logger.
-# iss-yemen
-ISS Yemen Web Application built by Beta Blockers
