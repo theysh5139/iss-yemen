@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Events - ISS YEMEN</title>
+    <style>
+        /* Basic Reset and Variables */
+        :root {
+            --sidebar-bg: #1e604f; /* Dark Green */
+            --text-color: #333;
+            --light-gray: #f4f4f4;
+            --border-color: #ccc;
+            --main-bg: #fff;
+            --accent-green: #28a745;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-gray);
+            display: flex;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 250px;
+            background-color: var(--sidebar-bg);
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding-top: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: fixed;
+            left: 0;
+        }
+
+        .logo {
+            padding: 0 20px 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .menu a {
+            display: block;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #ccc;
+            transition: background-color 0.3s;
+        }
+
+        .menu a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .menu .submenu-toggle {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu .active-section {
+            background-color: #0d4336; /* Darker green for active section */
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .menu .active-page {
+            background-color: #0f4f3e; /* Slightly darker for the active page */
+            color: #fff;
+            padding-left: 30px; /* Indent for sub-page */
+        }
+
+        .menu .current-page {
+            background-color: var(--accent-green);
+            color: #fff;
+        }
+
+        .admin-info {
+            margin-top: auto;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .admin-info img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background-color: #fff;
+        }
+
+        .admin-info span {
+            font-size: 0.8em;
+            color: #999;
+        }
+
+        /* Main Content Styling */
+        .main-content {
+            margin-left: 250px; /* Offset for fixed sidebar */
+            flex-grow: 1;
+            background-color: var(--main-bg);
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Top Nav/Breadcrumb */
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb a {
+            text-decoration: none;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .breadcrumb span {
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+
+        /* Header */
+        h1 {
+            font-size: 1.8em;
+            color: var(--text-color);
+            margin: 0;
+            padding-bottom: 20px;
+        }
+
+        /* Form Layout */
+        .form-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .form-section {
+            flex-basis: 100%;
+            margin-bottom: 20px;
+        }
+
+        .left-col {
+            flex: 2;
+            min-width: 300px;
+        }
+
+        .right-col {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+            background-color: var(--light-gray); /* Match screenshot input style */
+        }
+
+        textarea {
+            height: 150px;
+            resize: vertical;
+        }
+
+        /* Select Dropdowns - Custom Styling to match screenshot */
+        .custom-select-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .select-display {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: default;
+            background-color: var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .select-display::after {
+            content: '▼';
+            font-size: 0.6em;
+            margin-left: 10px;
+        }
+
+        .select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            border: 1px solid var(--border-color);
+            background-color: #fff;
+            z-index: 10;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            margin-top: 2px;
+            display: none; /* Hide by default */
+        }
+
+        .select-options.show {
+            display: block;
+        }
+
+        .select-option {
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .select-option:hover {
+            background-color: var(--light-gray);
+        }
+
+        .select-option.selected {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+
+
+        /* Footer/Action Buttons */
+        .form-actions {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 10px;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-back {
+            background-color: #fff;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-save-next {
+            background-color: var(--accent-green);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="logo">ISS YEMEN</div>
+    <div class="menu">
+        <a href="dashboard.php">Dashboard</a>
+        <a class="active-section submenu-toggle">Manage Events</a>
+        <a href="add_events.php" class="active-page current-page">Add Events</a>
+        <a href="manage_members.php" class="submenu-toggle">Manage Members</a>
+        <a href="news_announcements.php" class="submenu-toggle">News & Announcements</a>
+        <a href="settings_help.php" class="submenu-toggle">Settings & Help</a>
+    </div>
+    <div class="admin-info">
+        <img src="avatar.png" alt="Admin Avatar">
+        <span>Admin <br> admin@graduate.utm.my</span>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="top-nav">
+        <div class="breadcrumb">
+            <a href="dashboard.php">Dashboard</a> &gt;
+            <a href="manage_events.php">Manage Events</a> &gt;
+            <span>Add Events</span>
+        </div>
+        <div class="user-actions">
+            <span style="font-size: 1.5em; margin-right: 15px;">&#x1F514;</span>
+            <span style="font-size: 1.5em;">&#x2699;</span>
+        </div>
+    </div>
+
+    <h1>Add Events</h1>
+
+    <form id="eventForm">
+        <div class="form-section">
+            <h2>Section 1: Basic Event Info</h2>
+            <div class="form-container">
+
+                <div class="left-col">
+                    <div class="form-group">
+                        <label for="eventName">Event Name (Title)</label>
+                        <input type="text" id="eventName" name="eventName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventDate">Date & Time</label>
+                        <input type="datetime-local" id="eventDate" name="eventDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventLink">Event/Registration Link (URL)</label>
+                        <input type="url" id="eventLink" name="eventLink">
+                    </div>
+
+                </div>
+
+                <div class="right-col">
+                    <div class="form-group">
+                        <label for="eventCategory">Event Category</label>
+                        <div class="custom-select-container" id="category-select">
+                            <input type="hidden" id="eventCategory" name="eventCategory" required>
+                            <div class="select-display" data-value="">Select Category</div>
+                            <div class="select-options">
+                                <div class="select-option" data-value="WORKSHOP">WORKSHOP</div>
+                                <div class="select-option" data-value="SEMINAR">SEMINAR</div>
+                                <div class="select-option" data-value="TALK">TALK</div>
+                                <div class="select-option" data-value="COMPETITION">COMPETITION</div>
+                                <div class="select-option" data-value="EXPEDITION">EXPEDITION</div>
+                                <div class="select-option" data-value="VOLUNTEER">VOLUNTEER</div>
+                                <div class="select-option" data-value="CULTURAL">CULTURAL</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="organizingDepartment">Organizing Department</label>
+                        <div class="custom-select-container" id="department-select">
+                            <input type="hidden" id="organizingDepartment" name="organizingDepartment" required>
+                            <div class="select-display" data-value="">Select Department</div>
+                            <div class="select-options">
+                                <div class="select-option" data-value="ACADEMIC">ACADEMIC</div>
+                                <div class="select-option" data-value="SOCIAL">SOCIAL</div>
+                                <div class="select-option" data-value="CULTURAL">CULTURAL</div>
+                                <div class="select-option" data-value="SPORTS">SPORTS</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="capacity">Capacity (Max Attendees)</label>
+                        <input type="number" id="capacity" name="capacity" min="1" value="50" required>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-back" onclick="history.back()">Back</button>
+            <button type="submit" class="btn btn-save-next" id="saveEventBtn">Save & Next</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // --- Custom Dropdown Logic (Replicating the screenshot's behavior) ---
+    document.querySelectorAll('.custom-select-container').forEach(container => {
+        const display = container.querySelector('.select-display');
+        const options = container.querySelector('.select-options');
+        const hiddenInput = container.querySelector('input[type="hidden"]');
+
+        // Toggle options visibility
+        display.addEventListener('click', () => {
+            // Close other open dropdowns
+            document.querySelectorAll('.select-options.show').forEach(openOptions => {
+                if (openOptions !== options) {
+                    openOptions.classList.remove('show');
+                }
+            });
+            options.classList.toggle('show');
+        });
+
+        // Handle option selection
+        options.querySelectorAll('.select-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const value = option.getAttribute('data-value');
+                const text = option.textContent;
+
+                // Update display and hidden input
+                display.textContent = text;
+                display.setAttribute('data-value', value);
+                hiddenInput.value = value;
+
+                // Close dropdown
+                options.classList.remove('show');
+
+                // Optional: visually mark selected item
+                options.querySelectorAll('.select-option').forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+            });
+        });
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-select-container')) {
+            document.querySelectorAll('.select-options.show').forEach(options => {
+                options.classList.remove('show');
+            });
+        }
+    });
+
+    // --- Form Submission and Client-Side Validation ---
+    const eventForm = document.getElementById('eventForm');
+
+    eventForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // 1. Collect Form Data
+        const formData = {
+            title: document.getElementById('eventName').value,
+            description: document.getElementById('description').value,
+            date: document.getElementById('eventDate').value,
+            capacity: parseInt(document.getElementById('capacity').value),
+            link: document.getElementById('eventLink').value,
+            category: document.getElementById('eventCategory').value,
+            department: document.getElementById('organizingDepartment').value,
+        };
+
+        // 2. Client-Side Validation (Date Logic)
+        const eventDate = new Date(formData.date);
+        const now = new Date();
+
+        if (eventDate <= now) {
+            alert('❌ Validation Error: Event Date must be in the future.');
+            return;
+        }
+
+        // 3. API Call (POST /events)
+        console.log('Form data to be submitted:', formData);
+
+        // --- START: PHP/API Integration Placeholder ---
+        /*
+        try {
+            const response = await fetch('/api/events', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Add any necessary authorization headers (e.g., 'Authorization': 'Bearer token')
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('✅ Event created successfully! Event ID: ' + result.id);
+                // Redirect or clear form after successful creation
+                // window.location.href = 'manage_events.php';
+            } else {
+                // Handle server-side validation errors (e.g., title missing, capacity is zero)
+                alert('❌ Failed to create event: ' + (result.message || 'Server error.'));
+            }
+
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            alert('A network error occurred. Please try again.');
+        }
+        */
+        // --- END: PHP/API Integration Placeholder ---
+        alert('Form data validated and ready for POST request.\nCheck console for data object.');
+    });
+
+</script>
+
+</body>
