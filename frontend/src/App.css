@@ -3,15 +3,49 @@ body {
   margin: 0;
   background: linear-gradient(135deg, #f8f9fa 0%, #eef2f7 100%);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 main {
-  min-height: calc(100vh - 80px);
-  padding: 2rem 1rem;
+  min-height: calc(100vh - 72px);
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  main {
+    min-height: calc(100vh - 64px);
+  }
+}
+
+@media (max-width: 480px) {
+  main {
+    min-height: calc(100vh - 60px);
+  }
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 1.5rem;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 0.75rem;
+  }
 }

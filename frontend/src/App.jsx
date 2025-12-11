@@ -8,6 +8,9 @@ import { AuthProvider } from "./context/AuthProvider.jsx"
 import ForgotPassword from "./pages/ForgotPassword.jsx"
 import ResetPassword from "./pages/ResetPassword.jsx"
 import Navbar from "./components/Navbar.jsx"
+import AboutUs from "./pages/AboutUs.jsx"
+import Members from "./pages/Members.jsx"
+import PastEvents from "./pages/PastEvents.jsx"
 import "./App.css"
 
 export default function App() {
@@ -15,6 +18,10 @@ export default function App() {
     <AuthProvider>
       <Navbar />
       <Routes>
+        <Route path="/" element={<AboutUs />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/members" element={<Members />} />
+        <Route path="/events" element={<PastEvents />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
