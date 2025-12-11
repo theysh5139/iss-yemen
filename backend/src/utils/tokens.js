@@ -11,3 +11,15 @@ export function hashToken(token) {
 export function addMinutes(date, minutes) {
   return new Date(date.getTime() + minutes * 60 * 1000);
 }
+
+export function addSeconds(date, seconds) {
+  return new Date(date.getTime() + seconds * 1000);
+}
+
+/**
+ * Generate a 6-digit OTP
+ * @returns {string} 6-digit OTP as string
+ */
+export function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}

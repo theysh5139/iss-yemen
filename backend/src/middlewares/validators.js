@@ -48,4 +48,16 @@ export const resendVerificationSchema = Joi.object({
   email: Joi.string().email().required()
 });
 
+export const verifyOtpSchema = Joi.object({
+  email: Joi.string().email().required(),
+  otp: Joi.string()
+    .pattern(/^\d{6}$/)
+    .message('OTP must be exactly 6 digits')
+    .required()
+});
+
+export const resendOtpSchema = Joi.object({
+  email: Joi.string().email().required()
+});
+
 

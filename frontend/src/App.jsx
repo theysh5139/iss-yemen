@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom"
 import Signup from "./pages/Signup.jsx"
 import VerifyEmail from "./pages/VerifyEmail.jsx"
 import Login from "./pages/Login.jsx"
+import VerifyOTP from "./pages/VerifyOTP.jsx"
 import Dashboard from "./pages/Dashboard.jsx"
 import ProtectedRoute from "./routes/ProtectedRoute.jsx"
 import { AuthProvider } from "./context/AuthProvider.jsx"
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route

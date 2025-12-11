@@ -31,8 +31,14 @@ export default function Login() {
     setLoading(true)
     try {
       const res = await loginApi(form)
-      setUser(res.user)
-      navigate("/dashboard", { replace: true })
+      // After successful login request, redirect to OTP verification
+      // Pass email in state so verify-otp page can use it
+      navigate("/verify-otp", { 
+        replace: true,
+        state: { 
+          email: form.email
+        }
+      })
     } catch (err) {
       setError(err.message || "Login failed")
     } finally {

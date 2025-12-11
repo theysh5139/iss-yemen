@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { User } from '../models/User.model.js';
-import { addMinutes, generateRandomToken, hashToken } from '../utils/tokens.js';
+import { addMinutes, addSeconds, generateRandomToken, generateOTP, hashToken } from '../utils/tokens.js';
 import { sendEmail } from '../utils/email.js';
 import { signAccessToken, authCookieOptions } from '../utils/jwt.js';
 
@@ -106,11 +106,262 @@ export async function login(req, res, next) {
       return res.status(403).json({ message: 'Email not verified' });
     }
 
+    // Check if user is locked out
+    if (user.lockoutUntil && user.lockoutUntil > new Date()) {
+      const secondsRemaining = Math.ceil((user.lockoutUntil - new Date()) / 1000);
+      return res.status(429).json({ 
+        message: `Account temporarily locked. Please try again in ${secondsRemaining} seconds.`,
+        lockoutSeconds: secondsRemaining
+      });
+    }
+
+    // Generate 6-digit OTP
+    const otp = generateOTP();
+    const otpHash = hashToken(otp);
+    const otpExpires = addSeconds(new Date(), 60); // Expires in 60 seconds
+
+    // Generate email content
+    const emailContent = {
+      to: user.email,
+      subject: 'Your Login Verification Code',
+      text: `Your verification code is: ${otp}\n\nThis code will expire in 60 seconds.\n\nIf you did not request this code, please ignore this email.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Your Login Verification Code</h2>
+          <p>Hello ${user.name || 'there'},</p>
+          <p>Your verification code is:</p>
+          <div style="background-color: #f5f5f5; border: 2px solid #ddd; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+            <h1 style="font-size: 32px; letter-spacing: 8px; color: #2563eb; margin: 0;">${otp}</h1>
+          </div>
+          <p style="color: #666; font-size: 14px;">This code will expire in <strong>60 seconds</strong>.</p>
+          <p style="color: #666; font-size: 14px;">If you did not request this code, please ignore this email.</p>
+        </div>
+      `
+    };
+
+    // Send OTP via email FIRST, then save to database
+    // This ensures email is sent before we commit the OTP to the database
+    let emailSent = false;
+    try {
+      const emailResult = await sendEmail(emailContent);
+      emailSent = true;
+      console.log(`✅ OTP email sent successfully to ${user.email}`);
+      
+      // In development, log OTP to console for debugging
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[DEV] OTP for ${user.email}: ${otp}`);
+      }
+    } catch (emailError) {
+      console.error('❌ Failed to send OTP email during login:', emailError.message);
+      console.error('Email error details:', emailError);
+      
+      // In development, log OTP to console even if email fails
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[DEV] Email failed, but OTP for ${user.email}: ${otp}`);
+      }
+      
+      // Return error - don't save OTP if email fails
+      return res.status(500).json({ 
+        message: 'Failed to send OTP email. Please try again later.',
+        error: process.env.NODE_ENV !== 'production' ? emailError.message : undefined
+      });
+    }
+
+    // Only save OTP to database after email is successfully sent
+    if (emailSent) {
+      user.otp = otpHash;
+      user.otpExpires = otpExpires;
+      user.failedOtpAttempts = 0; // Reset on new OTP generation
+      user.lockoutUntil = undefined; // Clear lockout on new OTP
+      await user.save();
+    }
+
+    // Never include OTP in response - always send via email only
+    return res.json({
+      message: 'OTP sent to your email. Please verify to complete login.',
+      email: user.email // Return email so frontend can use it for OTP verification
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function verifyOTP(req, res, next) {
+  try {
+    const { email, otp } = req.body;
+
+    const user = await User.findOne({ email: String(email).toLowerCase() });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or OTP' });
+    }
+
+    // Check if user is locked out
+    if (user.lockoutUntil && user.lockoutUntil > new Date()) {
+      const secondsRemaining = Math.ceil((user.lockoutUntil - new Date()) / 1000);
+      return res.status(429).json({ 
+        message: `Account temporarily locked. Please try again in ${secondsRemaining} seconds.`,
+        lockoutSeconds: secondsRemaining
+      });
+    }
+
+    // Check if OTP exists
+    if (!user.otp || !user.otpExpires) {
+      return res.status(400).json({ message: 'No OTP found. Please request a new OTP by logging in again.' });
+    }
+
+    // Check if OTP is expired (U13 - OTP Expiration)
+    if (user.otpExpires < new Date()) {
+      user.otp = undefined;
+      user.otpExpires = undefined;
+      await user.save();
+      return res.status(400).json({ message: 'OTP has expired. Please request a new OTP by logging in again.' });
+    }
+
+    // Verify OTP (hashed comparison)
+    const otpHash = hashToken(String(otp));
+    const isOtpValid = otpHash === user.otp;
+
+    if (!isOtpValid) {
+      // Increment failed attempts
+      user.failedOtpAttempts = (user.failedOtpAttempts || 0) + 1;
+
+      // Lock out after 3 failed attempts (U14 - Invalid OTP Error with lockout)
+      if (user.failedOtpAttempts >= 3) {
+        user.lockoutUntil = addSeconds(new Date(), 30); // Lock for 30 seconds
+        await user.save();
+        return res.status(429).json({ 
+          message: 'Too many failed attempts. Account locked for 30 seconds.',
+          lockoutSeconds: 30
+        });
+      }
+
+      await user.save();
+      
+      // U14 - Invalid OTP Error: Return clear error message
+      const attemptsRemaining = 3 - user.failedOtpAttempts;
+      return res.status(400).json({ 
+        message: `Invalid OTP. ${attemptsRemaining} attempt(s) remaining before account lockout.`,
+        attemptsRemaining
+      });
+    }
+
+    // OTP is valid - complete login
+    // Clear OTP data
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    user.failedOtpAttempts = 0;
+    user.lockoutUntil = undefined;
+    await user.save();
+
+    // Issue JWT token
     const token = signAccessToken({ sub: user._id.toString(), role: user.role });
     res.cookie('access_token', token, authCookieOptions());
+    
     return res.json({
       message: 'Login successful',
       user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resendOTP(req, res, next) {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email: String(email).toLowerCase() });
+    if (!user) {
+      // For security, don't reveal if user exists
+      return res.json({ message: 'If an account exists, a new OTP has been sent to your email.' });
+    }
+
+    // Check if user is locked out
+    if (user.lockoutUntil && user.lockoutUntil > new Date()) {
+      const secondsRemaining = Math.ceil((user.lockoutUntil - new Date()) / 1000);
+      return res.status(429).json({ 
+        message: `Account temporarily locked. Please try again in ${secondsRemaining} seconds.`,
+        lockoutSeconds: secondsRemaining
+      });
+    }
+
+    // Cooldown check: prevent resending OTP too frequently (30 seconds cooldown)
+    if (user.otpExpires) {
+      const secondsUntilExpiry = Math.floor((user.otpExpires - new Date()) / 1000);
+      // If OTP was sent less than 30 seconds ago (i.e., expires in more than 30 seconds), enforce cooldown
+      if (secondsUntilExpiry > 30) {
+        const cooldownRemaining = secondsUntilExpiry - 30;
+        return res.status(429).json({
+          message: `Please wait ${cooldownRemaining} seconds before requesting a new OTP.`,
+          cooldownSeconds: cooldownRemaining
+        });
+      }
+    }
+
+    // Generate new 6-digit OTP
+    const otp = generateOTP();
+    const otpHash = hashToken(otp);
+    const otpExpires = addSeconds(new Date(), 60); // Expires in 60 seconds
+
+    // Generate email content
+    const emailContent = {
+      to: user.email,
+      subject: 'Your Login Verification Code',
+      text: `Your verification code is: ${otp}\n\nThis code will expire in 60 seconds.\n\nIf you did not request this code, please ignore this email.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Your Login Verification Code</h2>
+          <p>Hello ${user.name || 'there'},</p>
+          <p>Your verification code is:</p>
+          <div style="background-color: #f5f5f5; border: 2px solid #ddd; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+            <h1 style="font-size: 32px; letter-spacing: 8px; color: #2563eb; margin: 0;">${otp}</h1>
+          </div>
+          <p style="color: #666; font-size: 14px;">This code will expire in <strong>60 seconds</strong>.</p>
+          <p style="color: #666; font-size: 14px;">If you did not request this code, please ignore this email.</p>
+        </div>
+      `
+    };
+
+    // Send OTP via email FIRST, then save to database
+    // This ensures email is sent before we commit the OTP to the database
+    let emailSent = false;
+    try {
+      const emailResult = await sendEmail(emailContent);
+      emailSent = true;
+      console.log(`✅ OTP email resent successfully to ${user.email}`);
+      
+      // In development, log OTP to console for debugging
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[DEV] Resent OTP for ${user.email}: ${otp}`);
+      }
+    } catch (emailError) {
+      console.error('❌ Failed to send OTP email during resend:', emailError.message);
+      console.error('Email error details:', emailError);
+      
+      // In development, log OTP to console even if email fails
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[DEV] Email failed, but OTP for ${user.email}: ${otp}`);
+      }
+      
+      // Return error - don't save OTP if email fails
+      return res.status(500).json({ 
+        message: 'Failed to send OTP email. Please try again later.',
+        error: process.env.NODE_ENV !== 'production' ? emailError.message : undefined
+      });
+    }
+
+    // Only update user with new OTP after email is successfully sent
+    if (emailSent) {
+      user.otp = otpHash;
+      user.otpExpires = otpExpires;
+      user.failedOtpAttempts = 0; // Reset failed attempts on resend
+      user.lockoutUntil = undefined; // Clear lockout on new OTP
+      await user.save();
+    }
+
+    return res.json({
+      message: 'A new OTP has been sent to your email.',
+      email: user.email
     });
   } catch (err) {
     next(err);

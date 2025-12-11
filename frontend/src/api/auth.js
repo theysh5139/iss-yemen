@@ -13,6 +13,14 @@ export function loginApi(payload) {
   return apiFetch('/api/auth/login', { method: 'POST', body: payload })
 }
 
+export function verifyOtpApi(payload) {
+  return apiFetch('/api/auth/verify-otp', { method: 'POST', body: payload })
+}
+
+export function resendOtpApi(payload) {
+  return apiFetch('/api/auth/resend-otp', { method: 'POST', body: payload })
+}
+
 export function logoutApi() {
   return apiFetch('/api/auth/logout', { method: 'POST' })
 }
