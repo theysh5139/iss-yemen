@@ -45,6 +45,7 @@ Health endpoints:
 - Auth: JWT (HTTP-only cookie), bcrypt for password hashing
 - Email + password signup with email verification (mock email logs)
 - Login, logout, forgot/reset password implemented
+- Admin login credentials for testing, email: admin@issyemen.com password: Admin123!
 
 ## Scripts
 - `npm run install:all` – install deps for backend & frontend
