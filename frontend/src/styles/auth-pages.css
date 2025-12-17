@@ -161,6 +161,9 @@
   font-family: inherit;
   background-color: #f9f9f9;
   width: 100%;
+  text-align: center !important;
+  letter-spacing: 0.1em;
+  box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
@@ -176,10 +179,48 @@
   background-color: #ffffff;
   box-shadow: 0 0 0 4px rgba(74, 111, 165, 0.1);
   transform: translateY(-2px);
+  text-align: center !important;
 }
 
 .form-input::placeholder {
   color: #b0b0b0;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+/* Ensure OTP input is properly centered */
+.form-input[type="text"][name="otp"] {
+  text-align: center;
+  letter-spacing: 0.3em;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.form-input[type="password"] {
+  text-align: center;
+  letter-spacing: 0.2em;
+  font-size: 1rem;
+}
+
+.form-input[type="email"] {
+  text-align: center;
+}
+
+/* OTP specific styles */
+.otp-timer {
+  text-align: center;
+  color: #4a6fa5;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0.5rem 0 0 0;
+}
+
+.otp-hint {
+  text-align: center;
+  color: #7f8c8d;
+  font-size: 0.8125rem;
+  margin: 0.25rem 0 0 0;
+  font-style: italic;
 }
 
 /* Modern button with gradient and enhanced hover effects */

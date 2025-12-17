@@ -20,7 +20,8 @@ export const signupSchema = Joi.object({
     .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).+$/)
     .message('Password must include upper, lower, and a digit')
     .required(),
-  confirmPassword: Joi.any().valid(Joi.ref('password')).required().messages({ 'any.only': 'Passwords must match' })
+  confirmPassword: Joi.any().valid(Joi.ref('password')).required().messages({ 'any.only': 'Passwords must match' }),
+  role: Joi.string().valid('visitor', 'member').optional()
 });
 
 export const loginSchema = Joi.object({
@@ -46,6 +47,49 @@ export const passwordResetSchema = Joi.object({
 
 export const resendVerificationSchema = Joi.object({
   email: Joi.string().email().required()
+});
+
+export const createAnnouncementSchema = Joi.object({
+  title: Joi.string().min(3).max(200).required(),
+  description: Joi.string().min(10).required(),
+  date: Joi.date().required(),
+  location: Joi.string().min(2).max(200).optional().allow(''),
+  category: Joi.string().valid('News', 'Announcement', 'Activity', 'Cultural', 'Academic', 'Social').optional(),
+  isPublic: Joi.boolean().optional()
+});
+
+export const updateAnnouncementSchema = Joi.object({
+  title: Joi.string().min(3).max(200).optional(),
+  description: Joi.string().min(10).optional(),
+  date: Joi.date().optional(),
+  location: Joi.string().min(2).max(200).optional().allow(''),
+  category: Joi.string().valid('News', 'Announcement', 'Activity', 'Cultural', 'Academic', 'Social').optional(),
+  isPublic: Joi.boolean().optional()
+});
+
+export const createEventSchema = Joi.object({
+  title: Joi.string().min(3).max(200).required(),
+  description: Joi.string().min(10).required(),
+  date: Joi.date().required(),
+  location: Joi.string().min(2).max(200).required(),
+  category: Joi.string().valid('News', 'Announcement', 'Activity', 'Cultural', 'Academic', 'Social').required(),
+  type: Joi.string().valid('event', 'announcement', 'activity').optional(),
+  schedule: Joi.string().max(200).optional().allow(''),
+  isRecurring: Joi.boolean().optional(),
+  isPublic: Joi.boolean().optional()
+});
+
+export const updateEventSchema = Joi.object({
+  title: Joi.string().min(3).max(200).optional(),
+  description: Joi.string().min(10).optional(),
+  date: Joi.date().optional(),
+  location: Joi.string().min(2).max(200).optional().allow(''),
+  category: Joi.string().valid('News', 'Announcement', 'Activity', 'Cultural', 'Academic', 'Social').optional(),
+  type: Joi.string().valid('event', 'announcement', 'activity').optional(),
+  schedule: Joi.string().max(200).optional().allow(''),
+  isRecurring: Joi.boolean().optional(),
+  isPublic: Joi.boolean().optional(),
+  cancelled: Joi.boolean().optional()
 });
 
 

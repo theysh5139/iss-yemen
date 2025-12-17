@@ -1,9 +1,52 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { getAboutUs } from "../api/aboutus.js"
 import "../styles/about-us.css"
 import utmLogo from "../assets/utm-logo.png"
 
 export default function AboutUs() {
+  const [aboutUs, setAboutUs] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchAboutUs() {
+      try {
+        const res = await getAboutUs()
+        if (res.aboutUs) {
+          setAboutUs(res.aboutUs)
+        }
+      } catch (err) {
+        console.error("Failed to fetch About Us:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAboutUs()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="about-container">
+        <div className="loading-container">
+          <p>Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const content = aboutUs || {
+    mission: 'The ISS Yemen club is dedicated to fostering unity, cultural exchange, and academic excellence among Yemeni students at UTM. We aim to create a supportive community that helps students thrive academically, socially, and culturally during their time in Malaysia.',
+    vision: 'To be a leading student organization that empowers Yemeni students, preserves our cultural heritage, and builds bridges between Yemen and Malaysia through meaningful engagement, events, and collaborative initiatives.',
+    activities: [
+      { icon: '🎓', title: 'Academic Support', description: 'Providing academic materials, course resources, past-year papers, summaries, and study support for students from all faculties.' },
+      { icon: '🎉', title: 'Cultural Events', description: 'Celebrating Yemeni heritage through cultural nights, festivals, traditional performances, and community cultural activities.' },
+      { icon: '🤝', title: 'Community Building', description: 'Creating social programs, gatherings, support activities, and initiatives that strengthen relationships within the ISS Yemen community.' },
+      { icon: '🎯', title: 'Student Activities & Engagement', description: 'Coordinating sports events, media and content creation, documentation, and logistical support for all ISS Yemen activities and programs.' }
+    ],
+    joinUsText: 'Whether you\'re a new student or have been at UTM for a while, we welcome all Yemeni students to join our community. Together, we can build a stronger, more connected student body.'
+  }
+
   return (
     <div className="about-container animate-fadeInUp">
       <div className="about-hero">
@@ -21,9 +64,7 @@ export default function AboutUs() {
           <div className="section-card">
             <h2 className="section-title">Our Mission</h2>
             <p className="section-text">
-              The ISS Yemen club is dedicated to fostering unity, cultural exchange, and academic excellence 
-              among Yemeni students at UTM. We aim to create a supportive community that helps students 
-              thrive academically, socially, and culturally during their time in Malaysia.
+              {content.mission}
             </p>
           </div>
         </div>
@@ -32,9 +73,7 @@ export default function AboutUs() {
           <div className="section-card">
             <h2 className="section-title">Our Vision</h2>
             <p className="section-text">
-              To be a leading student organization that empowers Yemeni students, preserves our cultural 
-              heritage, and builds bridges between Yemen and Malaysia through meaningful engagement, 
-              events, and collaborative initiatives.
+              {content.vision}
             </p>
           </div>
         </div>
@@ -43,26 +82,13 @@ export default function AboutUs() {
           <div className="section-card">
             <h2 className="section-title">What We Do</h2>
             <div className="activities-grid">
-              <div className="activity-item">
-                <div className="activity-icon">🎓</div>
-                <h3>Academic Support</h3>
-                <p>Providing academic materials, course resources, past-year papers, summaries, and study support for students from all faculties.</p>
-              </div>
-              <div className="activity-item">
-                <div className="activity-icon">🎉</div>
-                <h3>Cultural Events</h3>
-                <p>Celebrating Yemeni heritage through cultural nights, festivals, traditional performances, and community cultural activities.</p>
-              </div>
-              <div className="activity-item">
-                <div className="activity-icon">🤝</div>
-                <h3>Community Building</h3>
-                <p>Creating social programs, gatherings, support activities, and initiatives that strengthen relationships within the ISS Yemen community.</p>
-              </div>
-              <div className="activity-item">
-                <div className="activity-icon">🎯</div>
-                <h3>Student Activities & Engagement</h3>
-                <p>Coordinating sports events, media and content creation, documentation, and logistical support for all ISS Yemen activities and programs.</p>
-              </div>
+              {content.activities.map((activity, index) => (
+                <div key={index} className="activity-item">
+                  <div className="activity-icon">{activity.icon}</div>
+                  <h3>{activity.title}</h3>
+                  <p>{activity.description}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -71,8 +97,7 @@ export default function AboutUs() {
           <div className="section-card">
             <h2 className="section-title">Join Us</h2>
             <p className="section-text">
-              Whether you're a new student or have been at UTM for a while, we welcome all Yemeni students 
-              to join our community. Together, we can build a stronger, more connected student body.
+              {content.joinUsText}
             </p>
             <div className="cta-buttons">
               <a href="/signup" className="cta-button primary">

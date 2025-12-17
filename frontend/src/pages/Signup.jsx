@@ -6,10 +6,11 @@ import { Link } from "react-router-dom"
 import "../styles/auth-pages.css"
 
 export default function Signup() {
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" })
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", role: "member" }) // Always member for regular signup
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [verifyUrl, setVerifyUrl] = useState("")
 
   function onChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -36,10 +37,17 @@ export default function Signup() {
     }
     setLoading(true)
     try {
-      const res = await signupApi({ ...form })
+      // Send all form data including confirmPassword for backend validation
+      // Backend will validate passwords match and strip confirmPassword
+      const res = await signupApi(form)
       setSuccess(res.message || "Signup successful. Check your email to verify.")
-      setForm({ name: "", email: "", password: "", confirmPassword: "" })
+      // In development, backend returns verifyUrl
+      if (res.verifyUrl) {
+        setVerifyUrl(res.verifyUrl)
+      }
+      setForm({ name: "", email: "", password: "", confirmPassword: "", role: "member" })
     } catch (err) {
+      // Error message already includes validation details from client.js
       setError(err.message || "Signup failed")
     } finally {
       setLoading(false)
@@ -112,8 +120,36 @@ export default function Signup() {
             />
           </div>
 
+
           {error && <div className="error-message animate-pulse">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
+          {success && (
+            <div className="success-message">
+              <p>{success}</p>
+              {verifyUrl && (
+                <div style={{ marginTop: "1rem", padding: "1rem", background: "#f0f4f8", borderRadius: "8px", border: "1px solid #0b6b63" }}>
+                  <p style={{ margin: "0 0 0.5rem 0", fontWeight: "600", color: "#0b6b63" }}>
+                    📧 Development Mode - Verification Link:
+                  </p>
+                  <a 
+                    href={verifyUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ 
+                      color: "#0b6b63", 
+                      textDecoration: "underline",
+                      wordBreak: "break-all",
+                      display: "block"
+                    }}
+                  >
+                    {verifyUrl}
+                  </a>
+                  <p style={{ margin: "0.5rem 0 0 0", fontSize: "0.875rem", color: "#666" }}>
+                    Click the link above to verify your email, or check the backend console.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           <button type="submit" disabled={loading} className="submit-button">
             {loading ? "Creating account…" : "Create Account"}

@@ -1,6 +1,8 @@
-# ISS Yemen Club Web App
+# ISS Yemen Webpage
 
 Monorepo with backend (Express + MongoDB) and frontend (React + Vite).
+
+**Project Location:** `C:\Users\Dell\APPDEV\iss-yemen-webpage`
 
 ## Prerequisites
 - Node.js 18+
