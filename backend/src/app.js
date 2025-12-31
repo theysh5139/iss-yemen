@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 
 import authRoutes from './routes/auth.routes.js';
 import testRoutes from './routes/test.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
 import mongoose from 'mongoose';
 
 const app = express();
@@ -36,6 +37,7 @@ app.get('/api/health/db', (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Test routes (useful for debugging email configuration)
 // In production, you might want to protect these routes or remove them
