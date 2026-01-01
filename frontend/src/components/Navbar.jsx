@@ -13,7 +13,7 @@ export default function Navbar() {
 
   async function handleLogout() {
     setUser(null)
-    navigate("/login", { replace: true })
+    navigate("/", { replace: true }) // Redirect to homepage as visitor
     setMenuOpen(false)
   }
 
@@ -58,9 +58,16 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/dashboard" className="nav-link" onClick={closeMenu}>
-                Dashboard
-              </Link>
+              {user.role === 'member' && (
+                <Link to="/profile" className="nav-link" onClick={closeMenu}>
+                  Profile
+                </Link>
+              )}
+              {user.role === 'admin' && (
+                <Link to="/admin/dashboard" className="nav-link" onClick={closeMenu}>
+                  Dashboard
+                </Link>
+              )}
               <button onClick={handleLogout} className="nav-logout-btn">
                 Logout
               </button>

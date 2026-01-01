@@ -1,0 +1,160 @@
+.hod-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.hod-modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.hod-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: #f0f0f0;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.hod-modal-close:hover {
+  background: #e74c3c;
+  color: white;
+  transform: rotate(90deg) scale(1.1);
+}
+
+.hod-modal-title {
+  font-size: 2rem;
+  color: #0b6b63;
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+}
+
+.hod-modal-subtitle {
+  color: #666;
+  margin: 0 0 2rem 0;
+  font-size: 1rem;
+}
+
+.hod-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.hod-modal-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  transform-style: preserve-3d;
+  border: 1px solid rgba(11, 107, 99, 0.1);
+}
+
+.hod-modal-card:hover {
+  transform: translateY(-8px) rotateX(5deg) rotateY(-2deg) scale(1.02);
+  box-shadow: 0 12px 40px rgba(11, 107, 99, 0.2);
+  border-color: rgba(11, 107, 99, 0.3);
+}
+
+.hod-modal-photo-wrapper {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.hod-modal-photo-wrapper img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #0b6b63;
+  box-shadow: 0 8px 20px rgba(11, 107, 99, 0.2);
+  transition: all 0.3s ease;
+}
+
+.hod-modal-card:hover .hod-modal-photo-wrapper img {
+  transform: scale(1.1);
+  box-shadow: 0 12px 30px rgba(11, 107, 99, 0.3);
+}
+
+.hod-modal-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a2a4a;
+  margin: 0 0 0.5rem 0;
+}
+
+.hod-modal-designation {
+  font-size: 0.95rem;
+  color: #666;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .hod-modal-content {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .hod-modal-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hod-modal-title {
+    font-size: 1.5rem;
+  }
+}
+
+

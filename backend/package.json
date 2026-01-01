@@ -7,7 +7,12 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "lint": "echo 'add linter'"
+    "lint": "echo 'add linter'",
+    "create-admin": "node src/scripts/create-admin.js",
+    "create-member": "node src/scripts/create-member.js",
+    "create-test-member": "node src/scripts/create-test-member.js",
+    "seed-events": "node src/scripts/seed-events.js",
+    "configure-email": "node src/scripts/configure-email.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -21,8 +26,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.6.0",
     "morgan": "^1.10.0",
-    "nodemailer": "^7.0.10",
-    "pdfkit": "^0.17.2",
+    "nodemailer": "^7.0.11",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

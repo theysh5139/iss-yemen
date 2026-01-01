@@ -15,11 +15,11 @@ export function addMinutes(date, minutes) {
 export function addSeconds(date, seconds) {
   return new Date(date.getTime() + seconds * 1000);
 }
-
-/**
- * Generate a 6-digit OTP
- * @returns {string} 6-digit OTP as string
- */
-export function generateOTP() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+export function generateOTP(length = 6) {
+  const digits = '0123456789';
+  let otp = '';
+  for (let i = 0; i < length; i++) {
+    otp += digits[Math.floor(Math.random() * digits.length)];
+  }
+  return otp;
 }

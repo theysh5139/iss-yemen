@@ -1,68 +1,79 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { getPastEvents } from "../api/events.js"
+import { useAuth } from "../context/AuthProvider.jsx"
+import EventRegistrationModal from "../components/EventRegistrationModal.jsx"
 import "../styles/past-events.css"
 
 export default function PastEvents() {
-  // Mock event data - replace with API call later
-  const events = [
-    {
-      id: 1,
-      title: "Yemeni Cultural Night 2024",
-      date: "2024-11-15",
-      location: "UTM Student Center",
-      description: "A celebration of Yemeni culture with traditional food, music, and performances.",
-      attendees: 150,
-      category: "Cultural"
-    },
-    {
-      id: 2,
-      title: "Academic Workshop: Research Methods",
-      date: "2024-10-20",
-      location: "UTM Library",
-      description: "Workshop on academic research methods and thesis writing for graduate students.",
-      attendees: 45,
-      category: "Academic"
-    },
-    {
-      id: 3,
-      title: "Networking Meetup",
-      date: "2024-09-30",
-      location: "UTM Cafeteria",
-      description: "Casual meetup for new and existing members to network and socialize.",
-      attendees: 80,
-      category: "Social"
-    },
-    {
-      id: 4,
-      title: "Eid Al-Fitr Celebration",
-      date: "2024-04-10",
-      location: "UTM Student Center",
-      description: "Community celebration of Eid Al-Fitr with prayers, food, and activities.",
-      attendees: 200,
-      category: "Cultural"
-    },
-    {
-      id: 5,
-      title: "Study Group Formation",
-      date: "2024-03-15",
-      location: "UTM Library",
-      description: "Organizing study groups for various majors to support academic success.",
-      attendees: 60,
-      category: "Academic"
-    },
-    {
-      id: 6,
-      title: "Welcome New Students",
-      date: "2024-02-01",
-      location: "UTM Main Hall",
-      description: "Orientation event for new Yemeni students joining UTM.",
-      attendees: 120,
-      category: "Social"
-    }
-  ]
+  const { user } = useAuth()
+  const [events, setEvents] = useState([])
+  const [filteredEvents, setFilteredEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [categoryFilter, setCategoryFilter] = useState("All")
+  const [dateFilter, setDateFilter] = useState("All")
+  const [selectedEvent, setSelectedEvent] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Sort events by date (most recent first)
-  const sortedEvents = [...events].sort((a, b) => new Date(b.date) - new Date(a.date))
+  const isMember = user && (user.role === 'member' || user.role === 'admin')
+
+  useEffect(() => {
+    async function fetchEvents() {
+      try {
+        setLoading(true)
+        const res = await getPastEvents()
+        if (res.events) {
+          const sortedEvents = res.events.sort((a, b) => new Date(b.date) - new Date(a.date))
+          setEvents(sortedEvents)
+          setFilteredEvents(sortedEvents)
+        }
+      } catch (err) {
+        console.error("Failed to fetch past events:", err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchEvents()
+  }, [])
+
+  useEffect(() => {
+    let filtered = [...events]
+
+    // Filter by category
+    if (categoryFilter !== "All") {
+      filtered = filtered.filter(event => event.category === categoryFilter)
+    }
+
+    // Filter by date
+    if (dateFilter !== "All") {
+      const now = new Date()
+      const filterDate = new Date()
+      
+      switch (dateFilter) {
+        case "This Month":
+          filterDate.setMonth(now.getMonth() - 1)
+          break
+        case "Last 3 Months":
+          filterDate.setMonth(now.getMonth() - 3)
+          break
+        case "Last 6 Months":
+          filterDate.setMonth(now.getMonth() - 6)
+          break
+        case "This Year":
+          filterDate.setFullYear(now.getFullYear() - 1)
+          break
+        default:
+          break
+      }
+      
+      filtered = filtered.filter(event => new Date(event.date) >= filterDate)
+    }
+
+    setFilteredEvents(filtered)
+  }, [categoryFilter, dateFilter, events])
 
   function formatDate(dateString) {
     const date = new Date(dateString)
@@ -77,9 +88,88 @@ export default function PastEvents() {
     const colors = {
       Cultural: "#4a6fa5",
       Academic: "#5cb85c",
-      Social: "#f56565"
+      Social: "#f56565",
+      News: "#9b59b6",
+      Announcement: "#e67e22",
+      Activity: "#3498db"
     }
     return colors[category] || "#7f8c8d"
+  }
+
+  // Get unique categories from events
+  const categories = ["All", ...new Set(events.map(e => e.category).filter(Boolean))]
+
+  function handleEventClick(event) {
+    setSelectedEvent(event)
+    setIsModalOpen(true)
+  }
+
+  async function handleModalClose() {
+    setIsModalOpen(false)
+    setSelectedEvent(null)
+    // Refresh events after registration
+    try {
+      const res = await getPastEvents()
+      if (res.events) {
+        const sortedEvents = res.events.sort((a, b) => new Date(b.date) - new Date(a.date))
+        setEvents(sortedEvents)
+        // Reapply filters
+        let filtered = [...sortedEvents]
+        if (categoryFilter !== "All") {
+          filtered = filtered.filter(event => event.category === categoryFilter)
+        }
+        if (dateFilter !== "All") {
+          const now = new Date()
+          const filterDate = new Date()
+          switch (dateFilter) {
+            case "This Month":
+              filterDate.setMonth(now.getMonth() - 1)
+              break
+            case "Last 3 Months":
+              filterDate.setMonth(now.getMonth() - 3)
+              break
+            case "Last 6 Months":
+              filterDate.setMonth(now.getMonth() - 6)
+              break
+            case "This Year":
+              filterDate.setFullYear(now.getFullYear() - 1)
+              break
+          }
+          filtered = filtered.filter(event => new Date(event.date) >= filterDate)
+        }
+        setFilteredEvents(filtered)
+      }
+    } catch (err) {
+      console.error("Failed to refresh events:", err)
+    }
+  }
+
+  function isRegistered(event) {
+    if (!isMember || !event.registeredUsers) return false
+    return event.registeredUsers.some(regUser => 
+      typeof regUser === 'object' ? regUser._id === user?.id : regUser === user?.id
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="events-container">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading past events...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="events-container">
+        <div className="error-container">
+          <p>Error loading events: {error}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -89,44 +179,120 @@ export default function PastEvents() {
         <p className="events-subtitle">A look back at our recent activities and celebrations</p>
       </div>
 
-      <div className="events-content">
-        <div className="timeline">
-          {sortedEvents.map((event, index) => (
-            <div key={event.id} className="timeline-item">
-              <div className="timeline-marker" style={{ borderColor: getCategoryColor(event.category) }}>
-                <div 
-                  className="timeline-dot" 
-                  style={{ backgroundColor: getCategoryColor(event.category) }}
-                ></div>
-              </div>
-              <div className="timeline-content">
-                <div className="event-card">
-                  <div className="event-header">
-                    <div className="event-category" style={{ backgroundColor: getCategoryColor(event.category) }}>
-                      {event.category}
-                    </div>
-                    <div className="event-date">{formatDate(event.date)}</div>
-                  </div>
-                  <h2 className="event-title">{event.title}</h2>
-                  <div className="event-details">
-                    <div className="event-detail">
-                      <span className="detail-icon">📍</span>
-                      <span>{event.location}</span>
-                    </div>
-                    <div className="event-detail">
-                      <span className="detail-icon">👥</span>
-                      <span>{event.attendees} attendees</span>
-                    </div>
-                  </div>
-                  <p className="event-description">{event.description}</p>
-                </div>
-              </div>
-            </div>
-          ))}
+      {/* Filters */}
+      <div className="events-filters">
+        <div className="filter-group">
+          <label htmlFor="category-filter">Filter by Category:</label>
+          <select
+            id="category-filter"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="filter-select"
+          >
+            {categories.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label htmlFor="date-filter">Filter by Date:</label>
+          <select
+            id="date-filter"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="filter-select"
+          >
+            <option value="All">All Time</option>
+            <option value="This Month">This Month</option>
+            <option value="Last 3 Months">Last 3 Months</option>
+            <option value="Last 6 Months">Last 6 Months</option>
+            <option value="This Year">This Year</option>
+          </select>
+        </div>
+
+        <div className="filter-results">
+          Showing {filteredEvents.length} of {events.length} events
         </div>
       </div>
+
+      <div className="events-content">
+        {filteredEvents.length > 0 ? (
+          <div className="timeline">
+            {filteredEvents.map((event) => (
+              <div key={event._id} className="timeline-item">
+                <div className="timeline-marker" style={{ borderColor: getCategoryColor(event.category) }}>
+                  <div 
+                    className="timeline-dot" 
+                    style={{ backgroundColor: getCategoryColor(event.category) }}
+                  ></div>
+                </div>
+                <div className="timeline-content">
+                  <div className="event-card">
+                    <div className="event-header">
+                      <div className="event-category" style={{ backgroundColor: getCategoryColor(event.category) }}>
+                        {event.category}
+                      </div>
+                      <div className="event-date">{formatDate(event.date)}</div>
+                    </div>
+                    <h2 className="event-title">{event.title}</h2>
+                    <div className="event-details">
+                      <div className="event-detail">
+                        <span className="detail-icon">📍</span>
+                        <span>{event.location}</span>
+                      </div>
+                      <div className="event-detail">
+                        <span className="detail-icon">👥</span>
+                        <span>{event.attendees || (event.registeredUsers?.length || 0)} attendees</span>
+                      </div>
+                    </div>
+                    <p className="event-description">{event.description}</p>
+                    {isMember && !event.cancelled && (
+                      <div className="event-actions">
+                        {isRegistered(event) ? (
+                          <button
+                            className="btn btn-secondary"
+                            onClick={() => handleEventClick(event)}
+                          >
+                            View Details / Unregister
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-primary"
+                            onClick={() => handleEventClick(event)}
+                          >
+                            Join Event
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {!isMember && !event.cancelled && (
+                      <div className="event-actions">
+                        <a href="/login" className="btn btn-primary">
+                          Login to Join
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <p>No past events found matching your filters.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Registration Modal */}
+      <EventRegistrationModal
+        event={selectedEvent}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onRegistrationChange={handleModalClose}
+        user={user}
+      />
     </div>
   )
 }
-
-
