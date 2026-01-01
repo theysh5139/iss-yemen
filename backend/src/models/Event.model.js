@@ -1,5 +1,28 @@
 import mongoose from 'mongoose';
 
+const registrationSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  registeredAt: { type: Date, default: Date.now },
+  registrationName: { type: String }, // Name used during registration
+  registrationEmail: { type: String }, // Email used during registration
+  phone: { type: String }, // Phone number from registration form
+  notes: { type: String }, // Additional notes from registration form
+  paymentReceipt: {
+    receiptNumber: { type: String },
+    receiptUrl: { type: String },
+    generatedAt: { type: Date },
+    amount: { type: Number },
+    paymentMethod: { type: String },
+    paymentStatus: { 
+      type: String, 
+      enum: ['Pending', 'Verified', 'Rejected'], 
+      default: 'Pending' 
+    },
+    verifiedAt: { type: Date },
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  }
+}, { _id: false });
+
 const eventSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
@@ -10,10 +33,13 @@ const eventSchema = new mongoose.Schema(
     type: { type: String, enum: ['event', 'announcement', 'activity'], default: 'event' },
     attendees: { type: Number, default: 0 },
     registeredUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    registrations: [registrationSchema], // Detailed registration with payment info
     schedule: { type: String }, // For recurring activities like "Every Wednesday, 8:00 PM"
     isRecurring: { type: Boolean, default: false },
     isPublic: { type: Boolean, default: true }, // Public events visible to visitors, private only to members
-    cancelled: { type: Boolean, default: false } // For cancelled events
+    cancelled: { type: Boolean, default: false }, // For cancelled events
+    requiresPayment: { type: Boolean, default: false },
+    paymentAmount: { type: Number, default: 0 }
   },
   { timestamps: true }
 );

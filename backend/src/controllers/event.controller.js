@@ -14,6 +14,7 @@ export async function getEvents(req, res, next) {
     const events = await Event.find(query)
       .sort({ date: -1 })
       .populate('registeredUsers', 'name email')
+      .populate('registrations.user', 'name email')
       .lean();
 
     return res.json({ events });
@@ -30,6 +31,7 @@ export async function getEventById(req, res, next) {
 
     const event = await Event.findById(id)
       .populate('registeredUsers', 'name email')
+      .populate('registrations.user', 'name email')
       .lean();
 
     if (!event) {
@@ -52,6 +54,8 @@ export async function registerForEvent(req, res, next) {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const { name, email, phone, notes, paymentMethod } = req.body;
+    const User = (await import('../models/User.model.js')).User;
 
     const event = await Event.findById(id);
     if (!event) {
@@ -63,11 +67,56 @@ export async function registerForEvent(req, res, next) {
       return res.status(400).json({ message: 'Already registered for this event' });
     }
 
+    // Get user details for receipt
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Use form data if provided, otherwise use user data
+    const registrationName = name || user.name;
+    const registrationEmail = email || user.email;
+    const selectedPaymentMethod = paymentMethod || 'Online Banking';
+
+    // Generate payment receipt if event requires payment
+    let receiptData = null;
+    if (event.requiresPayment && event.paymentAmount > 0) {
+      const { generateReceiptData } = await import('../utils/receipt.js');
+      receiptData = generateReceiptData(event, user, event.paymentAmount, selectedPaymentMethod);
+    }
+
+    // Add to registered users
     event.registeredUsers.push(userId);
     event.attendees = event.registeredUsers.length;
+
+    // Add detailed registration with receipt and form data
+    const registrationData = {
+      user: userId,
+      registeredAt: new Date(),
+      registrationName: registrationName,
+      registrationEmail: registrationEmail,
+      phone: phone || null,
+      notes: notes || null
+    };
+
+    if (receiptData) {
+      registrationData.paymentReceipt = {
+        receiptNumber: receiptData.receiptNumber,
+        generatedAt: receiptData.generatedAt,
+        amount: receiptData.amount,
+        paymentMethod: receiptData.paymentMethod,
+        paymentStatus: receiptData.paymentStatus
+      };
+    }
+
+    event.registrations.push(registrationData);
     await event.save();
 
-    return res.json({ message: 'Successfully registered for event', event });
+    return res.json({ 
+      message: 'Successfully registered for event', 
+      event,
+      receipt: receiptData || null
+    });
   } catch (err) {
     next(err);
   }
@@ -109,6 +158,8 @@ export async function getUpcomingEvents(req, res, next) {
     const events = await Event.find(query)
       .sort({ date: 1 })
       .limit(10)
+      .populate('registeredUsers', 'name email')
+      .populate('registrations.user', 'name email')
       .lean();
 
     return res.json({ events });

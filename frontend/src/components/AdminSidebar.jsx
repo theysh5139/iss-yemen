@@ -2,17 +2,21 @@ import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import "../styles/admin-sidebar.css"
 
-export default function AdminSidebar({ user, onLogout }) {
+export default function AdminSidebar({ user, onLogout, isOpen, onClose }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [activeMenu, setActiveMenu] = useState(null)
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
-    { id: 'events', label: 'Manage Events and Activities', icon: '📅', path: '/admin/events' },
+    { id: 'events', label: 'Manage Events', icon: '📅', path: '/admin/events' },
+    // A16: Added Payment Verification Link (Placed near Events for context)
+    { id: 'verify-payments', label: 'Verify Payments', icon: '💰', path: '/admin/verify-payments' },
     { id: 'users', label: 'Manage Users', icon: '👥', path: '/admin/users' },
     { id: 'news', label: 'News & Announcements', icon: '📢', path: '/admin/news' },
     { id: 'hods', label: 'Manage HODs', icon: '👔', path: '/admin/hods' },
+    // A14: Added Chatbot Manager Link
+    { id: 'chatbot', label: 'Chatbot Manager', icon: '🤖', path: '/admin/chatbot' },
     { id: 'aboutus', label: 'Edit About Us', icon: '📝', path: '/admin/aboutus' },
     { id: 'settings', label: 'Settings & Help', icon: '⚙️', path: '/admin/settings' }
   ]
@@ -21,6 +25,10 @@ export default function AdminSidebar({ user, onLogout }) {
     setActiveMenu(activeMenu === item.id ? null : item.id)
     if (item.path) {
       navigate(item.path)
+      // Close sidebar on mobile after navigation
+      if (window.innerWidth <= 1024 && onClose) {
+        onClose()
+      }
     }
   }
 
@@ -28,7 +36,7 @@ export default function AdminSidebar({ user, onLogout }) {
   const activeItem = menuItems.find(item => currentPath.startsWith(item.path))
 
   return (
-    <aside className="admin-sidebar">
+    <aside className={`admin-sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
         <h2 className="sidebar-logo">ISS YEMEN</h2>
       </div>
@@ -42,7 +50,7 @@ export default function AdminSidebar({ user, onLogout }) {
           >
             <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{item.label}</span>
-            <span className="nav-arrow">▲</span>
+            {/* Removed the arrow since there are no sub-menus logic in the click handler */}
           </div>
         ))}
       </nav>
@@ -62,4 +70,3 @@ export default function AdminSidebar({ user, onLogout }) {
     </aside>
   )
 }
-

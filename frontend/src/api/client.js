@@ -1,15 +1,16 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
 export async function apiFetch(path, { method = 'GET', body, headers } = {}) {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(headers || {})
-    },
-    credentials: 'include',
-    body: body ? JSON.stringify(body) : undefined
-  })
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(headers || {})
+      },
+      credentials: 'include',
+      body: body ? JSON.stringify(body) : undefined
+    })
 
   if (res.status === 401 || res.status === 403) {
     
@@ -38,6 +39,16 @@ export async function apiFetch(path, { method = 'GET', body, headers } = {}) {
     throw error
   }
   return data
+  } catch (err) {
+    // Handle network errors (failed to fetch)
+    if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+      const networkError = new Error('Unable to connect to the server. Please make sure the backend server is running on port 5000.')
+      networkError.status = 0
+      networkError.isNetworkError = true
+      throw networkError
+    }
+    throw err
+  }
 }
 
 

@@ -24,8 +24,11 @@ export function getEventsByType(type) {
   return apiFetch(`/api/events/type/${type}`)
 }
 
-export function registerForEvent(id) {
-  return apiFetch(`/api/events/${id}/register`, { method: 'POST' })
+export function registerForEvent(id, registrationData = {}) {
+  return apiFetch(`/api/events/${id}/register`, { 
+    method: 'POST',
+    body: registrationData
+  })
 }
 
 export function unregisterFromEvent(id) {

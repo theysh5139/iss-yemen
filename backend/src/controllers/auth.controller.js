@@ -95,8 +95,8 @@ export async function login(req, res, next) {
       return res.status(403).json({ message: 'Email not verified' });
     }
 
-    // Admin users skip OTP verification
-    if (user.role === 'admin') {
+    // Admin and member users skip OTP verification (for testing)
+    if (user.role === 'admin' || user.role === 'member') {
       const token = signAccessToken({ sub: user._id.toString(), role: user.role });
       res.cookie('access_token', token, authCookieOptions());
       return res.json({
@@ -105,7 +105,7 @@ export async function login(req, res, next) {
       });
     }
 
-    // Regular users (members/visitors) require OTP
+    // Regular users (visitors) require OTP
     // If OTP is provided, verify it
     if (otp) {
       if (!user.mfaOtpHash || !user.mfaOtpExpiresAt) {

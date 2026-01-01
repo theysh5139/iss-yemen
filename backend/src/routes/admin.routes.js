@@ -13,7 +13,10 @@ import {
   updateEvent,
   cancelEvent,
   deleteEvent,
-  getAllEvents
+  getAllEvents,
+  verifyPayments,
+  approvePayment,
+  rejectPayment
 } from '../controllers/admin.controller.js';
 import { getEmailConfig, saveEmailConfig, testEmailConfig } from '../controllers/emailConfig.controller.js';
 import { authenticate, requireRole } from '../middlewares/auth.middleware.js';
@@ -46,6 +49,11 @@ router.post('/events', validateBody(createEventSchema), createEvent);
 router.patch('/events/:id', validateBody(updateEventSchema), updateEvent);
 router.patch('/events/:id/cancel', cancelEvent);
 router.delete('/events/:id', deleteEvent);
+
+// Payment Verification 
+router.get('/payments/verify', verifyPayments);
+router.post('/payments/:eventId/:registrationIndex/approve', approvePayment);
+router.post('/payments/:eventId/:registrationIndex/reject', rejectPayment);
 
 // Email Configuration
 router.get('/email-config', getEmailConfig);

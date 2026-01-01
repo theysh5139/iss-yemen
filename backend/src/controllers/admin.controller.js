@@ -338,3 +338,133 @@ export async function getAllEvents(req, res, next) {
   }
 }
 
+export const verifyPayments = async (req, res, next) => {
+  try {
+    const { Event } = await import('../models/Event.model.js');
+    const { User } = await import('../models/User.model.js');
+    
+    // Fetch all events with registrations that have payment receipts
+    const events = await Event.find({
+      'registrations.paymentReceipt': { $exists: true }
+    }).populate('registrations.user', 'name email');
+
+    const payments = [];
+
+    events.forEach(event => {
+      event.registrations.forEach((reg, index) => {
+        if (reg.paymentReceipt) {
+          const user = reg.user;
+          payments.push({
+            id: reg._id?.toString() || `${event._id}-${index}`,
+            registrationIndex: index, // Store index for easy lookup
+            eventId: event._id.toString(),
+            eventName: event.title,
+            eventDate: event.date,
+            userId: user?._id?.toString() || reg.user?.toString() || 'Unknown',
+            userName: user?.name || 'Unknown',
+            userEmail: user?.email || 'Unknown',
+            receiptNumber: reg.paymentReceipt.receiptNumber,
+            receiptUrl: reg.paymentReceipt.receiptUrl,
+            amount: reg.paymentReceipt.amount || 0,
+            paymentMethod: reg.paymentReceipt.paymentMethod || 'Online',
+            status: reg.paymentReceipt.paymentStatus || 'Pending',
+            registeredAt: reg.registeredAt,
+            generatedAt: reg.paymentReceipt.generatedAt,
+            verifiedAt: reg.paymentReceipt.verifiedAt,
+            verifiedBy: reg.paymentReceipt.verifiedBy
+          });
+        }
+      });
+    });
+
+    // Sort by status (Pending first) then by date
+    payments.sort((a, b) => {
+      if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+      if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+      return new Date(b.registeredAt) - new Date(a.registeredAt);
+    });
+
+    res.json({ success: true, payments });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Verify/Approve a payment receipt
+export const approvePayment = async (req, res, next) => {
+  try {
+    const { eventId, registrationIndex } = req.params;
+    const adminId = req.user.id;
+
+    const { Event } = await import('../models/Event.model.js');
+    const event = await Event.findById(eventId);
+    
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    const index = parseInt(registrationIndex);
+    if (isNaN(index) || index < 0 || index >= event.registrations.length) {
+      return res.status(404).json({ message: 'Registration not found' });
+    }
+
+    const registration = event.registrations[index];
+    if (!registration || !registration.paymentReceipt) {
+      return res.status(404).json({ message: 'Payment receipt not found' });
+    }
+
+    registration.paymentReceipt.paymentStatus = 'Verified';
+    registration.paymentReceipt.verifiedAt = new Date();
+    registration.paymentReceipt.verifiedBy = adminId;
+
+    await event.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Payment verified successfully',
+      receipt: registration.paymentReceipt
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Reject a payment receipt
+export const rejectPayment = async (req, res, next) => {
+  try {
+    const { eventId, registrationIndex } = req.params;
+    const adminId = req.user.id;
+
+    const { Event } = await import('../models/Event.model.js');
+    const event = await Event.findById(eventId);
+    
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    const index = parseInt(registrationIndex);
+    if (isNaN(index) || index < 0 || index >= event.registrations.length) {
+      return res.status(404).json({ message: 'Registration not found' });
+    }
+
+    const registration = event.registrations[index];
+    if (!registration || !registration.paymentReceipt) {
+      return res.status(404).json({ message: 'Payment receipt not found' });
+    }
+
+    registration.paymentReceipt.paymentStatus = 'Rejected';
+    registration.paymentReceipt.verifiedAt = new Date();
+    registration.paymentReceipt.verifiedBy = adminId;
+
+    await event.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Payment rejected',
+      receipt: registration.paymentReceipt
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

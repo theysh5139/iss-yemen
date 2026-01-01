@@ -9,7 +9,7 @@ export default function HODCard({ hod }) {
           src={hod.photo} 
           alt={hod.name}
           onError={(e) => {
-            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(hod.name)}&size=200&background=0b6b63&color=fff`
+            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(hod.name)}&size=200&background=1e3a8a&color=fff`
           }}
         />
       </div>
