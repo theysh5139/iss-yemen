@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { apiFetch } from './client.js';
 
 export async function getAllRules() {
@@ -25,25 +24,14 @@ export async function deleteRule(id) {
   });
 }
 
-export async function sendMessage(message) {
+export async function sendChatMessage(message) {
   return apiFetch('/api/chatbot/message', {
     method: 'POST',
     body: { message }
   });
 }
 
-=======
-import { apiFetch } from './client.js'
-
-export function sendChatMessage(message) {
-  return apiFetch('/api/chatbot/message', {
-    method: 'POST',
-    body: { message }
-  })
+export async function getTopFAQs() {
+  return apiFetch('/api/chatbot/faqs');
 }
-
-export function getTopFAQs() {
-  return apiFetch('/api/chatbot/faqs')
-}
->>>>>>> origin/LATEST_SPRINT4
 

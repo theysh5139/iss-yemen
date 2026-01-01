@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-import { generateRandomToken } from './tokens.js';
-
-/**
- * Generate a unique receipt ID
- * Format: REC-YYYYMMDD-XXXXXX
- */
-export function generateReceiptId() {
-=======
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 
@@ -15,17 +6,10 @@ import crypto from 'crypto';
  * Format: REC-YYYYMMDD-XXXXXX
  */
 export function generateReceiptNumber() {
->>>>>>> origin/LATEST_SPRINT4
   const date = new Date();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-<<<<<<< HEAD
-  const random = generateRandomToken(6).toUpperCase();
-  return `REC-${year}${month}${day}-${random}`;
-}
-
-=======
   // Use Node's built-in crypto.randomUUID if available, otherwise fall back to uuid v4
   const uuid = crypto.randomUUID ? crypto.randomUUID() : uuidv4();
   const random = uuid.substring(0, 6).toUpperCase().replace(/-/g, '');
@@ -38,7 +22,7 @@ export function generateReceiptNumber() {
 export function generateReceiptData(event, user, amount = null, paymentMethod = 'Online Banking') {
   const receiptNumber = generateReceiptNumber();
   const receiptAmount = amount || event.paymentAmount || 0;
-  
+
   return {
     receiptNumber,
     generatedAt: new Date(),
@@ -59,7 +43,7 @@ export function generateReceiptData(event, user, amount = null, paymentMethod = 
  */
 export function generateReceiptHTML(receiptData) {
   const { receiptNumber, generatedAt, amount, eventTitle, eventDate, userName, userEmail } = receiptData;
-  
+
   const formattedDate = new Date(generatedAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -180,11 +164,11 @@ export function generateReceiptHTML(receiptData) {
       <h1>ISS YEMEN</h1>
       <p>Official Payment Receipt</p>
     </div>
-    
+
     <div class="receipt-number">
       Receipt No: <strong>${receiptNumber}</strong>
     </div>
-    
+
     <div class="receipt-details">
       <div class="detail-row">
         <span class="detail-label">Date:</span>
@@ -207,12 +191,12 @@ export function generateReceiptHTML(receiptData) {
         <span class="detail-value">${userEmail}</span>
       </div>
     </div>
-    
+
     <div class="amount-section">
       <div class="amount-label">Total Amount</div>
       <div class="amount-value">RM ${amount.toFixed(2)}</div>
     </div>
-    
+
     <div class="footer">
       <p>This is an official receipt issued by ISS Yemen.</p>
       <p>For inquiries, please contact the admin.</p>
@@ -223,5 +207,3 @@ export function generateReceiptHTML(receiptData) {
 </html>
   `;
 }
-
->>>>>>> origin/LATEST_SPRINT4

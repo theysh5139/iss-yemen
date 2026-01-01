@@ -10,8 +10,6 @@ router.post('/rule', verifyAdmin, chatbotController.createRule);
 router.put('/rule/:id', verifyAdmin, chatbotController.updateRule);
 router.get('/rules', verifyAdmin, chatbotController.getAllRules);
 router.get('/faqs', chatbotController.getTopFAQs); // Public endpoint for FAQs
-router.get('/rules', verifyAdmin, chatbotController.getAllRules);
-router.put('/rule/:id', verifyAdmin, chatbotController.updateRule);
 router.delete('/rule/:id', verifyAdmin, chatbotController.deleteRule);
 
 // Public Chat Route

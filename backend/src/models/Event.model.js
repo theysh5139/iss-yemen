@@ -40,14 +40,11 @@ const eventSchema = new mongoose.Schema(
     isRecurring: { type: Boolean, default: false },
     isPublic: { type: Boolean, default: true }, // Public events visible to visitors, private only to members
     cancelled: { type: Boolean, default: false }, // For cancelled events
-<<<<<<< HEAD
     isActive: { type: Boolean, default: true },
     registrationOpen: { type: Boolean, default: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-=======
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     requiresPayment: { type: Boolean, default: false },
     paymentAmount: { type: Number, default: 0 }
->>>>>>> origin/LATEST_SPRINT4
   },
   { timestamps: true }
 );

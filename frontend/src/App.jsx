@@ -19,10 +19,7 @@ import AllEvents from "./pages/AllEvents.jsx"
 import Signup from "./pages/Signup.jsx"
 import Login from "./pages/Login.jsx"
 import VerifyEmail from "./pages/VerifyEmail.jsx"
-<<<<<<< HEAD
 import VerifyOTP from "./pages/VerifyOTP.jsx"
-=======
->>>>>>> origin/LATEST_SPRINT4
 import ForgotPassword from "./pages/ForgotPassword.jsx"
 import ResetPassword from "./pages/ResetPassword.jsx"
 
@@ -67,10 +64,7 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
-<<<<<<< HEAD
           <Route path="/verify-otp" element={<VerifyOTP />} />
-=======
->>>>>>> origin/LATEST_SPRINT4
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 

@@ -14,11 +14,7 @@ import {
   cancelEvent,
   deleteEvent,
   getAllEvents,
-<<<<<<< HEAD
-  getAllPaymentReceipts,
-=======
   verifyPayments,
->>>>>>> origin/LATEST_SPRINT4
   approvePayment,
   rejectPayment
 } from '../controllers/admin.controller.js';
@@ -55,15 +51,9 @@ router.patch('/events/:id/cancel', cancelEvent);
 router.delete('/events/:id', deleteEvent);
 
 // Payment Verification 
-<<<<<<< HEAD
-router.get('/payments', getAllPaymentReceipts);
-router.patch('/payments/:id/approve', approvePayment);
-router.patch('/payments/:id/reject', rejectPayment);
-=======
 router.get('/payments/verify', verifyPayments);
 router.post('/payments/:eventId/:registrationIndex/approve', approvePayment);
 router.post('/payments/:eventId/:registrationIndex/reject', rejectPayment);
->>>>>>> origin/LATEST_SPRINT4
 
 // Email Configuration
 router.get('/email-config', getEmailConfig);

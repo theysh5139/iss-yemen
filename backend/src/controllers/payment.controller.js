@@ -2,7 +2,7 @@ import { Payment } from '../models/Payment.model.js';
 import { Receipt } from '../models/Receipt.model.js';
 import { Event } from '../models/Event.model.js';
 import { User } from '../models/User.model.js';
-import { generateReceiptId } from '../utils/receipt.js';
+import { generateReceiptNumber } from '../utils/receipt.js';
 import { generateReceiptPDF } from '../utils/pdfGenerator.js';
 import { generateRandomToken } from '../utils/tokens.js';
 
@@ -47,7 +47,7 @@ export async function createPayment(req, res, next) {
     });
     
     // U21: Automatically generate proof of payment (receipt record)
-    const receiptId = generateReceiptId();
+    const receiptId = generateReceiptNumber();
     const receipt = await Receipt.create({
       receiptId,
       paymentId: payment._id,

@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-import ChatRule from '../models/ChatRule.model.js'; // Ensure .js is added
-=======
 import ChatRule from '../models/ChatRule.model.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
@@ -11,9 +8,9 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 if (GEMINI_API_KEY) {
   try {
     genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    console.log('✅ Gemini AI initialized successfully');
+    console.log('??? Gemini AI initialized successfully');
   } catch (error) {
-    console.error('❌ Failed to initialize Gemini AI:', error.message);
+    console.error('??? Failed to initialize Gemini AI:', error.message);
   }
 }
 
@@ -50,15 +47,10 @@ function levenshteinDistance(str1, str2) {
   }
   return matrix[str2.length][str1.length];
 }
->>>>>>> origin/LATEST_SPRINT4
 
 // 1. Create Rule
 export const createRule = async (req, res) => {
   try {
-<<<<<<< HEAD
-    const { keyword, response } = req.body;
-    const newRule = new ChatRule({ keyword, response });
-=======
     const { keyword, response, isFAQ, relatedKeywords, category, priority } = req.body;
     const newRule = new ChatRule({ 
       keyword, 
@@ -68,7 +60,6 @@ export const createRule = async (req, res) => {
       category: category || 'general',
       priority: priority || 0
     });
->>>>>>> origin/LATEST_SPRINT4
     await newRule.save();
     res.status(201).json(newRule);
   } catch (error) {
@@ -76,12 +67,6 @@ export const createRule = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
-// 2. Get All Rules
-export const getAllRules = async (req, res) => {
-  try {
-    const rules = await ChatRule.find();
-=======
 // 2. Update Rule
 export const updateRule = async (req, res) => {
   try {
@@ -113,32 +98,12 @@ export const updateRule = async (req, res) => {
 export const getAllRules = async (req, res) => {
   try {
     const rules = await ChatRule.find().sort({ priority: -1, createdAt: -1 });
->>>>>>> origin/LATEST_SPRINT4
     res.status(200).json(rules);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-<<<<<<< HEAD
-// 3. Update Rule
-export const updateRule = async (req, res) => {
-  try {
-    const { keyword, response } = req.body;
-    const rule = await ChatRule.findByIdAndUpdate(
-      req.params.id,
-      { keyword, response },
-      { new: true, runValidators: true }
-    );
-    if (!rule) {
-      return res.status(404).json({ message: 'Rule not found' });
-    }
-    res.status(200).json(rule);
-  } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({ message: 'Keyword already exists' });
-    }
-=======
 // 4. Get Top 10 FAQs
 export const getTopFAQs = async (req, res) => {
   try {
@@ -148,49 +113,20 @@ export const getTopFAQs = async (req, res) => {
       .select('keyword response category');
     res.status(200).json(faqs);
   } catch (error) {
->>>>>>> origin/LATEST_SPRINT4
     res.status(500).json({ message: error.message });
   }
 };
 
-<<<<<<< HEAD
-// 4. Delete Rule
-export const deleteRule = async (req, res) => {
-  try {
-    const rule = await ChatRule.findByIdAndDelete(req.params.id);
-    if (!rule) {
-      return res.status(404).json({ message: 'Rule not found' });
-    }
-=======
 // 5. Delete Rule
 export const deleteRule = async (req, res) => {
   try {
     await ChatRule.findByIdAndDelete(req.params.id);
->>>>>>> origin/LATEST_SPRINT4
     res.status(200).json({ message: 'Rule deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-<<<<<<< HEAD
-// 4. Handle Chat
-export const handleChat = async (req, res) => {
-  try {
-    const { message } = req.body;
-    // Simple exact match logic
-    const rule = await ChatRule.findOne({ keyword: message });
-    
-    if (rule) {
-      res.json({ response: rule.response });
-    } else {
-      res.json({ response: "I'm sorry, I don't understand that yet." });
-    }
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-=======
 // 6. Enhanced Handle Chat with Gemini AI fallback
 export const handleChat = async (req, res) => {
   try {
@@ -347,4 +283,3 @@ Provide a helpful, concise answer (2-3 sentences max). If the question is about 
     res.status(500).json({ message: error.message });
   }
 };
->>>>>>> origin/LATEST_SPRINT4
