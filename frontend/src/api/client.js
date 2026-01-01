@@ -11,12 +11,17 @@ export async function apiFetch(path, { method = 'GET', body, headers } = {}) {
     body: body ? JSON.stringify(body) : undefined
   })
 
-  if (res.status === 401 || res.status === 403) {
-    
-        const authError = new Error('Authentication required or session expired.');
-        authError.status = res.status;
-        throw authError;
-      }
+  // Don't show generic auth error for login/signup endpoints - let the actual error message through
+  const isAuthEndpoint = path.includes('/auth/login') || path.includes('/auth/signup');
+  
+  if ((res.status === 401 || res.status === 403) && !isAuthEndpoint) {
+    const authError = new Error('Authentication required or session expired.');
+    authError.status = res.status;
+    throw authError;
+  }
+  
+  // For auth endpoints with 401/403, let the actual error message from backend come through
+  // Don't throw generic error - let the JSON parsing below handle it
 
   const isJson = res.headers.get('content-type')?.includes('application/json')
   const data = isJson ? await res.json() : null

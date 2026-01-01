@@ -10,6 +10,7 @@
     "lint": "echo 'add linter'",
     "create-admin": "node src/scripts/create-admin.js",
     "create-member": "node src/scripts/create-member.js",
+    "create-test-member": "node src/scripts/create-test-member.js",
     "seed-events": "node src/scripts/seed-events.js",
     "configure-email": "node src/scripts/configure-email.js"
   },

@@ -1,5 +1,6 @@
 import { User } from '../models/User.model.js';
 import { Event } from '../models/Event.model.js';
+import { PaymentReceipt } from '../models/PaymentReceipt.model.js';
 
 export async function getAdminStats(req, res, next) {
   try {
@@ -337,4 +338,131 @@ export async function getAllEvents(req, res, next) {
     next(err);
   }
 }
+
+// Get all payment receipts with event linkage
+export const getAllPaymentReceipts = async (req, res, next) => {
+  try {
+    const { status } = req.query; // Optional filter by status
+    
+    const query = {};
+    if (status && ['Pending', 'Verified', 'Rejected'].includes(status)) {
+      query.paymentStatus = status;
+    }
+
+    const receipts = await PaymentReceipt.find(query)
+      .populate('userId', 'name email')
+      .populate('eventId', 'title date location')
+      .populate('verifiedBy', 'name email')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const formattedReceipts = receipts.map(receipt => ({
+      id: receipt._id,
+      user: {
+        id: receipt.userId?._id,
+        name: receipt.userId?.name || 'Unknown',
+        email: receipt.userId?.email || 'N/A'
+      },
+      event: {
+        id: receipt.eventId?._id,
+        title: receipt.eventId?.title || 'Event Deleted',
+        date: receipt.eventId?.date,
+        location: receipt.eventId?.location
+      },
+      amount: receipt.amount,
+      currency: receipt.currency,
+      paymentType: receipt.paymentType,
+      receiptUrl: receipt.receiptUrl,
+      status: receipt.paymentStatus,
+      verifiedBy: receipt.verifiedBy ? {
+        name: receipt.verifiedBy.name,
+        email: receipt.verifiedBy.email
+      } : null,
+      verifiedAt: receipt.verifiedAt,
+      rejectionReason: receipt.rejectionReason,
+      submittedAt: receipt.submittedAt,
+      createdAt: receipt.createdAt
+    }));
+
+    return res.json({ success: true, receipts: formattedReceipts });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Verify/Approve a payment receipt
+export const approvePayment = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const adminId = req.user.id;
+
+    const receipt = await PaymentReceipt.findById(id)
+      .populate('eventId', 'title')
+      .populate('userId', 'name email');
+
+    if (!receipt) {
+      return res.status(404).json({ success: false, message: 'Payment receipt not found' });
+    }
+
+    if (receipt.paymentStatus === 'Verified') {
+      return res.status(400).json({ success: false, message: 'Payment already verified' });
+    }
+
+    receipt.paymentStatus = 'Verified';
+    receipt.verifiedBy = adminId;
+    receipt.verifiedAt = new Date();
+    receipt.rejectionReason = undefined;
+    await receipt.save();
+
+    return res.json({ 
+      success: true, 
+      message: 'Payment verified successfully',
+      receipt: {
+        id: receipt._id,
+        status: receipt.paymentStatus,
+        verifiedAt: receipt.verifiedAt
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Reject a payment receipt
+export const rejectPayment = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const adminId = req.user.id;
+
+    const receipt = await PaymentReceipt.findById(id);
+
+    if (!receipt) {
+      return res.status(404).json({ success: false, message: 'Payment receipt not found' });
+    }
+
+    if (receipt.paymentStatus === 'Rejected') {
+      return res.status(400).json({ success: false, message: 'Payment already rejected' });
+    }
+
+    receipt.paymentStatus = 'Rejected';
+    receipt.verifiedBy = adminId;
+    receipt.verifiedAt = new Date();
+    receipt.rejectionReason = reason || 'Payment receipt rejected by admin';
+    await receipt.save();
+
+    return res.json({ 
+      success: true, 
+      message: 'Payment rejected successfully',
+      receipt: {
+        id: receipt._id,
+        status: receipt.paymentStatus,
+        rejectionReason: receipt.rejectionReason,
+        verifiedAt: receipt.verifiedAt
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 

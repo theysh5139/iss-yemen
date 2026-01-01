@@ -1,9 +1,14 @@
+/* Import centralized theme */
+@import './styles/theme.css';
+
 /* Modern app-wide styles with animations */
 body {
   margin: 0;
-  background: #f0f7f6; /* Light muted teal background to match theme */
+  background: var(--bg-tertiary, #f0f7f6); /* Light muted teal background to match theme */
   min-height: 100vh;
   overflow-x: hidden;
+  font-family: var(--font-family);
+  color: var(--text-primary);
 }
 
 main {

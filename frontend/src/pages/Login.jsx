@@ -48,8 +48,13 @@ export default function Login() {
         setOtpExpiry(Date.now() + 60000) // 60 seconds from now
         setError("")
       } else {
-        localStorage.setItem('authToken', res.token);
-        login(res.user, res.token);
+        // Token is set as HTTP-only cookie by backend, but we may have a token in response
+        // Store token if provided, otherwise rely on cookie
+        if (res.token) {
+          localStorage.setItem('authToken', res.token);
+        }
+        // Login with user data (token is in cookie for security)
+        login(res.user, res.token || null);
         // Redirect admin users to admin dashboard
         if (res.user?.role === 'admin') {
           navigate("/admin/dashboard", { replace: true })

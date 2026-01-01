@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
-
+import chatbotRoutes from "./routes/chatbot.routes.js";
 import authRoutes from './routes/auth.routes.js';
 import eventRoutes from './routes/event.routes.js';
 import adminRoutes from './routes/admin.routes.js';
@@ -62,6 +62,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/hods', hodRoutes);
 app.use('/api/aboutus', aboutUsRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 
 app.use((err, _req, res, _next) => {
   // eslint-disable-next-line no-console

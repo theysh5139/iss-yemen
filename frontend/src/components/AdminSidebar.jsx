@@ -9,10 +9,14 @@ export default function AdminSidebar({ user, onLogout }) {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
-    { id: 'events', label: 'Manage Events and Activities', icon: '📅', path: '/admin/events' },
+    { id: 'events', label: 'Manage Events', icon: '📅', path: '/admin/events' },
+    // A16: Added Payment Verification Link (Placed near Events for context)
+    { id: 'verify-payments', label: 'Verify Payments', icon: '💰', path: '/admin/verify-payments' },
     { id: 'users', label: 'Manage Users', icon: '👥', path: '/admin/users' },
     { id: 'news', label: 'News & Announcements', icon: '📢', path: '/admin/news' },
     { id: 'hods', label: 'Manage HODs', icon: '👔', path: '/admin/hods' },
+    // A14: Added Chatbot Manager Link
+    { id: 'chatbot', label: 'Chatbot Manager', icon: '🤖', path: '/admin/chatbot' },
     { id: 'aboutus', label: 'Edit About Us', icon: '📝', path: '/admin/aboutus' },
     { id: 'settings', label: 'Settings & Help', icon: '⚙️', path: '/admin/settings' }
   ]
@@ -42,7 +46,7 @@ export default function AdminSidebar({ user, onLogout }) {
           >
             <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{item.label}</span>
-            <span className="nav-arrow">▲</span>
+            {/* Removed the arrow since there are no sub-menus logic in the click handler */}
           </div>
         ))}
       </nav>
@@ -62,4 +66,3 @@ export default function AdminSidebar({ user, onLogout }) {
     </aside>
   )
 }
-
