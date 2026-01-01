@@ -7,8 +7,14 @@ const router = express.Router();
 
 // Admin Routes
 router.post('/rule', verifyAdmin, chatbotController.createRule);
+<<<<<<< HEAD
 router.get('/rules', verifyAdmin, chatbotController.getAllRules);
 router.put('/rule/:id', verifyAdmin, chatbotController.updateRule);
+=======
+router.put('/rule/:id', verifyAdmin, chatbotController.updateRule);
+router.get('/rules', verifyAdmin, chatbotController.getAllRules);
+router.get('/faqs', chatbotController.getTopFAQs); // Public endpoint for FAQs
+>>>>>>> origin/LATEST_SPRINT4
 router.delete('/rule/:id', verifyAdmin, chatbotController.deleteRule);
 
 // Public Chat Route

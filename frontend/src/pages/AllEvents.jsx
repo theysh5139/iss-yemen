@@ -207,11 +207,21 @@ export default function AllEvents() {
                         </button>
                       ) : (
                         <button
+                          type="button"
                           className="btn btn-primary btn-3d"
                           onClick={(e) => {
+                            e.preventDefault()
                             e.stopPropagation()
-                            handleEventClick(event)
+                            console.log('Join Event button clicked!', event)
+                            if (event && event._id) {
+                              handleEventClick(event)
+                            } else {
+                              console.error('Event is invalid:', event)
+                              alert('Error: Event data is missing. Please refresh the page.')
+                            }
                           }}
+                          style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+                          disabled={!event || !event._id}
                         >
                           Join Event
                         </button>

@@ -95,7 +95,7 @@ export async function verifyEmail(req, res, next) {
 
 export async function login(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const { email, password, otp } = req.body;
     const user = await User.findOne({ email: String(email).toLowerCase() });
     if (!user) return res.status(401).json({ message: 'Invalid email or password' });
 
@@ -106,8 +106,8 @@ export async function login(req, res, next) {
       return res.status(403).json({ message: 'Email not verified' });
     }
 
-    // Admin users skip OTP verification
-    if (user.role === 'admin') {
+    // Admin and member users skip OTP verification (for testing)
+    if (user.role === 'admin' || user.role === 'member') {
       const token = signAccessToken({ sub: user._id.toString(), role: user.role });
       res.cookie('access_token', token, authCookieOptions());
       return res.json({
@@ -127,81 +127,49 @@ export async function login(req, res, next) {
       });
     }
 
-    // Check if user is locked out
-    if (user.lockoutUntil && user.lockoutUntil > new Date()) {
-      const secondsRemaining = Math.ceil((user.lockoutUntil - new Date()) / 1000);
-      return res.status(429).json({
-        message: `Account temporarily locked. Please try again in ${secondsRemaining} seconds.`,
-        lockoutSeconds: secondsRemaining
-      });
-    }
-
-    // Generate 6-digit OTP
-    const otp = generateOTP();
-    const otpHash = hashToken(otp);
-    const otpExpires = addSeconds(new Date(), 60); // Expires in 60 seconds
-
-    // Generate email content
-    const emailContent = {
-      to: user.email,
-      subject: 'Your Login Verification Code',
-      text: `Your verification code is: ${otp}\n\nThis code will expire in 60 seconds.\n\nIf you did not request this code, please ignore this email.`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Your Login Verification Code</h2>
-          <p>Hello ${user.name || 'there'},</p>
-          <p>Your verification code is:</p>
-          <div style="background-color: #f5f5f5; border: 2px solid #ddd; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
-            <h1 style="font-size: 32px; letter-spacing: 8px; color: #2563eb; margin: 0;">${otp}</h1>
-          </div>
-          <p style="color: #666; font-size: 14px;">This code will expire in <strong>60 seconds</strong>.</p>
-          <p style="color: #666; font-size: 14px;">If you did not request this code, please ignore this email.</p>
-        </div>
-      `
-    };
-
-    // Send OTP via email FIRST, then save to database
-    // This ensures email is sent before we commit the OTP to the database
-    let emailSent = false;
-    try {
-      const emailResult = await sendEmail(emailContent);
-      emailSent = true;
-      console.log(`✅ OTP email sent successfully to ${user.email}`);
-
-      // In development, log OTP to console for debugging
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`[DEV] OTP for ${user.email}: ${otp}`);
-      }
-    } catch (emailError) {
-      console.error('❌ Failed to send OTP email during login:', emailError.message);
-      console.error('Email error details:', emailError);
-
-      // In development, log OTP to console even if email fails
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`[DEV] Email failed, but OTP for ${user.email}: ${otp}`);
+    // Regular users (visitors) require OTP
+    // If OTP is provided, verify it
+    if (otp) {
+      if (!user.mfaOtpHash || !user.mfaOtpExpiresAt) {
+        return res.status(400).json({ message: 'No OTP found. Please request a new OTP.' });
       }
 
-      // Return error - don't save OTP if email fails
-      return res.status(500).json({
-        message: 'Failed to send OTP email. Please try again later.',
-        error: process.env.NODE_ENV !== 'production' ? emailError.message : undefined
-      });
-    }
+      if (user.mfaOtpExpiresAt < new Date()) {
+        user.mfaOtpHash = undefined;
+        user.mfaOtpExpiresAt = undefined;
+        await user.save();
+        return res.status(400).json({ message: 'OTP has expired. Please request a new OTP.' });
+      }
 
-    // Only save OTP to database after email is successfully sent
-    if (emailSent) {
-      user.otp = otpHash;
-      user.otpExpires = otpExpires;
-      user.failedOtpAttempts = 0; // Reset on new OTP generation
-      user.lockoutUntil = undefined; // Clear lockout on new OTP
+      const otpHash = hashToken(String(otp));
+      if (otpHash !== user.mfaOtpHash) {
+        return res.status(401).json({ message: 'Invalid OTP. Please try again.' });
+      }
+
+      // OTP verified, clear it and proceed with login
+      user.mfaOtpHash = undefined;
+      user.mfaOtpExpiresAt = undefined;
       await user.save();
+    } else {
+      // No OTP provided, generate and send one
+      const otpCode = generateOTP(6);
+      user.mfaOtpHash = hashToken(otpCode);
+      user.mfaOtpExpiresAt = addSeconds(new Date(), 60); // 60 seconds expiration
+      await user.save();
+
+      await sendEmail({
+        to: user.email,
+        subject: 'Your Login OTP',
+        text: `Your OTP code is: ${otpCode}. It will expire in 60 seconds.`,
+        html: `<p>Your OTP code is: <strong>${otpCode}</strong></p><p>It will expire in 60 seconds.</p>`
+      });
+
+      return res.json({
+        message: 'OTP sent to your email. Please verify to complete login.',
+        email: user.email // Return email so frontend can use it for OTP verification
+      });
     }
 
-    // Never include OTP in response - always send via email only
-    return res.json({
-      message: 'OTP sent to your email. Please verify to complete login.',
-      email: user.email // Return email so frontend can use it for OTP verification
-    });
   } catch (err) {
     next(err);
   }

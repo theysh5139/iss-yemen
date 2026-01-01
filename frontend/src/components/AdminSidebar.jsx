@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import "../styles/admin-sidebar.css"
 
-export default function AdminSidebar({ user, onLogout }) {
+export default function AdminSidebar({ user, onLogout, isOpen, onClose }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [activeMenu, setActiveMenu] = useState(null)
@@ -25,6 +25,10 @@ export default function AdminSidebar({ user, onLogout }) {
     setActiveMenu(activeMenu === item.id ? null : item.id)
     if (item.path) {
       navigate(item.path)
+      // Close sidebar on mobile after navigation
+      if (window.innerWidth <= 1024 && onClose) {
+        onClose()
+      }
     }
   }
 
@@ -32,7 +36,7 @@ export default function AdminSidebar({ user, onLogout }) {
   const activeItem = menuItems.find(item => currentPath.startsWith(item.path))
 
   return (
-    <aside className="admin-sidebar">
+    <aside className={`admin-sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
         <h2 className="sidebar-logo">ISS YEMEN</h2>
       </div>

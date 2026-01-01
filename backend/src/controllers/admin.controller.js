@@ -339,52 +339,53 @@ export async function getAllEvents(req, res, next) {
   }
 }
 
-// Get all payment receipts with event linkage
-export const getAllPaymentReceipts = async (req, res, next) => {
+export const verifyPayments = async (req, res, next) => {
   try {
-    const { status } = req.query; // Optional filter by status
+    const { Event } = await import('../models/Event.model.js');
+    const { User } = await import('../models/User.model.js');
 
-    const query = {};
-    if (status && ['Pending', 'Verified', 'Rejected'].includes(status)) {
-      query.paymentStatus = status;
-    }
+    // Fetch all events with registrations that have payment receipts
+    const events = await Event.find({
+      'registrations.paymentReceipt': { $exists: true }
+    }).populate('registrations.user', 'name email');
 
-    const receipts = await PaymentReceipt.find(query)
-      .populate('userId', 'name email')
-      .populate('eventId', 'title date location')
-      .populate('verifiedBy', 'name email')
-      .sort({ createdAt: -1 })
-      .lean();
+    const payments = [];
 
-    const formattedReceipts = receipts.map(receipt => ({
-      id: receipt._id,
-      user: {
-        id: receipt.userId?._id,
-        name: receipt.userId?.name || 'Unknown',
-        email: receipt.userId?.email || 'N/A'
-      },
-      event: {
-        id: receipt.eventId?._id,
-        title: receipt.eventId?.title || 'Event Deleted',
-        date: receipt.eventId?.date,
-        location: receipt.eventId?.location
-      },
-      amount: receipt.amount,
-      currency: receipt.currency,
-      paymentType: receipt.paymentType,
-      receiptUrl: receipt.receiptUrl,
-      status: receipt.paymentStatus,
-      verifiedBy: receipt.verifiedBy ? {
-        name: receipt.verifiedBy.name,
-        email: receipt.verifiedBy.email
-      } : null,
-      verifiedAt: receipt.verifiedAt,
-      rejectionReason: receipt.rejectionReason,
-      submittedAt: receipt.submittedAt,
-      createdAt: receipt.createdAt
-    }));
+    events.forEach(event => {
+      event.registrations.forEach((reg, index) => {
+        if (reg.paymentReceipt) {
+          const user = reg.user;
+          payments.push({
+            id: reg._id?.toString() || `${event._id}-${index}`,
+            registrationIndex: index, // Store index for easy lookup
+            eventId: event._id.toString(),
+            eventName: event.title,
+            eventDate: event.date,
+            userId: user?._id?.toString() || reg.user?.toString() || 'Unknown',
+            userName: user?.name || 'Unknown',
+            userEmail: user?.email || 'Unknown',
+            receiptNumber: reg.paymentReceipt.receiptNumber,
+            receiptUrl: reg.paymentReceipt.receiptUrl,
+            amount: reg.paymentReceipt.amount || 0,
+            paymentMethod: reg.paymentReceipt.paymentMethod || 'Online',
+            status: reg.paymentReceipt.paymentStatus || 'Pending',
+            registeredAt: reg.registeredAt,
+            generatedAt: reg.paymentReceipt.generatedAt,
+            verifiedAt: reg.paymentReceipt.verifiedAt,
+            verifiedBy: reg.paymentReceipt.verifiedBy
+          });
+        }
+      });
+    });
 
-    return res.json({ success: true, receipts: formattedReceipts });
+    // Sort by status (Pending first) then by date
+    payments.sort((a, b) => {
+      if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+      if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+      return new Date(b.registeredAt) - new Date(a.registeredAt);
+    });
+
+    res.json({ success: true, payments });
   } catch (error) {
     next(error);
   }
@@ -393,35 +394,36 @@ export const getAllPaymentReceipts = async (req, res, next) => {
 // Verify/Approve a payment receipt
 export const approvePayment = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { eventId, registrationIndex } = req.params;
     const adminId = req.user.id;
 
-    const receipt = await PaymentReceipt.findById(id)
-      .populate('eventId', 'title')
-      .populate('userId', 'name email');
+    const { Event } = await import('../models/Event.model.js');
+    const event = await Event.findById(eventId);
 
-    if (!receipt) {
-      return res.status(404).json({ success: false, message: 'Payment receipt not found' });
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
     }
 
-    if (receipt.paymentStatus === 'Verified') {
-      return res.status(400).json({ success: false, message: 'Payment already verified' });
+    const index = parseInt(registrationIndex);
+    if (isNaN(index) || index < 0 || index >= event.registrations.length) {
+      return res.status(404).json({ message: 'Registration not found' });
     }
 
-    receipt.paymentStatus = 'Verified';
-    receipt.verifiedBy = adminId;
-    receipt.verifiedAt = new Date();
-    receipt.rejectionReason = undefined;
-    await receipt.save();
+    const registration = event.registrations[index];
+    if (!registration || !registration.paymentReceipt) {
+      return res.status(404).json({ message: 'Payment receipt not found' });
+    }
 
-    return res.json({
+    registration.paymentReceipt.paymentStatus = 'Verified';
+    registration.paymentReceipt.verifiedAt = new Date();
+    registration.paymentReceipt.verifiedBy = adminId;
+
+    await event.save();
+
+    res.json({
       success: true,
       message: 'Payment verified successfully',
-      receipt: {
-        id: receipt._id,
-        status: receipt.paymentStatus,
-        verifiedAt: receipt.verifiedAt
-      }
+      receipt: registration.paymentReceipt
     });
   } catch (error) {
     next(error);
@@ -431,38 +433,38 @@ export const approvePayment = async (req, res, next) => {
 // Reject a payment receipt
 export const rejectPayment = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { reason } = req.body;
+    const { eventId, registrationIndex } = req.params;
     const adminId = req.user.id;
 
-    const receipt = await PaymentReceipt.findById(id);
+    const { Event } = await import('../models/Event.model.js');
+    const event = await Event.findById(eventId);
 
-    if (!receipt) {
-      return res.status(404).json({ success: false, message: 'Payment receipt not found' });
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
     }
 
-    if (receipt.paymentStatus === 'Rejected') {
-      return res.status(400).json({ success: false, message: 'Payment already rejected' });
+    const index = parseInt(registrationIndex);
+    if (isNaN(index) || index < 0 || index >= event.registrations.length) {
+      return res.status(404).json({ message: 'Registration not found' });
     }
 
-    receipt.paymentStatus = 'Rejected';
-    receipt.verifiedBy = adminId;
-    receipt.verifiedAt = new Date();
-    receipt.rejectionReason = reason || 'Payment receipt rejected by admin';
-    await receipt.save();
+    const registration = event.registrations[index];
+    if (!registration || !registration.paymentReceipt) {
+      return res.status(404).json({ message: 'Payment receipt not found' });
+    }
 
-    return res.json({
+    registration.paymentReceipt.paymentStatus = 'Rejected';
+    registration.paymentReceipt.verifiedAt = new Date();
+    registration.paymentReceipt.verifiedBy = adminId;
+
+    await event.save();
+
+    res.json({
       success: true,
-      message: 'Payment rejected successfully',
-      receipt: {
-        id: receipt._id,
-        status: receipt.paymentStatus,
-        rejectionReason: receipt.rejectionReason,
-        verifiedAt: receipt.verifiedAt
-      }
+      message: 'Payment rejected',
+      receipt: registration.paymentReceipt
     });
   } catch (error) {
     next(error);
   }
 };
-
