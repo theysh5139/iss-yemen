@@ -15,9 +15,6 @@ export default function AdminChatbot() {
   const [rules, setRules] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [faqFilter, setFaqFilter] = useState('all');
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -154,28 +151,8 @@ export default function AdminChatbot() {
     }
   };
 
-  // Calculate statistics
-  const stats = {
-    total: rules.length,
-    faqs: rules.filter(r => r.isFAQ).length,
-    categories: [...new Set(rules.map(r => r.category || 'general'))].length,
-    highPriority: rules.filter(r => r.priority > 5).length
-  };
-
-  // Filter rules
-  const filteredRules = rules.filter(rule => {
-    const matchesSearch = !searchQuery || 
-      rule.keyword.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rule.response.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || rule.category === categoryFilter;
-    const matchesFAQ = faqFilter === 'all' || 
-      (faqFilter === 'faq' && rule.isFAQ) || 
-      (faqFilter === 'non-faq' && !rule.isFAQ);
-    return matchesSearch && matchesCategory && matchesFAQ;
-  });
-
-  // Get unique categories
-  const categories = ['all', ...new Set(rules.map(r => r.category || 'general'))];
+  // Display all rules (no filtering)
+  const filteredRules = rules;
 
   if (user?.role !== 'admin') {
     return null;
@@ -230,68 +207,6 @@ export default function AdminChatbot() {
                     Create Rules
                   </button>
                 </div>
-
-                {/* Statistics Cards */}
-                <div className="chatbot-stats-grid">
-                  <div className="stat-card stat-card-primary">
-                    <div className="stat-card-content">
-                      <div className="stat-card-number">{stats.total}</div>
-                      <div className="stat-card-icon">📋</div>
-                    </div>
-                    <div className="stat-card-label">Total Rules</div>
-                  </div>
-                  <div className="stat-card stat-card-success">
-                    <div className="stat-card-content">
-                      <div className="stat-card-number">{stats.faqs}</div>
-                      <div className="stat-card-icon">⭐</div>
-                    </div>
-                    <div className="stat-card-label">FAQs</div>
-                  </div>
-                  <div className="stat-card stat-card-info">
-                    <div className="stat-card-content">
-                      <div className="stat-card-number">{stats.categories}</div>
-                      <div className="stat-card-icon">📁</div>
-                    </div>
-                    <div className="stat-card-label">Categories</div>
-                  </div>
-                  <div className="stat-card stat-card-warning">
-                    <div className="stat-card-content">
-                      <div className="stat-card-number">{stats.highPriority}</div>
-                      <div className="stat-card-icon">🔝</div>
-                    </div>
-                    <div className="stat-card-label">High Priority</div>
-                  </div>
-                </div>
-
-                {/* Filters */}
-                <div className="chatbot-filter-container">
-                  <div className="filter-wrapper">
-                    <select
-                      className="filter-select"
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
-                    >
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>
-                          {cat === 'all' ? 'All Categories' : cat.charAt(0).toUpperCase() + cat.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="filter-arrow">▼</span>
-                  </div>
-                  <div className="filter-wrapper">
-                    <select
-                      className="filter-select"
-                      value={faqFilter}
-                      onChange={(e) => setFaqFilter(e.target.value)}
-                    >
-                      <option value="all">All Types</option>
-                      <option value="faq">FAQs Only</option>
-                      <option value="non-faq">Non-FAQs</option>
-                    </select>
-                    <span className="filter-arrow">▼</span>
-                  </div>
-                </div>
               </div>
 
               {/* --- Chatbot Rules Section --- */}
@@ -301,29 +216,6 @@ export default function AdminChatbot() {
 
                 {/* Content Box */}
                 <div className="chatbot-rules-content">
-                  {/* Search Box */}
-                  <div className="chatbot-search-container">
-                    <div className="search-box">
-                      <span className="search-icon">🔍</span>
-                      <input
-                        type="text"
-                        placeholder="Search rules by keyword or response..."
-                        className="search-input"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                      {searchQuery && (
-                        <button
-                          className="search-clear"
-                          onClick={() => setSearchQuery('')}
-                          aria-label="Clear search"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
                   {/* Rules List */}
                   <div className="rules-list">
                     {isLoading ? (

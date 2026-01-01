@@ -7,6 +7,9 @@
 }
 
 .chatbot-header {
+  background: #e5e7eb; /* Light gray background */
+  padding: 1.5rem 2rem;
+  border-radius: 0.5rem;
   margin-bottom: 2rem;
 }
 
