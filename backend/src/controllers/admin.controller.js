@@ -326,7 +326,7 @@ export async function getAllAnnouncements(req, res, next) {
 export async function getAllEvents(req, res, next) {
   try {
     // Get all events and activities (not announcements)
-    const events = await Event.find({ 
+    const events = await Event.find({
       $or: [{ type: 'event' }, { type: 'activity' }]
     })
       .sort({ date: -1 })
@@ -343,7 +343,7 @@ export async function getAllEvents(req, res, next) {
 export const getAllPaymentReceipts = async (req, res, next) => {
   try {
     const { status } = req.query; // Optional filter by status
-    
+
     const query = {};
     if (status && ['Pending', 'Verified', 'Rejected'].includes(status)) {
       query.paymentStatus = status;
@@ -414,8 +414,8 @@ export const approvePayment = async (req, res, next) => {
     receipt.rejectionReason = undefined;
     await receipt.save();
 
-    return res.json({ 
-      success: true, 
+    return res.json({
+      success: true,
       message: 'Payment verified successfully',
       receipt: {
         id: receipt._id,
@@ -451,8 +451,8 @@ export const rejectPayment = async (req, res, next) => {
     receipt.rejectionReason = reason || 'Payment receipt rejected by admin';
     await receipt.save();
 
-    return res.json({ 
-      success: true, 
+    return res.json({
+      success: true,
       message: 'Payment rejected successfully',
       receipt: {
         id: receipt._id,

@@ -103,6 +103,5 @@ export const updateEventSchema = Joi.object({
   isPublic: Joi.boolean().optional(),
   cancelled: Joi.boolean().optional()
 });
-});
 
 

@@ -58,8 +58,8 @@ export async function signup(req, res, next) {
     }
 
     return res.status(201).json({
-      message: emailSent 
-        ? 'Signup successful. Please verify your email.' 
+      message: emailSent
+        ? 'Signup successful. Please verify your email.'
         : 'Signup successful, but verification email could not be sent. Please use resend verification.',
       user: { id: user._id.toString(), email: user.email, name: user.name, emailVerified: user.isEmailVerified() },
       ...(verifyUrlInResponse && { verifyUrl: verifyUrlInResponse })
@@ -130,7 +130,7 @@ export async function login(req, res, next) {
     // Check if user is locked out
     if (user.lockoutUntil && user.lockoutUntil > new Date()) {
       const secondsRemaining = Math.ceil((user.lockoutUntil - new Date()) / 1000);
-      return res.status(429).json({ 
+      return res.status(429).json({
         message: `Account temporarily locked. Please try again in ${secondsRemaining} seconds.`,
         lockoutSeconds: secondsRemaining
       });
@@ -167,7 +167,7 @@ export async function login(req, res, next) {
       const emailResult = await sendEmail(emailContent);
       emailSent = true;
       console.log(`✅ OTP email sent successfully to ${user.email}`);
-      
+
       // In development, log OTP to console for debugging
       if (process.env.NODE_ENV !== 'production') {
         console.log(`[DEV] OTP for ${user.email}: ${otp}`);
@@ -175,14 +175,14 @@ export async function login(req, res, next) {
     } catch (emailError) {
       console.error('❌ Failed to send OTP email during login:', emailError.message);
       console.error('Email error details:', emailError);
-      
+
       // In development, log OTP to console even if email fails
       if (process.env.NODE_ENV !== 'production') {
         console.log(`[DEV] Email failed, but OTP for ${user.email}: ${otp}`);
       }
-      
+
       // Return error - don't save OTP if email fails
-      return res.status(500).json({ 
+      return res.status(500).json({
         message: 'Failed to send OTP email. Please try again later.',
         error: process.env.NODE_ENV !== 'production' ? emailError.message : undefined
       });
@@ -219,7 +219,7 @@ export async function verifyOTP(req, res, next) {
     // Check if user is locked out
     if (user.lockoutUntil && user.lockoutUntil > new Date()) {
       const secondsRemaining = Math.ceil((user.lockoutUntil - new Date()) / 1000);
-      return res.status(429).json({ 
+      return res.status(429).json({
         message: `Account temporarily locked. Please try again in ${secondsRemaining} seconds.`,
         lockoutSeconds: secondsRemaining
       });
@@ -250,17 +250,17 @@ export async function verifyOTP(req, res, next) {
       if (user.failedOtpAttempts >= 3) {
         user.lockoutUntil = addSeconds(new Date(), 30); // Lock for 30 seconds
         await user.save();
-        return res.status(429).json({ 
+        return res.status(429).json({
           message: 'Too many failed attempts. Account locked for 30 seconds.',
           lockoutSeconds: 30
         });
       }
 
       await user.save();
-      
+
       // U14 - Invalid OTP Error: Return clear error message
       const attemptsRemaining = 3 - user.failedOtpAttempts;
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: `Invalid OTP. ${attemptsRemaining} attempt(s) remaining before account lockout.`,
         attemptsRemaining
       });
@@ -277,7 +277,7 @@ export async function verifyOTP(req, res, next) {
     // Issue JWT token
     const token = signAccessToken({ sub: user._id.toString(), role: user.role });
     res.cookie('access_token', token, authCookieOptions());
-    
+
     return res.json({
       message: 'Login successful',
       user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role }
@@ -300,7 +300,7 @@ export async function resendOTP(req, res, next) {
     // Check if user is locked out
     if (user.lockoutUntil && user.lockoutUntil > new Date()) {
       const secondsRemaining = Math.ceil((user.lockoutUntil - new Date()) / 1000);
-      return res.status(429).json({ 
+      return res.status(429).json({
         message: `Account temporarily locked. Please try again in ${secondsRemaining} seconds.`,
         lockoutSeconds: secondsRemaining
       });
@@ -350,7 +350,7 @@ export async function resendOTP(req, res, next) {
       const emailResult = await sendEmail(emailContent);
       emailSent = true;
       console.log(`✅ OTP email resent successfully to ${user.email}`);
-      
+
       // In development, log OTP to console for debugging
       if (process.env.NODE_ENV !== 'production') {
         console.log(`[DEV] Resent OTP for ${user.email}: ${otp}`);
@@ -358,14 +358,14 @@ export async function resendOTP(req, res, next) {
     } catch (emailError) {
       console.error('❌ Failed to send OTP email during resend:', emailError.message);
       console.error('Email error details:', emailError);
-      
+
       // In development, log OTP to console even if email fails
       if (process.env.NODE_ENV !== 'production') {
         console.log(`[DEV] Email failed, but OTP for ${user.email}: ${otp}`);
       }
-      
+
       // Return error - don't save OTP if email fails
-      return res.status(500).json({ 
+      return res.status(500).json({
         message: 'Failed to send OTP email. Please try again later.',
         error: process.env.NODE_ENV !== 'production' ? emailError.message : undefined
       });
@@ -474,7 +474,7 @@ export async function resendVerification(req, res, next) {
 
     const baseUrl = process.env.SERVER_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
     const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
-    
+
     try {
       await sendEmail({
         to: email,
@@ -484,19 +484,41 @@ export async function resendVerification(req, res, next) {
       });
 
       const includeLink = process.env.NODE_ENV !== 'production';
-      return res.json({ 
-        message: 'Verification link sent', 
-        verifyUrl: includeLink ? verifyUrl : undefined 
+      return res.json({
+        message: 'Verification link sent',
+        verifyUrl: includeLink ? verifyUrl : undefined
       });
     } catch (emailError) {
       console.error('Failed to send verification email:', emailError.message);
       // In development, still return the URL so they can manually test
       const includeLink = process.env.NODE_ENV !== 'production';
-      return res.status(500).json({ 
+      return res.status(500).json({
         message: 'Failed to send verification email. Please check server logs.',
         verifyUrl: includeLink ? verifyUrl : undefined // Include URL in dev mode for testing
       });
     }
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getCurrentUser(req, res, next) {
+  try {
+    // User is already authenticated by the middleware and attached to req.user
+    const user = await User.findById(req.user.id).select('-passwordHash -otp -otpExpires -emailVerificationTokenHash -emailVerificationTokenExpiresAt -passwordResetTokenHash -passwordResetTokenExpiresAt');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.json({
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        emailVerified: user.isEmailVerified()
+      }
+    });
   } catch (err) {
     next(err);
   }

@@ -34,7 +34,7 @@ app.use(express.json());
 // General rate limiter for all routes
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 1000,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -43,7 +43,7 @@ const limiter = rateLimit({
 // More lenient rate limiter for auth routes (login attempts need more flexibility)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // 20 login attempts per 15 minutes
+  max: 200, // 200 login attempts per 15 minutes
   message: 'Too many login attempts. Please try again in a few minutes.',
   standardHeaders: true,
   legacyHeaders: false,
