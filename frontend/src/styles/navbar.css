@@ -9,7 +9,7 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  border-bottom: 3px solid #f56565;
+  border-bottom: 3px solid #1e3a8a;
   min-height: 72px;
   display: flex;
   align-items: center;
@@ -47,13 +47,13 @@
   height: 40px;
   width: auto;
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  filter: drop-shadow(0 2px 8px rgba(245, 101, 101, 0.3));
+  filter: drop-shadow(0 2px 8px rgba(30, 58, 138, 0.3));
   flex-shrink: 0;
   display: block;
 }
 
 .navbar-brand:hover .navbar-logo {
-  filter: drop-shadow(0 4px 12px rgba(245, 101, 101, 0.5)) brightness(1.1);
+  filter: drop-shadow(0 4px 12px rgba(30, 58, 138, 0.5)) brightness(1.1);
   transform: rotate(8deg) scale(1.05);
 }
 
@@ -98,13 +98,13 @@
   left: 0;
   width: 0;
   height: 3px;
-  background: linear-gradient(90deg, #f56565 0%, #ed8936 100%);
+  background: linear-gradient(90deg, #1e3a8a 0%, #1e40af 100%);
   transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   border-radius: 2px;
 }
 
 .nav-link:hover {
-  color: #fef3c7;
+  color: #e2e8f0;
   transform: translateY(-2px);
 }
 
@@ -112,14 +112,14 @@
   width: 100%;
 }
 
-/* Login Button - Sprint 1 Style */
+/* Login Button - Blue Theme */
 .nav-link-login {
-  background: linear-gradient(135deg, #f56565 0%, #ed8936 100%);
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
   padding: 0.7rem 1.8rem;
   border-radius: 0.5rem;
   color: white;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+  box-shadow: 0 4px 15px rgba(30, 58, 138, 0.3);
   margin-left: 0.5rem;
 }
 
@@ -128,15 +128,15 @@
 }
 
 .nav-link-login:hover {
-  background: linear-gradient(135deg, #e53e3e 0%, #d69e2e 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(245, 101, 101, 0.5);
+  box-shadow: 0 8px 25px rgba(30, 58, 138, 0.5);
   color: white;
 }
 
-/* Logout Button */
+/* Logout Button - Blue Theme */
 .nav-logout-btn {
-  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
   color: white;
   border: none;
   padding: 0.7rem 1.8rem;
@@ -145,16 +145,16 @@
   font-size: 0.95rem;
   transition: all 0.3s ease;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+  box-shadow: 0 4px 15px rgba(30, 58, 138, 0.3);
   letter-spacing: 0.3px;
   margin-left: 0.5rem;
   white-space: nowrap;
 }
 
 .nav-logout-btn:hover {
-  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(72, 187, 120, 0.5);
+  box-shadow: 0 8px 25px rgba(30, 58, 138, 0.5);
 }
 
 .nav-logout-btn:active {
@@ -236,7 +236,7 @@
     transition: transform 0.3s ease-in-out;
     height: auto;
     min-height: auto;
-    border-top: 2px solid rgba(245, 101, 101, 0.3);
+    border-top: 2px solid rgba(30, 58, 138, 0.3);
   }
 
   .navbar-menu.active {

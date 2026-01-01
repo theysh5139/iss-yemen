@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import HODCard from "../components/HODCard.jsx"
 import HODModal from "../components/HODModal.jsx"
 import EventRegistrationModal from "../components/EventRegistrationModal.jsx"
+import Chatbot from "../components/Chatbot.jsx"
 import { getHomepageData, getUpcomingEvents } from "../api/events.js"
 import { getHODs } from "../api/hods.js"
 import { useAuth } from "../context/AuthProvider.jsx"
@@ -77,8 +78,14 @@ export default function HomePage() {
   }
 
   async function handleEventClick(event) {
+    console.log('Join Event clicked for:', event?.title, event)
+    if (!event) {
+      console.error('Event is undefined!')
+      return
+    }
     setSelectedEvent(event)
     setIsRegistrationModalOpen(true)
+    console.log('Modal should open now')
   }
 
   async function handleModalClose() {
@@ -181,20 +188,65 @@ export default function HomePage() {
               <span className="badge">{registeredEvents.length}</span>
             </div>
             <div className="events-grid">
-              {registeredEvents.map(event => (
-                <div key={event._id} className="event-card card-3d">
-                  <div className="event-card-header">
-                    <h3 className="event-title">{event.title}</h3>
-                    <span className="event-badge registered">Registered</span>
+              {registeredEvents.map(event => {
+                // Check if event has payment receipt for this user
+                const hasReceipt = event.registrations?.some(reg => 
+                  (typeof reg.user === 'object' ? reg.user._id : reg.user) === user?.id &&
+                  reg.paymentReceipt
+                )
+                const registration = event.registrations?.find(reg => 
+                  (typeof reg.user === 'object' ? reg.user._id : reg.user) === user?.id
+                )
+                
+                return (
+                  <div key={event._id} className="event-card card-3d">
+                    <div className="event-card-header">
+                      <h3 className="event-title">{event.title}</h3>
+                      <span className="event-badge registered">Registered</span>
+                    </div>
+                    <div className="event-details">
+                      <p className="event-date">📅 {formatDate(event.date)}</p>
+                      <p className="event-location">📍 {event.location}</p>
+                      {event.requiresPayment && event.paymentAmount > 0 && (
+                        <p className="event-payment" style={{ 
+                          color: '#856404', 
+                          fontWeight: '600',
+                          marginTop: '0.5rem',
+                          fontSize: '0.9rem'
+                        }}>
+                          💰 Payment Required: RM {event.paymentAmount.toFixed(2)}
+                          {registration?.paymentReceipt && (
+                            <span style={{ 
+                              marginLeft: '0.5rem',
+                              fontSize: '0.85rem',
+                              color: registration.paymentReceipt.paymentStatus === 'Verified' ? '#155724' : 
+                                     registration.paymentReceipt.paymentStatus === 'Rejected' ? '#721c24' : '#856404'
+                            }}>
+                              ({registration.paymentReceipt.paymentStatus})
+                            </span>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                    <p className="event-description">{event.description}</p>
+                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
+                      <a href={`/events#${event._id}`} className="event-link">View Details →</a>
+                      {hasReceipt && (
+                        <>
+                          <a 
+                            href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/receipts/event/${event._id}/download`}
+                            target="_blank"
+                            className="event-link"
+                            style={{ color: '#1e3a8a' }}
+                          >
+                            📥 Download Receipt
+                          </a>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="event-details">
-                    <p className="event-date">📅 {formatDate(event.date)}</p>
-                    <p className="event-location">📍 {event.location}</p>
-                  </div>
-                  <p className="event-description">{event.description}</p>
-                  <a href={`/events#${event._id}`} className="event-link">View Details →</a>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </section>
@@ -226,6 +278,16 @@ export default function HomePage() {
                     <div className="event-details">
                       <p className="event-date">📅 {formatDate(event.date)}</p>
                       <p className="event-location">📍 {event.location}</p>
+                      {event.requiresPayment && event.paymentAmount > 0 && (
+                        <p className="event-payment" style={{ 
+                          color: '#856404', 
+                          fontWeight: '600',
+                          marginTop: '0.5rem',
+                          fontSize: '0.9rem'
+                        }}>
+                          💰 Payment Required: RM {event.paymentAmount.toFixed(2)}
+                        </p>
+                      )}
                     </div>
                     <p className="event-description">{event.description}</p>
                     <div className="event-actions">
@@ -241,11 +303,21 @@ export default function HomePage() {
                         </button>
                       ) : (
                         <button
+                          type="button"
                           className="btn btn-primary btn-3d"
                           onClick={(e) => {
+                            e.preventDefault()
                             e.stopPropagation()
-                            handleEventClick(event)
+                            console.log('Join Event button clicked!', event)
+                            if (event && event._id) {
+                              handleEventClick(event)
+                            } else {
+                              console.error('Event is invalid:', event)
+                              alert('Error: Event data is missing. Please refresh the page.')
+                            }
                           }}
+                          style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+                          disabled={!event || !event._id}
                         >
                           Join Event
                         </button>
@@ -356,6 +428,9 @@ export default function HomePage() {
         onRegistrationChange={handleModalClose}
         user={user}
       />
+
+      {/* Chatbot Component */}
+      <Chatbot />
     </main>
   )
 }

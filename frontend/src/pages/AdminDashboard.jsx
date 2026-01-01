@@ -19,6 +19,7 @@ export default function AdminDashboard() {
   const [upcomingEvents, setUpcomingEvents] = useState([])
   const [latestNews, setLatestNews] = useState([])
   const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     if (user?.role !== 'admin') {
@@ -123,19 +124,29 @@ export default function AdminDashboard() {
 
   return (
     <div className="admin-dashboard">
-      <AdminSidebar user={user} onLogout={onLogout} />
+      <AdminSidebar user={user} onLogout={onLogout} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
+      )}
       
       <div className="admin-main-content">
         {/* Top Header */}
         <header className="admin-header">
-          <div className="breadcrumbs">
-            <span>Dashboard &gt;</span>
+          <div className="header-left">
+            <button className="menu-toggle-btn" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle menu">
+              <span className="hamburger-icon">☰</span>
+            </button>
+            <div className="breadcrumbs">
+              <span>Dashboard</span>
+            </div>
           </div>
           <div className="header-icons">
-            <button className="icon-btn">🔔</button>
-            <button className="icon-btn">⚙️</button>
-            <button className="icon-btn">🔍</button>
-            <button className="icon-btn">👤</button>
+            <button className="icon-btn" aria-label="Notifications">🔔</button>
+            <button className="icon-btn" aria-label="Settings">⚙️</button>
+            <button className="icon-btn" aria-label="Search">🔍</button>
+            <button className="icon-btn" aria-label="Profile">👤</button>
           </div>
         </header>
 

@@ -1,12 +1,46 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { registerForEvent, unregisterFromEvent } from "../api/events.js"
+import { downloadReceipt, shareReceipt } from "../api/receipts.js"
 import "../styles/event-registration-modal.css"
 
 export default function EventRegistrationModal({ event, isOpen, onClose, onRegistrationChange, user }) {
   const [registering, setRegistering] = useState(false)
   const [error, setError] = useState(null)
+  const [receipt, setReceipt] = useState(null)
+  const [shareUrl, setShareUrl] = useState(null)
+  const [showForm, setShowForm] = useState(false)
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: '',
+    notes: '',
+    paymentMethod: 'Online Banking'
+  })
 
-  if (!isOpen || !event) return null
+  // Reset form when modal opens/closes or user changes
+  useEffect(() => {
+    if (isOpen && event) {
+      console.log('Modal opened with event:', event?.title)
+      setShowForm(false)
+      setError(null)
+      setReceipt(null)
+      setShareUrl(null)
+      setFormData({
+        name: user?.name || '',
+        email: user?.email || '',
+        phone: '',
+        notes: '',
+        paymentMethod: 'Online Banking'
+      })
+    } else {
+      console.log('Modal state - isOpen:', isOpen, 'event:', event)
+    }
+  }, [isOpen, event, user])
+
+  if (!isOpen || !event) {
+    console.log('Modal not rendering - isOpen:', isOpen, 'event:', event)
+    return null
+  }
 
   const isRegistered = event.registeredUsers?.some(regUser => 
     typeof regUser === 'object' ? regUser._id === user?.id : regUser === user?.id
@@ -28,20 +62,99 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
     })
   }
 
-  async function handleRegister() {
+  const handleFormChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault()
+    
+    // Validate form
+    if (!formData.name.trim()) {
+      setError('Please enter your name')
+      return
+    }
+    if (!formData.email.trim()) {
+      setError('Please enter your email')
+      return
+    }
+    if (event.requiresPayment && event.paymentAmount > 0 && !formData.paymentMethod) {
+      setError('Please select a payment method')
+      return
+    }
+
     try {
       setRegistering(true)
       setError(null)
-      await registerForEvent(event._id)
+      setReceipt(null)
+      
+      // Prepare registration data
+      const registrationData = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        notes: formData.notes.trim(),
+        paymentMethod: event.requiresPayment && event.paymentAmount > 0 ? formData.paymentMethod : undefined
+      }
+      
+      const response = await registerForEvent(event._id, registrationData)
+      
+      // If receipt was generated, show it
+      if (response.receipt) {
+        setReceipt(response.receipt)
+        setShowForm(false) // Hide form after successful registration
+      }
+      
       if (onRegistrationChange) {
         await onRegistrationChange()
       }
-      onClose()
+      
+      // Don't close immediately if receipt was generated - let user download it
+      if (!response.receipt) {
+        onClose()
+      }
     } catch (err) {
       console.error("Failed to register for event:", err)
       setError(err.message || "Failed to register for event")
     } finally {
       setRegistering(false)
+    }
+  }
+
+  const handleRegister = () => {
+    // Show form instead of registering immediately
+    setShowForm(true)
+    setError(null)
+    setReceipt(null)
+  }
+
+  async function handleDownloadReceipt() {
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+      const userId = user?.id
+      const downloadUrl = `${API_BASE_URL}/api/receipts/event/${event._id}/download${userId ? `?userId=${userId}` : ''}`
+      // Open in new window - cookies will be sent automatically
+      window.open(downloadUrl, '_blank')
+    } catch (err) {
+      console.error("Failed to download receipt:", err)
+      alert("Failed to download receipt: " + (err.message || "Unknown error"))
+    }
+  }
+
+  async function handleShareReceipt() {
+    try {
+      const response = await shareReceipt(event._id)
+      setShareUrl(response.shareUrl)
+      // Copy to clipboard
+      await navigator.clipboard.writeText(response.shareUrl)
+      alert("Shareable link copied to clipboard!")
+    } catch (err) {
+      console.error("Failed to share receipt:", err)
+      alert("Failed to generate share link: " + (err.message || "Unknown error"))
     }
   }
 
@@ -97,6 +210,20 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                 <span className="detail-value">{event.registeredUsers.length} members</span>
               </div>
             )}
+            {event.requiresPayment && event.paymentAmount > 0 && (
+              <div className="event-detail-row" style={{ 
+                background: '#fff3cd', 
+                padding: '0.75rem', 
+                borderRadius: '6px',
+                marginTop: '0.5rem',
+                border: '1px solid #ffc107'
+              }}>
+                <span className="detail-label">💰 Payment Required:</span>
+                <span className="detail-value" style={{ fontWeight: 'bold', color: '#856404' }}>
+                  RM {event.paymentAmount.toFixed(2)}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="event-modal-description">
@@ -113,7 +240,7 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
           {!event.cancelled && (
             <div className="event-modal-registration-form">
               <h3 className="form-title">Event Registration</h3>
-              {isRegistered ? (
+              {isRegistered || receipt ? (
                 <>
                   <div className="registration-status registered">
                     <span className="status-icon">✓</span>
@@ -122,24 +249,112 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                       <p>You will receive event updates and reminders.</p>
                     </div>
                   </div>
-                  <div className="registration-form-actions">
+                  
+                  {/* Receipt Section */}
+                  {receipt && (
+                    <div className="receipt-section" style={{ 
+                      marginTop: '1.5rem', 
+                      padding: '1rem', 
+                      background: '#f0f9ff', 
+                      borderRadius: '8px',
+                      border: '1px solid #1e3a8a'
+                    }}>
+                      <h4 style={{ margin: '0 0 0.75rem 0', color: '#1e3a8a', fontWeight: '600' }}>
+                        🧾 Payment Receipt Generated
+                      </h4>
+                      <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', color: '#666' }}>
+                        Receipt Number: <strong>{receipt.receiptNumber}</strong>
+                      </p>
+                      {receipt.amount > 0 && (
+                        <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', color: '#666' }}>
+                          Amount: <strong>RM {receipt.amount.toFixed(2)}</strong>
+                        </p>
+                      )}
+                      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <button
+                          className="btn btn-primary"
+                          onClick={handleDownloadReceipt}
+                          style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                        >
+                          📥 Download Receipt
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={handleShareReceipt}
+                          style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                        >
+                          🔗 Share Receipt
+                        </button>
+                        {shareUrl && (
+                          <input
+                            type="text"
+                            value={shareUrl}
+                            readOnly
+                            style={{ 
+                              flex: 1, 
+                              padding: '0.5rem', 
+                              border: '1px solid #ccc', 
+                              borderRadius: '4px',
+                              fontSize: '0.85rem'
+                            }}
+                            onClick={(e) => e.target.select()}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="registration-form-actions" style={{ marginTop: '1rem' }}>
                     <button
                       className="btn btn-secondary btn-full"
-                      onClick={handleUnregister}
-                      disabled={registering}
+                      onClick={() => {
+                        setReceipt(null)
+                        setShareUrl(null)
+                        setShowForm(false)
+                        onClose()
+                      }}
                     >
-                      {registering ? "Unregistering..." : "Unregister from Event"}
+                      Close
                     </button>
+                    {!receipt && (
+                      <button
+                        className="btn btn-secondary btn-full"
+                        onClick={handleUnregister}
+                        disabled={registering}
+                      >
+                        {registering ? "Unregistering..." : "Unregister from Event"}
+                      </button>
+                    )}
                   </div>
                 </>
-              ) : (
+              ) : !showForm ? (
                 <>
+                  {event.requiresPayment && event.paymentAmount > 0 && (
+                    <div className="registration-info" style={{ 
+                      background: '#e7f3ff', 
+                      padding: '1rem', 
+                      borderRadius: '6px',
+                      marginBottom: '1rem',
+                      border: '1px solid #1e3a8a'
+                    }}>
+                      <p style={{ margin: '0 0 0.5rem 0', fontWeight: '600', color: '#1e3a8a' }}>
+                        💳 Payment Information
+                      </p>
+                      <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+                        This event requires a payment of <strong>RM {event.paymentAmount.toFixed(2)}</strong>.
+                        A payment receipt will be generated upon registration and will be pending admin verification.
+                      </p>
+                    </div>
+                  )}
                   <div className="registration-info">
                     <p>By registering for this event, you confirm that:</p>
                     <ul className="registration-terms">
                       <li>You will attend the event on the scheduled date and time</li>
                       <li>You understand the event location and requirements</li>
                       <li>You will notify organizers if you cannot attend</li>
+                      {event.requiresPayment && event.paymentAmount > 0 && (
+                        <li>You understand that payment verification is required before event participation</li>
+                      )}
                     </ul>
                   </div>
                   <div className="registration-form-actions">
@@ -148,10 +363,146 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                       onClick={handleRegister}
                       disabled={registering}
                     >
-                      {registering ? "Registering..." : "Confirm Registration"}
+                      {event.requiresPayment && event.paymentAmount > 0 
+                        ? `Register & Pay RM ${event.paymentAmount.toFixed(2)}` 
+                        : "Register for Event"}
                     </button>
                   </div>
                 </>
+              ) : (
+                <form onSubmit={handleFormSubmit} className="registration-form">
+                  <h4 style={{ marginBottom: '1rem', color: '#1e3a8a' }}>Registration Form</h4>
+                  
+                  <div className="form-group">
+                    <label htmlFor="name">Full Name *</label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleFormChange}
+                      required
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="email">Email Address *</label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleFormChange}
+                      required
+                      placeholder="Enter your email"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="phone">Phone Number</label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleFormChange}
+                      placeholder="Enter your phone number (optional)"
+                    />
+                  </div>
+
+                  {event.requiresPayment && event.paymentAmount > 0 && (
+                    <>
+                      <div className="form-group">
+                        <label htmlFor="paymentMethod">Payment Method *</label>
+                        <select
+                          id="paymentMethod"
+                          name="paymentMethod"
+                          value={formData.paymentMethod}
+                          onChange={handleFormChange}
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem',
+                            backgroundColor: '#fff'
+                          }}
+                        >
+                          <option value="Online Banking">Online Banking (FPX/IBG)</option>
+                          <option value="Credit Card">Credit Card</option>
+                          <option value="Debit Card">Debit Card</option>
+                          <option value="E-Wallet">E-Wallet (Touch 'n Go, GrabPay, etc.)</option>
+                          <option value="Bank Transfer">Bank Transfer</option>
+                          <option value="Cash">Cash (On-site payment)</option>
+                        </select>
+                      </div>
+
+                      <div className="payment-summary" style={{
+                        background: '#f0f9ff',
+                        padding: '1rem',
+                        borderRadius: '6px',
+                        marginBottom: '1rem',
+                        border: '1px solid #1e3a8a'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                          <span>Event Fee:</span>
+                          <strong>RM {event.paymentAmount.toFixed(2)}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: '600', color: '#1e3a8a', paddingTop: '0.5rem', borderTop: '1px solid #1e3a8a' }}>
+                          <span>Total Amount:</span>
+                          <span>RM {event.paymentAmount.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="form-group">
+                    <label htmlFor="notes">Additional Notes</label>
+                    <textarea
+                      id="notes"
+                      name="notes"
+                      value={formData.notes}
+                      onChange={handleFormChange}
+                      rows="3"
+                      placeholder="Any special requirements or notes (optional)"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        fontSize: '1rem',
+                        fontFamily: 'inherit',
+                        resize: 'vertical'
+                      }}
+                    />
+                  </div>
+
+                  <div className="registration-form-actions" style={{ marginTop: '1.5rem' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setShowForm(false)
+                        setError(null)
+                      }}
+                      disabled={registering}
+                      style={{ marginRight: '0.5rem' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={registering}
+                    >
+                      {registering ? "Registering..." : event.requiresPayment && event.paymentAmount > 0 
+                        ? `Complete Registration & Pay RM ${event.paymentAmount.toFixed(2)}` 
+                        : "Complete Registration"}
+                    </button>
+                  </div>
+                </form>
               )}
             </div>
           )}

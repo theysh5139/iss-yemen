@@ -12,6 +12,7 @@ import eventRoutes from './routes/event.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import hodRoutes from './routes/hod.routes.js';
 import aboutUsRoutes from './routes/aboutus.routes.js';
+import receiptRoutes from './routes/receipt.routes.js';
 import mongoose from 'mongoose';
 
 const app = express();
@@ -31,26 +32,29 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 
-// General rate limiter for all routes
+// General rate limiter for all routes - very high limits to prevent blocking
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000,
+  max: 10000, // Very high limit to prevent rate limiting issues
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// More lenient rate limiter for auth routes (login attempts need more flexibility)
+// Unlimited rate limiter for auth routes (login attempts unlimited)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // 200 login attempts per 15 minutes
+  max: 100000, // Essentially unlimited login attempts
   message: 'Too many login attempts. Please try again in a few minutes.',
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful logins
 });
 
-app.use(limiter);
+// Only apply general rate limiter if not in development mode
+if (process.env.NODE_ENV !== 'development') {
+  app.use(limiter);
+}
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/api/health/db', (_req, res) => {
@@ -59,6 +63,8 @@ app.get('/api/health/db', (_req, res) => {
   res.json({ state, readyState: mongoose.connection.readyState });
 });
 
+// Apply auth limiter (with very high limits) to auth routes
+// In development, this effectively allows unlimited attempts
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/admin', adminRoutes);
@@ -66,12 +72,18 @@ app.use('/api/hods', hodRoutes);
 app.use('/api/aboutus', aboutUsRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/receipts', receiptRoutes);
 
 // Test routes (useful for debugging email configuration)
 // In production, you might want to protect these routes or remove them
 if (process.env.NODE_ENV !== 'production') {
   app.use('/api/test', testRoutes);
 }
+
+// 404 handler for unmatched routes
+app.use((_req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
 
 app.use((err, _req, res, _next) => {
   // eslint-disable-next-line no-console

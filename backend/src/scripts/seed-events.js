@@ -15,7 +15,9 @@ const sampleEvents = [
     category: "Cultural",
     type: "event",
     isPublic: true,
-    isRecurring: false
+    isRecurring: false,
+    requiresPayment: true,
+    paymentAmount: 25.00
   },
   {
     title: "Academic Workshop: Research Methods & Thesis Writing",
@@ -45,7 +47,9 @@ const sampleEvents = [
     category: "Cultural",
     type: "event",
     isPublic: true,
-    isRecurring: false
+    isRecurring: false,
+    requiresPayment: true,
+    paymentAmount: 20.00
   },
   {
     title: "Study Group Formation Session",
@@ -75,7 +79,9 @@ const sampleEvents = [
     category: "Cultural",
     type: "event",
     isPublic: true,
-    isRecurring: false
+    isRecurring: false,
+    requiresPayment: true,
+    paymentAmount: 30.00
   },
   {
     title: "Career Development Seminar",

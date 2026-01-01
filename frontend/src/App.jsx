@@ -36,7 +36,7 @@ import AdminAboutUs from "./pages/AdminAboutUs.jsx"
 import AdminNews from "./pages/AdminNews.jsx"
 import AdminSettings from "./pages/AdminSettings.jsx"
 // 👇 IMPORTANT: Import the new pages here
-import AdminChatbot from "./pages/AdminChatbot.jsx" 
+import AdminChatbot from "./pages/AdminChatbot.jsx"
 import AdminVerifyPayments from "./pages/AdminVerifyPayments.jsx"
 
 import "./App.css"
@@ -73,7 +73,7 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
-        </Route>
+        </Route >
 
         {/* --- Admin Routes (No Navbar, All Protected) --- */}
         {/* All paths here start with /admin */}
@@ -85,7 +85,7 @@ export default function App() {
           <Route path="hods" element={<AdminManageHODs />} />
           <Route path="aboutus" element={<AdminAboutUs />} />
           <Route path="settings" element={<AdminSettings />} />
-          
+
           {/* 👇 Your New Routes */}
           <Route path="chatbot" element={<AdminChatbot />} />
           <Route path="verify-payments" element={<AdminVerifyPayments />} />
@@ -93,7 +93,7 @@ export default function App() {
 
         {/* Catch-all */}
         <Route path="*" element={<Signup />} />
-      </Routes>
-    </AuthProvider>
+      </Routes >
+    </AuthProvider >
   )
 }
