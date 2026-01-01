@@ -88,7 +88,8 @@ export const createEventSchema = Joi.object({
   type: Joi.string().valid('event', 'announcement', 'activity').optional(),
   schedule: Joi.string().max(200).optional().allow(''),
   isRecurring: Joi.boolean().optional(),
-  isPublic: Joi.boolean().optional()
+  isPublic: Joi.boolean().optional(),
+  fee: Joi.number().min(0).optional()
 });
 
 export const updateEventSchema = Joi.object({
@@ -101,6 +102,7 @@ export const updateEventSchema = Joi.object({
   schedule: Joi.string().max(200).optional().allow(''),
   isRecurring: Joi.boolean().optional(),
   isPublic: Joi.boolean().optional(),
+  fee: Joi.number().min(0).optional(),
   cancelled: Joi.boolean().optional()
 });
 

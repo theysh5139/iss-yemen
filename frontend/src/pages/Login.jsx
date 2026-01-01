@@ -24,27 +24,53 @@ export default function Login() {
   }
 
   async function onSubmit(e) {
-    e.preventDefault()
-    setError("")
-    const v = validate()
-    if (v) return setError(v)
-    setLoading(true)
-    try {
-      const res = await loginApi(form)
-      // After successful login request, redirect to OTP verification
-      // Pass email in state so verify-otp page can use it
-      navigate("/verify-otp", { 
-        replace: true,
-        state: { 
-          email: form.email
-        }
-      })
-    } catch (err) {
-      setError(err.message || "Login failed")
-    } finally {
-      setLoading(false)
+  e.preventDefault()
+  setError("")
+
+  const v = validate()
+  if (v) return setError(v)
+
+  setLoading(true)
+
+  try {
+    const res = await loginApi(form)
+
+    /**
+     * 🚨 DEV-ONLY ADMIN OTP BYPASS
+     * Make sure your backend returns:
+     * res.user.role === "admin"
+     * res.token (JWT)
+     */
+    if (
+      res.user?.role === "admin" &&
+      import.meta.env.DEV
+    ) {
+      // Store token
+      if (res.token) {
+        localStorage.setItem("authToken", res.token)
+      }
+
+      // Set auth context
+      setUser(res.user)
+
+      // Go straight to admin dashboard
+      navigate("/admin/dashboard", { replace: true })
+      return
     }
+
+    // Normal users → OTP flow
+    navigate("/verify-otp", {
+      replace: true,
+      state: { email: form.email }
+    })
+
+  } catch (err) {
+    setError(err.message || "Login failed")
+  } finally {
+    setLoading(false)
   }
+}
+
 
   return (
     <div className="auth-container animate-fadeInUp">

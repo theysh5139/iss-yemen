@@ -5,15 +5,19 @@ export async function apiFetch(path, { method = 'GET', body, headers } = {}) {
     const token = localStorage.getItem('authToken');
     const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
 
+    // Don't set Content-Type for FormData - let browser handle it
+    const isFormData = body instanceof FormData;
+    const defaultHeaders = isFormData ? {} : { 'Content-Type': 'application/json' };
+
     const res = await fetch(`${API_BASE_URL}${path}`, {
       method,
       headers: {
-        'Content-Type': 'application/json',
+        ...defaultHeaders,
         ...authHeaders,
         ...(headers || {})
       },
       credentials: 'include',
-      body: body ? JSON.stringify(body) : undefined
+      body: body ? (isFormData ? body : JSON.stringify(body)) : undefined
     })
 
     // Don't show generic auth error for login/signup endpoints - let the actual error message through

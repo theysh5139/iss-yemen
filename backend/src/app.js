@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import chatbotRoutes from "./routes/chatbot.routes.js";
 import authRoutes from './routes/auth.routes.js';
 import testRoutes from './routes/test.routes.js';
@@ -14,6 +16,9 @@ import hodRoutes from './routes/hod.routes.js';
 import aboutUsRoutes from './routes/aboutus.routes.js';
 import receiptRoutes from './routes/receipt.routes.js';
 import mongoose from 'mongoose';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -31,6 +36,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json());
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // General rate limiter for all routes - very high limits to prevent blocking
 const limiter = rateLimit({

@@ -9,6 +9,7 @@ import AdminRoute from "./routes/AdminRoute.jsx"
 
 // Components
 import Navbar from "./components/Navbar.jsx"
+import Chatbot from "./components/Chatbot.jsx"
 
 // Public Pages
 import HomePage from "./pages/HomePage.jsx"
@@ -35,65 +36,85 @@ import AdminManageHODs from "./pages/AdminManageHODs.jsx"
 import AdminAboutUs from "./pages/AdminAboutUs.jsx"
 import AdminNews from "./pages/AdminNews.jsx"
 import AdminSettings from "./pages/AdminSettings.jsx"
-// 👇 IMPORTANT: Import the new pages here
 import AdminChatbot from "./pages/AdminChatbot.jsx"
 import AdminVerifyPayments from "./pages/AdminVerifyPayments.jsx"
 
 import "./App.css"
 
-// Layout for pages that require the Navbar
+// =======================
+// Layout Components
+// =======================
+
+// 1️⃣ Auth Layout (No Navbar, No Chatbot)
+const AuthLayout = () => <Outlet />
+
+// 2️⃣ Main Layout (Navbar + Chatbot)
 const MainLayout = () => (
   <>
     <Navbar />
+    <Chatbot />
     <Outlet />
   </>
 )
 
+// 3️⃣ Admin Layout (Chatbot only)
+const AdminLayout = () => (
+  <>
+    <Chatbot />
+    <Outlet />
+  </>
+)
+
+// =======================
+// App Component
+// =======================
 export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* --- Public & User Routes (With Navbar) --- */}
-        <Route element={<MainLayout />}>
-          {/* Public */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/members" element={<Members />} />
-          <Route path="/events" element={<PastEvents />} />
-          <Route path="/all-events" element={<AllEvents />} />
+        {/* --- Auth Routes --- */}
+        <Route element={<AuthLayout />}>
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/verify-otp" element={<VerifyOTP />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+        </Route>
 
-          {/* User Protected */}
+        {/* --- Public & User Routes --- */}
+        <Route element={<MainLayout />}>
+          {/* Public Pages */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/members" element={<Members />} />
+          <Route path="/events" element={<PastEvents />} />
+          <Route path="/all-events" element={<AllEvents />} />
+
+          {/* Protected User Pages */}
           <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
-        </Route >
-
-        {/* --- Admin Routes (No Navbar, All Protected) --- */}
-        {/* All paths here start with /admin */}
-        <Route path="/admin" element={<AdminRoute><Outlet /></AdminRoute>}>
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="events" element={<AdminManageEvents />} />
-          <Route path="users" element={<AdminManageUsers />} />
-          <Route path="news" element={<AdminNews />} />
-          <Route path="hods" element={<AdminManageHODs />} />
-          <Route path="aboutus" element={<AdminAboutUs />} />
-          <Route path="settings" element={<AdminSettings />} />
-
-          {/* 👇 Your New Routes */}
-          <Route path="chatbot" element={<AdminChatbot />} />
-          <Route path="verify-payments" element={<AdminVerifyPayments />} />
         </Route>
+
+       {/* --- Admin Routes --- */}
+<Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+  <Route path="dashboard" element={<AdminDashboard />} />
+  <Route path="events" element={<AdminManageEvents />} />
+  <Route path="users" element={<AdminManageUsers />} />
+  <Route path="news" element={<AdminNews />} />
+  <Route path="hods" element={<AdminManageHODs />} />
+  <Route path="aboutus" element={<AdminAboutUs />} />
+  <Route path="settings" element={<AdminSettings />} />
+  <Route path="chatbot" element={<AdminChatbot />} />
+  <Route path="verify-payments" element={<AdminVerifyPayments />} />
+</Route>
+
 
         {/* Catch-all */}
         <Route path="*" element={<Signup />} />
-      </Routes >
-    </AuthProvider >
+      </Routes>
+    </AuthProvider>
   )
 }

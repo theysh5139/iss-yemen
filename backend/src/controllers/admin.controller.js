@@ -1,7 +1,15 @@
 import { User } from '../models/User.model.js';
 import { Event } from '../models/Event.model.js';
-import { PaymentReceipt } from '../models/PaymentReceipt.model.js';
+import path from 'path'
+import { fileURLToPath } from 'url'
+import fs from 'fs'
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+/* ===============================
+   DASHBOARD
+================================ */
 export async function getAdminStats(req, res, next) {
   try {
     const [totalUsers, totalEvents, activeAnnouncements] = await Promise.all([
@@ -10,11 +18,8 @@ export async function getAdminStats(req, res, next) {
       Event.countDocuments({ type: 'announcement', date: { $gte: new Date() } })
     ]);
 
-    // For now, views is a placeholder - you can implement actual view tracking later
-    const views = 7265; // This would come from analytics in production
-
-    return res.json({
-      views,
+    res.json({
+      views: 7265,
       totalUsers,
       totalEvents,
       activeAnnouncements
@@ -24,6 +29,9 @@ export async function getAdminStats(req, res, next) {
   }
 }
 
+/* ===============================
+   USERS
+================================ */
 export async function getAllUsers(req, res, next) {
   try {
     const users = await User.find()
@@ -31,13 +39,12 @@ export async function getAllUsers(req, res, next) {
       .sort({ createdAt: -1 })
       .lean();
 
-    // Add emailVerified field for frontend
-    const usersWithVerified = users.map(u => ({
-      ...u,
-      emailVerified: Boolean(u.emailVerifiedAt)
-    }));
-
-    return res.json({ users: usersWithVerified });
+    res.json({
+      users: users.map(u => ({
+        ...u,
+        emailVerified: Boolean(u.emailVerifiedAt)
+      }))
+    });
   } catch (err) {
     next(err);
   }
@@ -53,22 +60,12 @@ export async function updateUserRole(req, res, next) {
     }
 
     const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     user.role = role;
     await user.save();
 
-    return res.json({
-      message: 'User role updated successfully',
-      user: {
-        id: user._id.toString(),
-        email: user.email,
-        name: user.name,
-        role: user.role
-      }
-    });
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }
@@ -76,21 +73,12 @@ export async function updateUserRole(req, res, next) {
 
 export async function deleteUser(req, res, next) {
   try {
-    const { id } = req.params;
-
-    const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    if (req.user.id === req.params.id) {
+      return res.status(400).json({ message: 'Cannot delete yourself' });
     }
 
-    // Prevent deleting yourself
-    if (user._id.toString() === req.user.id) {
-      return res.status(400).json({ message: 'Cannot delete your own account' });
-    }
-
-    await User.findByIdAndDelete(id);
-
-    return res.json({ message: 'User deleted successfully' });
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }
@@ -98,57 +86,35 @@ export async function deleteUser(req, res, next) {
 
 export async function deactivateUser(req, res, next) {
   try {
-    const { id } = req.params;
-
-    const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    if (req.user.id === req.params.id) {
+      return res.status(400).json({ message: 'Cannot deactivate yourself' });
     }
 
-    // Prevent deactivating yourself
-    if (user._id.toString() === req.user.id) {
-      return res.status(400).json({ message: 'Cannot deactivate your own account' });
-    }
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Add isActive field or use a status field
-    // For now, we'll change role to visitor as a form of deactivation
-    // In production, you'd add an isActive boolean field
     user.role = 'visitor';
     await user.save();
 
-    return res.json({
-      message: 'User deactivated successfully',
-      user: {
-        id: user._id.toString(),
-        email: user.email,
-        name: user.name,
-        role: user.role
-      }
-    });
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }
 }
 
-// Announcement Management
+/* ===============================
+   ANNOUNCEMENTS
+================================ */
 export async function createAnnouncement(req, res, next) {
   try {
-    const { title, description, date, location, category, isPublic } = req.body;
-
-    const announcement = await Event.create({
-      title,
-      description,
-      date: date || new Date(),
-      location: location || 'TBA',
-      category: category || 'Announcement',
+    const event = await Event.create({
+      ...req.body,
       type: 'announcement',
-      isPublic: isPublic !== undefined ? isPublic : true
+      date: req.body.date || new Date(),
+      isPublic: req.body.isPublic ?? true
     });
 
-    return res.status(201).json({
-      message: 'Announcement created successfully',
-      event: announcement
-    });
+    res.status(201).json({ success: true, event });
   } catch (err) {
     next(err);
   }
@@ -156,31 +122,15 @@ export async function createAnnouncement(req, res, next) {
 
 export async function updateAnnouncement(req, res, next) {
   try {
-    const { id } = req.params;
-    const { title, description, date, location, category, isPublic } = req.body;
-
-    const announcement = await Event.findById(id);
-    if (!announcement) {
+    const event = await Event.findById(req.params.id);
+    if (!event || event.type !== 'announcement') {
       return res.status(404).json({ message: 'Announcement not found' });
     }
 
-    if (announcement.type !== 'announcement') {
-      return res.status(400).json({ message: 'This is not an announcement' });
-    }
+    Object.assign(event, req.body);
+    await event.save();
 
-    if (title) announcement.title = title;
-    if (description) announcement.description = description;
-    if (date) announcement.date = date;
-    if (location) announcement.location = location;
-    if (category) announcement.category = category;
-    if (isPublic !== undefined) announcement.isPublic = isPublic;
-
-    await announcement.save();
-
-    return res.json({
-      message: 'Announcement updated successfully',
-      event: announcement
-    });
+    res.json({ success: true, event });
   } catch (err) {
     next(err);
   }
@@ -188,136 +138,98 @@ export async function updateAnnouncement(req, res, next) {
 
 export async function deleteAnnouncement(req, res, next) {
   try {
-    const { id } = req.params;
-
-    const announcement = await Event.findById(id);
-    if (!announcement) {
-      return res.status(404).json({ message: 'Announcement not found' });
-    }
-
-    if (announcement.type !== 'announcement') {
-      return res.status(400).json({ message: 'This is not an announcement' });
-    }
-
-    await Event.findByIdAndDelete(id);
-
-    return res.json({ message: 'Announcement deleted successfully' });
+    await Event.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }
 }
 
-// Event Management
+/* ===============================
+   EVENTS
+================================ */
+
+
 export async function createEvent(req, res, next) {
   try {
-    const { title, description, date, location, category, type, schedule, isRecurring, isPublic } = req.body;
-
-    if (!title || !description || !date || !location || !category) {
-      return res.status(400).json({ message: 'Title, description, date, location, and category are required' });
-    }
-
     const event = await Event.create({
-      title,
-      description,
-      date: date ? new Date(date) : new Date(),
-      location,
-      category,
-      type: type || 'event',
-      schedule: schedule || undefined,
-      isRecurring: isRecurring || false,
-      isPublic: isPublic !== undefined ? isPublic : true
+      title: req.body.title,
+      description: req.body.description,
+      date: new Date(req.body.date),  // cast to Date
+      location: req.body.location,
+      category: req.body.category,
+      type: req.body.type,
+      schedule: req.body.schedule,
+      isRecurring: req.body.isRecurring === 'true' || req.body.isRecurring === true,
+      isPublic: req.body.isPublic === 'true' || req.body.isPublic === true,
+      fee: Number(req.body.fee) || 0,
+      qrCodeUrl: req.file ? `/uploads/qr/${req.file.filename}` : undefined
     });
 
-    return res.status(201).json({
-      message: 'Event created successfully',
-      event
-    });
+    res.status(201).json({ success: true, event });
   } catch (err) {
     next(err);
   }
 }
+
 
 export async function updateEvent(req, res, next) {
   try {
-    const { id } = req.params;
-    const { title, description, date, location, category, type, schedule, isRecurring, isPublic, cancelled } = req.body;
+    const event = await Event.findById(req.params.id)
+    if (!event) return res.status(404).json({ message: 'Event not found' })
 
-    const event = await Event.findById(id);
-    if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
+    const { title, description, date, location, category, type, schedule, isRecurring, isPublic, fee } = req.body
+
+    event.title = title
+    event.description = description
+    event.date = new Date(date)
+    event.location = location
+    event.category = category
+    event.type = type
+    event.schedule = schedule
+    event.isRecurring = Boolean(isRecurring)
+    event.isPublic = Boolean(isPublic)
+    event.fee = Number(fee) || 0
+
+    if (req.file) {
+      const uploadDir = path.join(__dirname, '../uploads/qr')
+      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
+      event.qrCodeUrl = `/uploads/qr/${req.file.filename}`
     }
 
-    if (title) event.title = title;
-    if (description) event.description = description;
-    if (date) event.date = date;
-    if (location) event.location = location;
-    if (category) event.category = category;
-    if (type) event.type = type;
-    if (schedule !== undefined) event.schedule = schedule;
-    if (isRecurring !== undefined) event.isRecurring = isRecurring;
-    if (isPublic !== undefined) event.isPublic = isPublic;
-    if (cancelled !== undefined) {
-      // Add cancelled field to event model or use a status field
-      // For now, we'll add it to the event object
-      event.cancelled = cancelled;
-    }
-
-    await event.save();
-
-    return res.json({
-      message: 'Event updated successfully',
-      event
-    });
+    await event.save()
+    res.json({ success: true, event })
   } catch (err) {
-    next(err);
+    next(err)
   }
 }
 
 export async function cancelEvent(req, res, next) {
   try {
-    const { id } = req.params;
+    const event = await Event.findById(req.params.id)
+    if (!event) return res.status(404).json({ message: 'Event not found' })
 
-    const event = await Event.findById(id);
-    if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
-    }
-
-    event.cancelled = true;
-    await event.save();
-
-    return res.json({
-      message: 'Event cancelled successfully',
-      event
-    });
+    event.cancelled = true
+    await event.save()
+    res.json({ success: true })
   } catch (err) {
-    next(err);
+    next(err)
   }
 }
 
 export async function deleteEvent(req, res, next) {
   try {
-    const { id } = req.params;
-
-    const event = await Event.findById(id);
-    if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
-    }
-
-    await Event.findByIdAndDelete(id);
-
-    return res.json({ message: 'Event deleted successfully' });
+    await Event.findByIdAndDelete(req.params.id)
+    res.json({ success: true })
   } catch (err) {
-    next(err);
+    next(err)
   }
 }
 
 export async function getAllAnnouncements(req, res, next) {
   try {
-    const announcements = await Event.find({ type: 'announcement' })
-      .sort({ date: -1 })
-      .lean();
-
-    return res.json({ announcements });
+    const announcements = await Event.find({ type: 'announcement' }).sort({ date: -1 });
+    res.json({ announcements });
   } catch (err) {
     next(err);
   }
@@ -325,26 +237,21 @@ export async function getAllAnnouncements(req, res, next) {
 
 export async function getAllEvents(req, res, next) {
   try {
-    // Get all events and activities (not announcements)
-    const events = await Event.find({
-      $or: [{ type: 'event' }, { type: 'activity' }]
-    })
+    const events = await Event.find({ $or: [{ type: 'event' }, { type: 'activity' }] })
       .sort({ date: -1 })
       .populate('registeredUsers', 'name email')
-      .lean();
 
-    return res.json({ events });
+    res.json({ events })
   } catch (err) {
-    next(err);
+    next(err)
   }
 }
 
+/* ===============================
+   PAYMENTS (FIXED)
+================================ */
 export const verifyPayments = async (req, res, next) => {
   try {
-    const { Event } = await import('../models/Event.model.js');
-    const { User } = await import('../models/User.model.js');
-
-    // Fetch all events with registrations that have payment receipts
     const events = await Event.find({
       'registrations.paymentReceipt': { $exists: true }
     }).populate('registrations.user', 'name email');
@@ -353,118 +260,57 @@ export const verifyPayments = async (req, res, next) => {
 
     events.forEach(event => {
       event.registrations.forEach((reg, index) => {
-        if (reg.paymentReceipt) {
-          const user = reg.user;
-          payments.push({
-            id: reg._id?.toString() || `${event._id}-${index}`,
-            registrationIndex: index, // Store index for easy lookup
-            eventId: event._id.toString(),
-            eventName: event.title,
-            eventDate: event.date,
-            userId: user?._id?.toString() || reg.user?.toString() || 'Unknown',
-            userName: user?.name || 'Unknown',
-            userEmail: user?.email || 'Unknown',
-            receiptNumber: reg.paymentReceipt.receiptNumber,
-            receiptUrl: reg.paymentReceipt.receiptUrl,
-            amount: reg.paymentReceipt.amount || 0,
-            paymentMethod: reg.paymentReceipt.paymentMethod || 'Online',
-            status: reg.paymentReceipt.paymentStatus || 'Pending',
-            registeredAt: reg.registeredAt,
-            generatedAt: reg.paymentReceipt.generatedAt,
-            verifiedAt: reg.paymentReceipt.verifiedAt,
-            verifiedBy: reg.paymentReceipt.verifiedBy
-          });
-        }
+        if (!reg.paymentReceipt) return;
+
+        payments.push({
+          id: `${event._id}-${index}`,
+          eventId: event._id,
+          registrationIndex: index,
+          eventName: event.title,
+          fee: event.paymentAmount,
+          receiptUrl: reg.paymentReceipt.receiptUrl,
+          amount: reg.paymentReceipt.amount,
+          status: reg.paymentReceipt.paymentStatus,
+          userName: reg.user?.name,
+          userEmail: reg.user?.email
+        });
       });
     });
 
-    // Sort by status (Pending first) then by date
-    payments.sort((a, b) => {
-      if (a.status === 'Pending' && b.status !== 'Pending') return -1;
-      if (a.status !== 'Pending' && b.status === 'Pending') return 1;
-      return new Date(b.registeredAt) - new Date(a.registeredAt);
-    });
-
     res.json({ success: true, payments });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
-// Verify/Approve a payment receipt
 export const approvePayment = async (req, res, next) => {
   try {
-    const { eventId, registrationIndex } = req.params;
-    const adminId = req.user.id;
+    const event = await Event.findById(req.params.eventId);
+    const reg = event.registrations[req.params.registrationIndex];
 
-    const { Event } = await import('../models/Event.model.js');
-    const event = await Event.findById(eventId);
-
-    if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
-    }
-
-    const index = parseInt(registrationIndex);
-    if (isNaN(index) || index < 0 || index >= event.registrations.length) {
-      return res.status(404).json({ message: 'Registration not found' });
-    }
-
-    const registration = event.registrations[index];
-    if (!registration || !registration.paymentReceipt) {
-      return res.status(404).json({ message: 'Payment receipt not found' });
-    }
-
-    registration.paymentReceipt.paymentStatus = 'Verified';
-    registration.paymentReceipt.verifiedAt = new Date();
-    registration.paymentReceipt.verifiedBy = adminId;
+    reg.paymentReceipt.paymentStatus = 'Verified';
+    reg.paymentReceipt.verifiedAt = new Date();
+    reg.paymentReceipt.verifiedBy = req.user.id;
 
     await event.save();
-
-    res.json({
-      success: true,
-      message: 'Payment verified successfully',
-      receipt: registration.paymentReceipt
-    });
-  } catch (error) {
-    next(error);
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
   }
 };
 
-// Reject a payment receipt
 export const rejectPayment = async (req, res, next) => {
   try {
-    const { eventId, registrationIndex } = req.params;
-    const adminId = req.user.id;
+    const event = await Event.findById(req.params.eventId);
+    const reg = event.registrations[req.params.registrationIndex];
 
-    const { Event } = await import('../models/Event.model.js');
-    const event = await Event.findById(eventId);
-
-    if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
-    }
-
-    const index = parseInt(registrationIndex);
-    if (isNaN(index) || index < 0 || index >= event.registrations.length) {
-      return res.status(404).json({ message: 'Registration not found' });
-    }
-
-    const registration = event.registrations[index];
-    if (!registration || !registration.paymentReceipt) {
-      return res.status(404).json({ message: 'Payment receipt not found' });
-    }
-
-    registration.paymentReceipt.paymentStatus = 'Rejected';
-    registration.paymentReceipt.verifiedAt = new Date();
-    registration.paymentReceipt.verifiedBy = adminId;
+    reg.paymentReceipt.paymentStatus = 'Rejected';
+    reg.paymentReceipt.verifiedAt = new Date();
+    reg.paymentReceipt.verifiedBy = req.user.id;
 
     await event.save();
-
-    res.json({
-      success: true,
-      message: 'Payment rejected',
-      receipt: registration.paymentReceipt
-    });
-  } catch (error) {
-    next(error);
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
   }
 };

@@ -28,7 +28,9 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.6.0",
     "morgan": "^1.10.0",
+    "multer": "^2.0.2",
     "nodemailer": "^7.0.11",
+    "pdfkit": "^0.17.2",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

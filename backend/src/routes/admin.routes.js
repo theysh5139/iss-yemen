@@ -44,11 +44,14 @@ router.patch('/announcements/:id', validateBody(updateAnnouncementSchema), updat
 router.delete('/announcements/:id', deleteAnnouncement);
 
 // Event Management
+import { uploadQR } from '../middlewares/uploadQR.middleware.js';
+
 router.get('/events', getAllEvents);
-router.post('/events', validateBody(createEventSchema), createEvent);
-router.patch('/events/:id', validateBody(updateEventSchema), updateEvent);
+router.post('/events', uploadQR.single('qrCode'), validateBody(createEventSchema), createEvent);
+router.patch('/events/:id', uploadQR.single('qrCode'), validateBody(updateEventSchema), updateEvent);
 router.patch('/events/:id/cancel', cancelEvent);
 router.delete('/events/:id', deleteEvent);
+
 
 // Payment Verification 
 router.get('/payments/verify', verifyPayments);

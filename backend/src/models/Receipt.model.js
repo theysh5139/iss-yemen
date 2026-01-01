@@ -22,8 +22,7 @@ const receiptSchema = new mongoose.Schema(
 );
 
 receiptSchema.index({ userId: 1 });
-receiptSchema.index({ receiptId: 1 });
-receiptSchema.index({ paymentId: 1 });
+// Removed duplicate indexes - receiptId and paymentId already have unique: true
 
 export const Receipt = mongoose.model('Receipt', receiptSchema);
 

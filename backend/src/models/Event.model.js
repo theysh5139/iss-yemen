@@ -32,6 +32,8 @@ const eventSchema = new mongoose.Schema(
     category: { type: String, enum: ['News', 'Announcement', 'Activity', 'Cultural', 'Academic', 'Social'], required: true },
     type: { type: String, enum: ['event', 'announcement', 'activity'], default: 'event' },
     price: { type: Number, default: 0 }, // Event registration fee
+    fee: { type: Number, default: 0 }, // Alternative fee field for compatibility
+    qrCodeUrl: { type: String }, // URL to QR code for payment
     maxAttendees: { type: Number },
     attendees: { type: Number, default: 0 },
     registeredUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

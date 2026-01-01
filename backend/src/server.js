@@ -33,6 +33,15 @@ async function start() {
     }
     process.exit(1);
   });
+
+  // Keep the server running
+  // process.on('SIGINT', () => {
+  //   console.log('Received SIGINT, shutting down gracefully');
+  //   server.close(() => {
+  //     console.log('Server closed');
+  //     process.exit(0);
+  //   });
+  // });
 }
 
 start().catch((err) => {

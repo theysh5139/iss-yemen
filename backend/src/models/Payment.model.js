@@ -20,7 +20,7 @@ const paymentSchema = new mongoose.Schema(
 );
 
 paymentSchema.index({ userId: 1, eventId: 1 });
-paymentSchema.index({ transactionId: 1 });
+// Removed duplicate index - transactionId already has unique: true
 paymentSchema.index({ status: 1 });
 
 export const Payment = mongoose.model('Payment', paymentSchema);
