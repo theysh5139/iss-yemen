@@ -65,3 +65,7 @@ emailConfigSchema.statics.setActiveConfig = async function(configId) {
 export const EmailConfig = mongoose.model('EmailConfig', emailConfigSchema);
 
 
+
+
+
+

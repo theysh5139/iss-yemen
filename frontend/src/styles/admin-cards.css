@@ -1,0 +1,161 @@
+/* Main Page Layout */
+.admin-page-container {
+    padding: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+  }
+  
+  .page-header {
+    margin-bottom: 2rem;
+  }
+  
+  .page-title {
+    font-size: 1.8rem;
+    color: #1e3a8a; /* Dark Blue */
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  
+  .page-subtitle {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Card Style (Matches Manage Events) */
+  .admin-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: box-shadow 0.2s;
+  }
+  
+  .admin-card:hover {
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  
+  .admin-card.pending {
+    border-left: 5px solid #f97316; /* Orange border for pending */
+  }
+  
+  /* Left Content */
+  .card-content h3 {
+    margin: 0 0 0.5rem 0;
+    color: #1e3a8a;
+    font-size: 1.25rem;
+  }
+  
+  .card-details {
+    display: flex;
+    gap: 15px;
+    color: #475569;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .view-proof-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .view-proof-link:hover {
+    text-decoration: underline;
+  }
+  
+  /* Badges */
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  .status-pending { background-color: #ffedd5; color: #c2410c; }
+  .status-approved { background-color: #dcfce7; color: #15803d; }
+  .status-rejected { background-color: #fee2e2; color: #b91c1c; }
+  
+  /* Buttons */
+  .card-actions {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .btn-approve { background-color: #16a34a; } /* Green */
+  .btn-approve:hover { background-color: #15803d; }
+  
+  .btn-reject { background-color: #ef4444; } /* Red */
+  .btn-reject:hover { background-color: #b91c1c; }
+  
+  .btn-edit { background-color: #2563eb; } /* Blue */
+  .btn-edit:hover { background-color: #1d4ed8; }
+  
+  .btn-delete { background-color: #dc2626; } /* Dark Red */
+  .btn-delete:hover { background-color: #b91c1c; }
+  
+  .btn-create {
+    background-color: #1e3a8a;
+    padding: 10px 20px;
+    margin-bottom: 20px;
+  }
+  
+  .btn-disabled {
+    background-color: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+  
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 500px;
+    max-width: 90%;
+  }
+  
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+  .form-input { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;} /* box-sizing fix */

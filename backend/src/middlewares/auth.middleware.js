@@ -41,4 +41,9 @@ export function requireRole(...allowedRoles) {
   };
 }
 
+export const verifyAdmin = [
+  authenticate, 
+  requireRole('admin') 
+];
+
 

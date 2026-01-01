@@ -105,6 +105,17 @@ export async function login(req, res, next) {
       });
     }
 
+    // TEST ACCOUNT: Bypass OTP for specific test member account (testing purposes only)
+    const TEST_MEMBER_EMAIL = process.env.TEST_MEMBER_EMAIL || 'testmember@test.com';
+    if (user.email.toLowerCase() === TEST_MEMBER_EMAIL.toLowerCase() && user.role === 'member') {
+      const token = signAccessToken({ sub: user._id.toString(), role: user.role });
+      res.cookie('access_token', token, authCookieOptions());
+      return res.json({
+        message: 'Login successful (Test account - OTP bypassed)',
+        user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role }
+      });
+    }
+
     // Regular users (members/visitors) require OTP
     // If OTP is provided, verify it
     if (otp) {
