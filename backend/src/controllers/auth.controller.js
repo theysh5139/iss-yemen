@@ -106,8 +106,8 @@ export async function login(req, res, next) {
       return res.status(403).json({ message: 'Email not verified' });
     }
 
-    // Admin and member users skip OTP verification (for testing)
-    if (user.role === 'admin' || user.role === 'member') {
+    // Admin users skip OTP/TAC verification
+    if (user.role === 'admin') {
       const token = signAccessToken({ sub: user._id.toString(), role: user.role });
       res.cookie('access_token', token, authCookieOptions());
       return res.json({
@@ -116,13 +116,14 @@ export async function login(req, res, next) {
       });
     }
 
-    // TEST ACCOUNT: Bypass OTP for specific test member account (testing purposes only)
-    const TEST_MEMBER_EMAIL = process.env.TEST_MEMBER_EMAIL || 'testmember@test.com';
+    // TEST MEMBER ACCOUNT: Bypass OTP/TAC for test member account only (for testing purposes)
+    // Default test account: member@issyemen.com (configurable via TEST_MEMBER_EMAIL env variable)
+    const TEST_MEMBER_EMAIL = process.env.TEST_MEMBER_EMAIL || 'member@issyemen.com';
     if (user.email.toLowerCase() === TEST_MEMBER_EMAIL.toLowerCase() && user.role === 'member') {
       const token = signAccessToken({ sub: user._id.toString(), role: user.role });
       res.cookie('access_token', token, authCookieOptions());
       return res.json({
-        message: 'Login successful (Test account - OTP bypassed)',
+        message: 'Login successful',
         user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role }
       });
     }

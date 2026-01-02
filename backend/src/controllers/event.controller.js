@@ -54,7 +54,7 @@ export async function registerForEvent(req, res, next) {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    const { name, email, phone, notes, paymentMethod } = req.body;
+    const { name, email, matricNumber, phone, notes, paymentMethod } = req.body;
     const User = (await import('../models/User.model.js')).User;
 
     const event = await Event.findById(id);
@@ -78,16 +78,39 @@ export async function registerForEvent(req, res, next) {
     const registrationEmail = email || user.email;
     const selectedPaymentMethod = paymentMethod || 'Online Banking';
 
-    // Generate payment receipt if event requires payment
-    let receiptData = null;
-    if (event.requiresPayment && event.paymentAmount > 0) {
-      const { generateReceiptData } = await import('../utils/receipt.js');
-      receiptData = generateReceiptData(event, user, event.paymentAmount, selectedPaymentMethod);
+    // Handle uploaded receipt file
+    let receiptUrl = null;
+    if (req.file) {
+      receiptUrl = `/uploads/receipts/${req.file.filename}`;
     }
 
     // Add to registered users
     event.registeredUsers.push(userId);
     event.attendees = event.registeredUsers.length;
+
+    // Generate payment receipt if event requires payment
+    let receiptData = null;
+    let receiptNumber = null;
+    if (event.requiresPayment && event.paymentAmount > 0) {
+      const { generateReceiptNumber } = await import('../utils/receipt.js');
+      receiptNumber = generateReceiptNumber();
+      receiptData = {
+        receiptNumber: receiptNumber,
+        generatedAt: new Date(),
+        amount: event.paymentAmount,
+        paymentMethod: selectedPaymentMethod,
+        paymentStatus: 'Pending',
+        registrationName: registrationName,
+        registrationEmail: registrationEmail,
+        matricNumber: matricNumber || null,
+        phone: phone || null
+      };
+      
+      // If user uploaded a receipt, use that URL
+      if (receiptUrl) {
+        receiptData.receiptUrl = receiptUrl;
+      }
+    }
 
     // Add detailed registration with receipt and form data
     const registrationData = {
@@ -95,6 +118,7 @@ export async function registerForEvent(req, res, next) {
       registeredAt: new Date(),
       registrationName: registrationName,
       registrationEmail: registrationEmail,
+      matricNumber: matricNumber || null,
       phone: phone || null,
       notes: notes || null
     };
@@ -102,20 +126,34 @@ export async function registerForEvent(req, res, next) {
     if (receiptData) {
       registrationData.paymentReceipt = {
         receiptNumber: receiptData.receiptNumber,
+        receiptUrl: receiptData.receiptUrl || receiptUrl,
         generatedAt: receiptData.generatedAt,
         amount: receiptData.amount,
         paymentMethod: receiptData.paymentMethod,
-        paymentStatus: receiptData.paymentStatus
+        paymentStatus: receiptData.paymentStatus || 'Pending'
+      };
+    } else if (receiptUrl) {
+      // If receipt was uploaded but no receipt data generated (free event with receipt upload?)
+      const { generateReceiptNumber } = await import('../utils/receipt.js');
+      registrationData.paymentReceipt = {
+        receiptNumber: generateReceiptNumber(),
+        receiptUrl: receiptUrl,
+        generatedAt: new Date(),
+        amount: event.paymentAmount || 0,
+        paymentStatus: 'Pending'
       };
     }
 
     event.registrations.push(registrationData);
     await event.save();
 
+    // Return receipt data from registration
+    const returnReceipt = registrationData.paymentReceipt || null;
+
     return res.json({ 
       message: 'Successfully registered for event', 
       event,
-      receipt: receiptData || null
+      receipt: returnReceipt
     });
   } catch (err) {
     next(err);

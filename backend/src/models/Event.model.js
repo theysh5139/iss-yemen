@@ -5,11 +5,12 @@ const registrationSchema = new mongoose.Schema({
   registeredAt: { type: Date, default: Date.now },
   registrationName: { type: String }, // Name used during registration
   registrationEmail: { type: String }, // Email used during registration
+  matricNumber: { type: String }, // Matric number from registration form
   phone: { type: String }, // Phone number from registration form
   notes: { type: String }, // Additional notes from registration form
   paymentReceipt: {
     receiptNumber: { type: String },
-    receiptUrl: { type: String },
+    receiptUrl: { type: String }, // URL to uploaded receipt PDF file
     generatedAt: { type: Date },
     amount: { type: Number },
     paymentMethod: { type: String },
@@ -19,7 +20,8 @@ const registrationSchema = new mongoose.Schema({
       default: 'Pending' 
     },
     verifiedAt: { type: Date },
-    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    rejectionReason: { type: String } // Reason for rejection if payment is rejected
   }
 }, { _id: false });
 

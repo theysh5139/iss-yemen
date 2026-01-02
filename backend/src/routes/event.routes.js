@@ -10,6 +10,7 @@ import {
   getPastEvents
 } from '../controllers/event.controller.js';
 import { authenticate, optionalAuth, requireRole } from '../middlewares/auth.middleware.js';
+import { uploadReceipt } from '../middlewares/uploadReceipt.middleware.js';
 
 const router = Router();
 
@@ -21,9 +22,9 @@ router.get('/type/:type', optionalAuth, getEventsByType);
 router.get('/', optionalAuth, getEvents);
 router.get('/:id', optionalAuth, getEventById);
 
-// Protected routes (members only)
-router.post('/:id/register', authenticate, requireRole('member', 'admin'), registerForEvent);
-router.post('/:id/unregister', authenticate, requireRole('member', 'admin'), unregisterFromEvent);
+// Protected routes (members only - member role only, not admin)
+router.post('/:id/register', authenticate, requireRole('member'), uploadReceipt.single('receipt'), registerForEvent);
+router.post('/:id/unregister', authenticate, requireRole('member'), unregisterFromEvent);
 
 export default router;
 

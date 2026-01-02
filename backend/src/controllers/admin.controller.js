@@ -254,33 +254,87 @@ export async function getAllEvents(req, res, next) {
 ================================ */
 export const verifyPayments = async (req, res, next) => {
   try {
+    const statusFilter = req.query.status || null;
+    
+    console.log('[verifyPayments] Fetching payments with status filter:', statusFilter);
+    console.log('[verifyPayments] Request query:', req.query);
+    
     const events = await Event.find({
       'registrations.paymentReceipt': { $exists: true }
-    }).populate('registrations.user', 'name email');
+    }).lean();
+
+    console.log('[verifyPayments] Found events with payments:', events.length);
+    
+    if (!events || events.length === 0) {
+      console.log('[verifyPayments] No events with payment receipts found');
+      return res.json({ receipts: [] });
+    }
 
     const payments = [];
 
-    events.forEach(event => {
-      event.registrations.forEach((reg, index) => {
-        if (!reg.paymentReceipt) return;
+    for (const event of events) {
+      for (let index = 0; index < event.registrations.length; index++) {
+        const reg = event.registrations[index];
+        if (!reg.paymentReceipt) continue;
+        
+        // Apply status filter if provided
+        if (statusFilter && statusFilter !== 'all' && reg.paymentReceipt.paymentStatus !== statusFilter) {
+          continue;
+        }
+
+        // Populate user info if user ID exists
+        let userName = reg.registrationName || 'Unknown User';
+        let userEmail = reg.registrationEmail || 'N/A';
+        let userId = null;
+        
+        if (reg.user) {
+          try {
+            const User = (await import('../models/User.model.js')).User;
+            const user = await User.findById(reg.user).select('name email').lean();
+            if (user) {
+              userName = user.name || userName;
+              userEmail = user.email || userEmail;
+              userId = user._id.toString();
+            }
+          } catch (userError) {
+            console.error('[verifyPayments] Error populating user:', userError);
+          }
+        }
 
         payments.push({
           id: `${event._id}-${index}`,
-          eventId: event._id,
+          eventId: event._id.toString(),
           registrationIndex: index,
-          eventName: event.title,
-          fee: event.paymentAmount,
+          event: {
+            _id: event._id.toString(),
+            title: event.title,
+            date: event.date,
+            location: event.location
+          },
+          user: {
+            name: userName,
+            email: userEmail,
+            _id: userId
+          },
           receiptUrl: reg.paymentReceipt.receiptUrl,
           amount: reg.paymentReceipt.amount,
-          status: reg.paymentReceipt.paymentStatus,
-          userName: reg.user?.name,
-          userEmail: reg.user?.email
+          currency: 'RM',
+          paymentType: reg.paymentReceipt.paymentMethod || 'QR Code / Bank Transfer',
+          status: reg.paymentReceipt.paymentStatus || 'Pending',
+          submittedAt: reg.registeredAt || reg.paymentReceipt.generatedAt,
+          verifiedAt: reg.paymentReceipt.verifiedAt,
+          verifiedBy: reg.paymentReceipt.verifiedBy,
+          rejectionReason: reg.paymentReceipt.rejectionReason,
+          receiptNumber: reg.paymentReceipt.receiptNumber,
+          createdAt: reg.paymentReceipt.generatedAt
         });
-      });
-    });
+      }
+    }
 
-    res.json({ success: true, payments });
+    console.log('[verifyPayments] Returning payments:', payments.length);
+    res.json({ receipts: payments });
   } catch (err) {
+    console.error('[verifyPayments] Error:', err);
     next(err);
   }
 };
@@ -303,15 +357,26 @@ export const approvePayment = async (req, res, next) => {
 
 export const rejectPayment = async (req, res, next) => {
   try {
-    const event = await Event.findById(req.params.eventId);
-    const reg = event.registrations[req.params.registrationIndex];
+    const { eventId, registrationIndex } = req.params;
+    const { reason } = req.body;
+    
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+    
+    const reg = event.registrations[registrationIndex];
+    if (!reg || !reg.paymentReceipt) {
+      return res.status(404).json({ message: 'Registration or payment receipt not found' });
+    }
 
     reg.paymentReceipt.paymentStatus = 'Rejected';
     reg.paymentReceipt.verifiedAt = new Date();
     reg.paymentReceipt.verifiedBy = req.user.id;
+    reg.paymentReceipt.rejectionReason = reason || 'No reason provided';
 
     await event.save();
-    res.json({ success: true });
+    res.json({ success: true, message: 'Payment rejected successfully' });
   } catch (err) {
     next(err);
   }
