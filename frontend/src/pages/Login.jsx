@@ -36,16 +36,12 @@ export default function Login() {
     const res = await loginApi(form)
 
     /**
-     * 🚨 DEV-ONLY ADMIN OTP BYPASS
-     * Make sure your backend returns:
-     * res.user.role === "admin"
-     * res.token (JWT)
+     * Admin and Test Member account skip OTP/TAC verification
+     * Backend returns user object only for admin and the test member account (member@issyemen.com)
+     * Other member accounts require OTP and backend returns { message, email } instead
      */
-    if (
-      res.user?.role === "admin" &&
-      import.meta.env.DEV
-    ) {
-      // Store token
+    if (res.user) {
+      // Store token if provided (for admin, token might be in cookie)
       if (res.token) {
         localStorage.setItem("authToken", res.token)
       }
@@ -53,12 +49,17 @@ export default function Login() {
       // Set auth context
       setUser(res.user)
 
-      // Go straight to admin dashboard
-      navigate("/admin/dashboard", { replace: true })
+      // Redirect based on role
+      if (res.user.role === "admin") {
+        navigate("/admin/dashboard", { replace: true })
+      } else {
+        // Member accounts go to homepage
+        navigate("/", { replace: true })
+      }
       return
     }
 
-    // Normal users → OTP flow
+    // Normal users (visitors) → OTP flow
     navigate("/verify-otp", {
       replace: true,
       state: { email: form.email }

@@ -25,6 +25,7 @@ export function getEventsByType(type) {
 }
 
 export function registerForEvent(id, registrationData = {}) {
+  // apiFetch already handles FormData correctly (no Content-Type header for FormData)
   return apiFetch(`/api/events/${id}/register`, { 
     method: 'POST',
     body: registrationData

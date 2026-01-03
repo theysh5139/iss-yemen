@@ -2,22 +2,16 @@
 
 import { useState, useEffect } from "react"
 import { getPastEvents } from "../api/events.js"
-import { useAuth } from "../context/AuthProvider.jsx"
-import EventRegistrationModal from "../components/EventRegistrationModal.jsx"
 import "../styles/past-events.css"
 
 export default function PastEvents() {
-  const { user } = useAuth()
   const [events, setEvents] = useState([])
   const [filteredEvents, setFilteredEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [categoryFilter, setCategoryFilter] = useState("All")
   const [dateFilter, setDateFilter] = useState("All")
-  const [selectedEvent, setSelectedEvent] = useState(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const isMember = user && (user.role === 'member' || user.role === 'admin')
 
   useEffect(() => {
     async function fetchEvents() {
@@ -99,57 +93,6 @@ export default function PastEvents() {
   // Get unique categories from events
   const categories = ["All", ...new Set(events.map(e => e.category).filter(Boolean))]
 
-  function handleEventClick(event) {
-    setSelectedEvent(event)
-    setIsModalOpen(true)
-  }
-
-  async function handleModalClose() {
-    setIsModalOpen(false)
-    setSelectedEvent(null)
-    // Refresh events after registration
-    try {
-      const res = await getPastEvents()
-      if (res.events) {
-        const sortedEvents = res.events.sort((a, b) => new Date(b.date) - new Date(a.date))
-        setEvents(sortedEvents)
-        // Reapply filters
-        let filtered = [...sortedEvents]
-        if (categoryFilter !== "All") {
-          filtered = filtered.filter(event => event.category === categoryFilter)
-        }
-        if (dateFilter !== "All") {
-          const now = new Date()
-          const filterDate = new Date()
-          switch (dateFilter) {
-            case "This Month":
-              filterDate.setMonth(now.getMonth() - 1)
-              break
-            case "Last 3 Months":
-              filterDate.setMonth(now.getMonth() - 3)
-              break
-            case "Last 6 Months":
-              filterDate.setMonth(now.getMonth() - 6)
-              break
-            case "This Year":
-              filterDate.setFullYear(now.getFullYear() - 1)
-              break
-          }
-          filtered = filtered.filter(event => new Date(event.date) >= filterDate)
-        }
-        setFilteredEvents(filtered)
-      }
-    } catch (err) {
-      console.error("Failed to refresh events:", err)
-    }
-  }
-
-  function isRegistered(event) {
-    if (!isMember || !event.registeredUsers) return false
-    return event.registeredUsers.some(regUser => 
-      typeof regUser === 'object' ? regUser._id === user?.id : regUser === user?.id
-    )
-  }
 
   if (loading) {
     return (
@@ -247,32 +190,11 @@ export default function PastEvents() {
                       </div>
                     </div>
                     <p className="event-description">{event.description}</p>
-                    {isMember && !event.cancelled && (
-                      <div className="event-actions">
-                        {isRegistered(event) ? (
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => handleEventClick(event)}
-                          >
-                            View Details / Unregister
-                          </button>
-                        ) : (
-                          <button
-                            className="btn btn-primary"
-                            onClick={() => handleEventClick(event)}
-                          >
-                            Join Event
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {!isMember && !event.cancelled && (
-                      <div className="event-actions">
-                        <a href="/login" className="btn btn-primary">
-                          Login to Join
-                        </a>
-                      </div>
-                    )}
+                    <div className="event-actions">
+                      <a href={`/all-events#${event._id}`} className="btn btn-secondary" style={{ textDecoration: 'none' }}>
+                        View Details →
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -285,14 +207,6 @@ export default function PastEvents() {
         )}
       </div>
 
-      {/* Registration Modal */}
-      <EventRegistrationModal
-        event={selectedEvent}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onRegistrationChange={handleModalClose}
-        user={user}
-      />
     </div>
   )
 }

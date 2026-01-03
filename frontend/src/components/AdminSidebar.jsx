@@ -25,10 +25,7 @@ export default function AdminSidebar({ user, onLogout, isOpen, onClose }) {
     setActiveMenu(activeMenu === item.id ? null : item.id)
     if (item.path) {
       navigate(item.path)
-      // Close sidebar on mobile after navigation
-      if (window.innerWidth <= 1024 && onClose) {
-        onClose()
-      }
+      // Sidebar stays open after navigation to keep the selected item visible
     }
   }
 

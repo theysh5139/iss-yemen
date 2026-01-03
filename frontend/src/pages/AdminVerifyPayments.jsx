@@ -41,28 +41,31 @@ export default function AdminVerifyPayments() {
       return;
     }
     fetchPayments();
-  }, [user, navigate]);
+  }, [user, navigate, statusFilter]);
 
   const fetchPayments = async () => {
     try {
       setIsLoading(true);
       setError(null);
+      console.log("Fetching payments with status filter:", statusFilter);
       const data = await getAllPaymentReceipts(statusFilter);
-      setPayments(data.receipts || []);
+      console.log("Payment data received:", data);
+      setPayments(data.receipts || data || []);
     } catch (error) {
       console.error("Error fetching payments:", error);
-      setError("Failed to load payment receipts. Please refresh the page.");
+      console.error("Error details:", error.message, error.status, error.data);
+      setError(error.message || "Failed to load payment receipts. Please refresh the page.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleApprove = async (id) => {
+  const handleApprove = async (payment) => {
     if (!window.confirm("Approve this payment receipt? This action will verify the payment.")) return;
     
     try {
       setError(null);
-      await approvePayment(id);
+      await approvePayment(payment.eventId, payment.registrationIndex);
       setSuccess("Payment approved successfully!");
       await fetchPayments();
       setTimeout(() => setSuccess(null), 3000);
@@ -71,7 +74,7 @@ export default function AdminVerifyPayments() {
     }
   };
 
-  const handleReject = async (id) => {
+  const handleReject = async (payment) => {
     if (!rejectReason.trim()) {
       alert("Please provide a reason for rejection.");
       return;
@@ -79,8 +82,8 @@ export default function AdminVerifyPayments() {
     
     try {
       setError(null);
-      setRejectingId(id);
-      await rejectPayment(id, rejectReason);
+      setRejectingId(payment.id);
+      await rejectPayment(payment.eventId, payment.registrationIndex, rejectReason);
       setSuccess("Payment rejected successfully!");
       setShowRejectModal(null);
       setRejectReason("");
@@ -244,24 +247,26 @@ export default function AdminVerifyPayments() {
                       )}
                     </div>
 
-                    <div className="pt-2">
-                      <a 
-                        href={payment.receiptUrl} 
-                        target="_blank" 
-                        rel="noreferrer" 
-                        className="btn-view"
-                        style={{ display: 'inline-block', textDecoration: 'none' }}
-                      >
-                        👁️ View Payment Receipt
-                      </a>
-                    </div>
+                    {payment.receiptUrl && (
+                      <div className="pt-2">
+                        <a 
+                          href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${payment.receiptUrl}`}
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="btn-view"
+                          style={{ display: 'inline-block', textDecoration: 'none' }}
+                        >
+                          👁️ View Payment Receipt
+                        </a>
+                      </div>
+                    )}
                   </div>
 
                   <div className="item-actions">
                     {payment.status === 'Pending' ? (
                       <>
                         <button 
-                          onClick={() => handleApprove(payment.id)}
+                          onClick={() => handleApprove(payment)}
                           className="btn-view"
                         >
                           ✅ Approve
@@ -294,7 +299,13 @@ export default function AdminVerifyPayments() {
                 <button className="modal-close" onClick={() => setShowRejectModal(null)}>×</button>
               </div>
               <div className="modal-body">
-                <form onSubmit={(e) => { e.preventDefault(); handleReject(showRejectModal); }}>
+                <form onSubmit={(e) => { 
+                  e.preventDefault(); 
+                  const payment = payments.find(p => p.id === showRejectModal);
+                  if (payment) {
+                    handleReject(payment);
+                  }
+                }}>
                   <div className="form-group">
                     <label>
                       Rejection Reason <span className="required">*</span>

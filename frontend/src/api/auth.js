@@ -71,4 +71,8 @@ export function getCurrentUserApi() {
   return apiFetch('/api/auth/me')
 }
 
+export function updateProfileApi(payload) {
+  return apiFetch('/api/auth/profile', { method: 'PATCH', body: payload })
+}
+
 

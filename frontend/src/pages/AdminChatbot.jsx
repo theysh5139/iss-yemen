@@ -213,16 +213,10 @@ export default function AdminChatbot() {
             <div className="chatbot-container">
               {/* --- Top Header Section --- */}
               <div className="chatbot-header">
-                <h1 className="chatbot-title">Chatbot Manager</h1>
-                <p className="chatbot-description">Create, edit, and manage chatbot rules. Updates reflect instantly without downtime.</p>
-
-                {/* Success Message */}
-                {successMessage && (
-                  <div className="success-message">
-                    <span>✅</span>
-                    <span>{successMessage}</span>
-                  </div>
-                )}
+                <div className="chatbot-title-section">
+                  <h1 className="chatbot-title">Chatbot Manager</h1>
+                  <p className="chatbot-description">Create, edit, and manage chatbot rules. Updates reflect instantly without downtime.</p>
+                </div>
 
                 {/* Create Button */}
                 <div className="chatbot-create-section">
@@ -234,6 +228,14 @@ export default function AdminChatbot() {
                     Create Rules
                   </button>
                 </div>
+
+                {/* Success Message */}
+                {successMessage && (
+                  <div className="success-message">
+                    <span>✅</span>
+                    <span>{successMessage}</span>
+                  </div>
+                )}
 
                 {/* Statistics Cards */}
                 <div className="chatbot-stats-grid">

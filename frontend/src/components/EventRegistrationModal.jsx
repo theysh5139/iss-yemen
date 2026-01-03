@@ -12,33 +12,48 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
+    matricNumber: '',
     phone: '',
-    notes: '',
-    paymentMethod: 'Online Banking'
+    notes: ''
   })
+  const [receiptFile, setReceiptFile] = useState(null)
 
   // Reset form when modal opens/closes or user changes
   useEffect(() => {
-    if (isOpen && event) {
+    if (isOpen && event && user) {
       console.log('Modal opened with event:', event?.title)
-      setShowForm(false)
       setError(null)
       setReceipt(null)
       setShareUrl(null)
       setFormData({
         name: user?.name || '',
         email: user?.email || '',
+        matricNumber: '',
         phone: '',
-        notes: '',
-        paymentMethod: 'Online Banking'
+        notes: ''
       })
+      setReceiptFile(null)
+      
+      // Check if user is already registered
+      const isUserRegistered = event.registeredUsers?.some(regUser => 
+        typeof regUser === 'object' ? regUser._id === user?.id : regUser === user?.id
+      )
+      
+      // Automatically show form for unregistered events
+      setShowForm(!isUserRegistered)
     } else {
       console.log('Modal state - isOpen:', isOpen, 'event:', event)
+      setShowForm(false)
     }
   }, [isOpen, event, user])
 
   if (!isOpen || !event) {
     console.log('Modal not rendering - isOpen:', isOpen, 'event:', event)
+    return null
+  }
+
+  // Only allow member role accounts to access registration
+  if (!user || user.role !== 'member') {
     return null
   }
 
@@ -82,9 +97,19 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
       setError('Please enter your email')
       return
     }
-    if (event.requiresPayment && event.paymentAmount > 0 && !formData.paymentMethod) {
-      setError('Please select a payment method')
+    if (!formData.matricNumber.trim()) {
+      setError('Please enter your matric number')
       return
+    }
+    if (!formData.phone.trim()) {
+      setError('Please enter your phone number')
+      return
+    }
+    if (event.requiresPayment && event.paymentAmount > 0) {
+      if (!receiptFile) {
+        setError('Please upload your payment receipt (PDF or Image)')
+        return
+      }
     }
 
     try {
@@ -92,16 +117,22 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
       setError(null)
       setReceipt(null)
       
-      // Prepare registration data
-      const registrationData = {
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone.trim(),
-        notes: formData.notes.trim(),
-        paymentMethod: event.requiresPayment && event.paymentAmount > 0 ? formData.paymentMethod : undefined
+      // Prepare registration data as FormData to support file upload
+      const formDataToSend = new FormData()
+      formDataToSend.append('name', formData.name.trim())
+      formDataToSend.append('email', formData.email.trim())
+      formDataToSend.append('matricNumber', formData.matricNumber.trim())
+      formDataToSend.append('phone', formData.phone.trim())
+      formDataToSend.append('notes', formData.notes.trim())
+      if (event.requiresPayment && event.paymentAmount > 0) {
+        // Default payment method for QR code / bank transfer
+        formDataToSend.append('paymentMethod', 'QR Code / Bank Transfer')
+        if (receiptFile) {
+          formDataToSend.append('receipt', receiptFile)
+        }
       }
       
-      const response = await registerForEvent(event._id, registrationData)
+      const response = await registerForEvent(event._id, formDataToSend)
       
       // If receipt was generated, show it
       if (response.receipt) {
@@ -122,6 +153,28 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
       setError(err.message || "Failed to register for event")
     } finally {
       setRegistering(false)
+    }
+  }
+
+  const handleReceiptFileChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      // Validate file type - allow PDF and images
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+      const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp']
+      const fileExt = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
+      
+      if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExt)) {
+        setError('Please upload a PDF or image file (JPG, PNG, GIF, WEBP) for the receipt')
+        return
+      }
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Receipt file size must be less than 5MB')
+        return
+      }
+      setReceiptFile(file)
+      setError(null)
     }
   }
 
@@ -400,26 +453,121 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="phone">Phone Number</label>
+                    <label htmlFor="matricNumber">Matric Number *</label>
+                    <input
+                      type="text"
+                      id="matricNumber"
+                      name="matricNumber"
+                      value={formData.matricNumber}
+                      onChange={handleFormChange}
+                      required
+                      placeholder="Enter your matric number"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="phone">Phone Number *</label>
                     <input
                       type="tel"
                       id="phone"
                       name="phone"
                       value={formData.phone}
                       onChange={handleFormChange}
-                      placeholder="Enter your phone number (optional)"
+                      required
+                      placeholder="Enter your phone number"
                     />
                   </div>
 
                   {event.requiresPayment && event.paymentAmount > 0 && (
                     <>
+                      <div className="payment-summary" style={{
+                        background: '#fff3cd',
+                        padding: '1rem',
+                        borderRadius: '6px',
+                        marginBottom: '1rem',
+                        border: '2px solid #ffc107'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '1rem' }}>
+                          <span style={{ fontWeight: '600' }}>Registration Fee:</span>
+                          <strong style={{ fontSize: '1.2rem', color: '#856404' }}>RM {event.paymentAmount.toFixed(2)}</strong>
+                        </div>
+                      </div>
+
+                      <div className="qr-code-section" style={{
+                        background: '#f0f9ff',
+                        padding: '1.5rem',
+                        borderRadius: '8px',
+                        marginBottom: '1rem',
+                        border: '2px solid #1e3a8a',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: '0 0 1rem 0', fontWeight: '600', color: '#1e3a8a', fontSize: '1.1rem' }}>
+                          💳 Payment QR Code
+                        </p>
+                        {(() => {
+                          // Default QR code file for paid events
+                          const defaultQrCode = '/uploads/qr/1767293083911-qr pay.png'
+                          const qrCodePath = event.qrCodeUrl || defaultQrCode
+                          const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+                          
+                          // Build the URL - encodeURI handles spaces in paths correctly
+                          const qrCodeUrl = `${apiBaseUrl}${encodeURI(qrCodePath)}`
+                          
+                          return (
+                            <img 
+                              src={qrCodeUrl}
+                              alt="Payment QR Code"
+                              style={{
+                                maxWidth: '250px',
+                                width: '100%',
+                                height: 'auto',
+                                border: '2px solid #1e3a8a',
+                                borderRadius: '8px',
+                                backgroundColor: '#fff',
+                                padding: '0.75rem',
+                                marginBottom: '1rem',
+                                display: 'block'
+                              }}
+                            />
+                          )
+                        })()}
+                        <div style={{
+                          background: '#fff',
+                          padding: '1rem',
+                          borderRadius: '6px',
+                          border: '1px solid #ddd',
+                          marginTop: '1rem'
+                        }}>
+                          <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666', fontWeight: '600' }}>
+                            Or transfer to account number:
+                          </p>
+                          <p style={{ 
+                            margin: 0, 
+                            fontSize: '1.1rem', 
+                            color: '#1e3a8a', 
+                            fontWeight: '700',
+                            fontFamily: 'monospace',
+                            letterSpacing: '2px'
+                          }}>
+                            1234567890
+                          </p>
+                          <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#666' }}>
+                            Bank: [Bank Name]
+                          </p>
+                        </div>
+                        <p style={{ margin: '1rem 0 0 0', fontSize: '0.9rem', color: '#666', fontStyle: 'italic' }}>
+                          Scan QR code or transfer to the account number above
+                        </p>
+                      </div>
+
                       <div className="form-group">
-                        <label htmlFor="paymentMethod">Payment Method *</label>
-                        <select
-                          id="paymentMethod"
-                          name="paymentMethod"
-                          value={formData.paymentMethod}
-                          onChange={handleFormChange}
+                        <label htmlFor="receipt">Transaction Proof (PDF or Image) *</label>
+                        <input
+                          type="file"
+                          id="receipt"
+                          name="receipt"
+                          accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,application/pdf,image/jpeg,image/png,image/gif,image/webp"
+                          onChange={handleReceiptFileChange}
                           required
                           style={{
                             width: '100%',
@@ -429,31 +577,15 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                             fontSize: '1rem',
                             backgroundColor: '#fff'
                           }}
-                        >
-                          <option value="Online Banking">Online Banking (FPX/IBG)</option>
-                          <option value="Credit Card">Credit Card</option>
-                          <option value="Debit Card">Debit Card</option>
-                          <option value="E-Wallet">E-Wallet (Touch 'n Go, GrabPay, etc.)</option>
-                          <option value="Bank Transfer">Bank Transfer</option>
-                          <option value="Cash">Cash (On-site payment)</option>
-                        </select>
-                      </div>
-
-                      <div className="payment-summary" style={{
-                        background: '#f0f9ff',
-                        padding: '1rem',
-                        borderRadius: '6px',
-                        marginBottom: '1rem',
-                        border: '1px solid #1e3a8a'
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                          <span>Event Fee:</span>
-                          <strong>RM {event.paymentAmount.toFixed(2)}</strong>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: '600', color: '#1e3a8a', paddingTop: '0.5rem', borderTop: '1px solid #1e3a8a' }}>
-                          <span>Total Amount:</span>
-                          <span>RM {event.paymentAmount.toFixed(2)}</span>
-                        </div>
+                        />
+                        {receiptFile && (
+                          <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#28a745' }}>
+                            ✓ Selected: {receiptFile.name}
+                          </p>
+                        )}
+                        <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#666' }}>
+                          Please upload your transaction proof (PDF, JPG, PNG, GIF, or WEBP - Max 5MB)
+                        </p>
                       </div>
                     </>
                   )}
@@ -486,6 +618,7 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                       onClick={() => {
                         setShowForm(false)
                         setError(null)
+                        setReceiptFile(null)
                       }}
                       disabled={registering}
                       style={{ marginRight: '0.5rem' }}
