@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { signup, verifyEmail, login, logout, requestPasswordReset, resetPassword, resendVerification, verifyOTP, resendOTP, getCurrentUser } from '../controllers/auth.controller.js';
-import { signupSchema, validateBody, loginSchema, passwordResetRequestSchema, passwordResetSchema, resendVerificationSchema, verifyOtpSchema, resendOtpSchema } from '../middlewares/validators.js';
+import { signup, verifyEmail, login, logout, requestPasswordReset, resetPassword, resendVerification, verifyOTP, resendOTP, getCurrentUser, updateProfile } from '../controllers/auth.controller.js';
+import { signupSchema, validateBody, loginSchema, passwordResetRequestSchema, passwordResetSchema, resendVerificationSchema, verifyOtpSchema, resendOtpSchema, updateProfileSchema } from '../middlewares/validators.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 
 const router = Router();
@@ -15,6 +15,7 @@ router.post('/password-reset-request', validateBody(passwordResetRequestSchema),
 router.post('/password-reset', validateBody(passwordResetSchema), resetPassword);
 router.post('/resend-verification', validateBody(resendVerificationSchema), resendVerification);
 router.get('/me', authenticate, getCurrentUser);
+router.patch('/profile', authenticate, validateBody(updateProfileSchema), updateProfile);
 
 export default router;
 
