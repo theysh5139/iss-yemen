@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import AdminSidebar from "../components/AdminSidebar.jsx"
+import AdminHeaderIcons from "../components/AdminHeaderIcons.jsx"
 import { useAuth } from "../context/AuthProvider.jsx"
 import { logoutApi } from "../api/auth.js"
 import { getAllUsers, updateUserRole, deactivateUser, deleteUser } from "../api/admin.js"
@@ -97,12 +98,7 @@ export default function AdminManageUsers() {
           <div className="breadcrumbs">
             <span>Dashboard &gt; Manage Users</span>
           </div>
-          <div className="header-icons">
-            <button className="icon-btn">🔔</button>
-            <button className="icon-btn">⚙️</button>
-            <button className="icon-btn">🔍</button>
-            <button className="icon-btn">👤</button>
-          </div>
+          <AdminHeaderIcons user={user} />
         </header>
 
         <div className="admin-content">

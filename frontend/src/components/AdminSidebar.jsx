@@ -30,7 +30,11 @@ export default function AdminSidebar({ user, onLogout, isOpen, onClose }) {
   }
 
   const currentPath = location.pathname
-  const activeItem = menuItems.find(item => currentPath.startsWith(item.path))
+  // Find active item - match by exact path or path prefix (for nested routes)
+  // Sort by path length (longest first) to match more specific paths first
+  const activeItem = [...menuItems]
+    .sort((a, b) => b.path.length - a.path.length)
+    .find(item => currentPath === item.path || currentPath.startsWith(item.path + '/'))
 
   return (
     <aside className={`admin-sidebar ${isOpen ? 'open' : ''}`}>

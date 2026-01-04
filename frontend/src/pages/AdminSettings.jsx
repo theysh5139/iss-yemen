@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import AdminSidebar from "../components/AdminSidebar.jsx"
+import AdminHeaderIcons from "../components/AdminHeaderIcons.jsx"
 import { useAuth } from "../context/AuthProvider.jsx"
 import { logoutApi } from "../api/auth.js"
 import { useNavigate } from "react-router-dom"
@@ -81,23 +82,18 @@ export default function AdminSettings() {
       {sidebarOpen && (
         <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
       )}
-
+      
       <div className="admin-main-content">
         <header className="admin-header">
           <div className="header-left">
             <button className="menu-toggle-btn" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle menu">
               <span className="hamburger-icon">☰</span>
             </button>
-            <div className="breadcrumbs">
-              <span>Dashboard &gt; Settings & Help</span>
-            </div>
+          <div className="breadcrumbs">
+            <span>Dashboard &gt; Settings & Help</span>
           </div>
-          <div className="header-icons">
-            <button className="icon-btn" aria-label="Notifications">🔔</button>
-            <button className="icon-btn" aria-label="Settings">⚙️</button>
-            <button className="icon-btn" aria-label="Search">🔍</button>
-            <button className="icon-btn" aria-label="Profile">👤</button>
           </div>
+          <AdminHeaderIcons user={user} />
         </header>
 
         <div className="admin-content">
@@ -390,16 +386,16 @@ export default function AdminSettings() {
                       <li><strong>How to upload QR codes?</strong> When creating/editing events, use the QR Code upload field</li>
                       <li><strong>Where are backups stored?</strong> Backups are managed by the system administrator</li>
                     </ul>
-                  </div>
+            </div>
 
                   <div className="help-section">
                     <h3>📞 Support</h3>
                     <div className="info-box">
                       <p><strong>Contact:</strong> {settings.contactEmail}</p>
                       <p><strong>Documentation:</strong> Check the FAQ_SETUP_GUIDE.md file for detailed setup instructions</p>
-                    </div>
-                  </div>
-                </div>
+            </div>
+          </div>
+        </div>
               )}
 
               {/* Save Button */}

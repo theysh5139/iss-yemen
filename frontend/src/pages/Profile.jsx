@@ -11,12 +11,7 @@ export default function Profile() {
   const { user, setUser } = useAuth()
   const navigate = useNavigate()
 
-  // Redirect admin users to admin dashboard
-  useEffect(() => {
-    if (user?.role === 'admin') {
-      navigate("/admin/dashboard", { replace: true })
-    }
-  }, [user, navigate])
+  // Allow admins to view their profile page
 
   const [registeredEvents, setRegisteredEvents] = useState([])
   const [upcomingEvents, setUpcomingEvents] = useState([])

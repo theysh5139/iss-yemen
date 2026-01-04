@@ -61,5 +61,96 @@ Health endpoints:
 ## Production
 - Set strong `JWT_SECRET` and secure cookies over HTTPS (NODE_ENV=production).
 - Use a real email service (e.g., Nodemailer + SMTP, SendGrid) instead of the mock logger.
+
+## Git Push Instructions
+
+To push your latest changes to the main branch, follow these steps:
+
+### Quick Push (All Changes)
+```bash
+# Navigate to the project root (iss-yemen directory)
+cd iss-yemen/backend
+
+# Add all changes (including new files)
+git add -A
+
+# Commit with a descriptive message
+git commit -m "Your commit message describing the changes"
+
+# Push to main branch
+git push origin main
+```
+
+### Step-by-Step Process
+
+1. **Navigate to the backend directory** (where the git repository is initialized):
+   ```bash
+   cd iss-yemen/backend
+   ```
+
+2. **Check current status** to see what files have changed:
+   ```bash
+   git status
+   ```
+
+3. **Pull latest changes** (recommended to avoid conflicts):
+   ```bash
+   git pull origin main
+   ```
+
+4. **Add all changes** (modified and new files):
+   ```bash
+   git add -A
+   ```
+   Or add specific files:
+   ```bash
+   git add path/to/file.js
+   ```
+
+5. **Commit your changes** with a descriptive message:
+   ```bash
+   git commit -m "Add feature: admin header icons with search functionality"
+   ```
+   
+   Example commit messages:
+   - `"Add background image to homepage"`
+   - `"Update admin sidebar to maintain active state"`
+   - `"Fix profile page redirect for administrators"`
+   - `"Add search popup with keyword matching for admin pages"`
+
+6. **Push to main branch**:
+   ```bash
+   git push origin main
+   ```
+
+### Including New Files
+
+When adding new files (untracked files), use:
+```bash
+git add -A
+```
+This command adds all changes including:
+- Modified files
+- New files (untracked)
+- Deleted files
+
+### Troubleshooting
+
+**If you get "Updates were rejected":**
+```bash
+# Pull latest changes first
+git pull origin main
+# Resolve any conflicts if they occur
+# Then push again
+git push origin main
+```
+
+**If you need to see what will be committed:**
+```bash
+git status
+```
+
+For more detailed instructions, see `GIT_PUSH_INSTRUCTIONS.md`.
+
 # iss-yemen
 ISS Yemen Web Application built by Beta Blockers

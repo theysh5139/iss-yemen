@@ -2,7 +2,6 @@ import { useState, useEffect } from "react"
 import HODCard from "../components/HODCard.jsx"
 import HODModal from "../components/HODModal.jsx"
 import EventRegistrationModal from "../components/EventRegistrationModal.jsx"
-import Chatbot from "../components/Chatbot.jsx"
 import { getHomepageData, getUpcomingEvents } from "../api/events.js"
 import { getHODs } from "../api/hods.js"
 import { useAuth } from "../context/AuthProvider.jsx"
@@ -428,9 +427,6 @@ export default function HomePage() {
         onRegistrationChange={handleModalClose}
         user={user}
       />
-
-      {/* Chatbot Component */}
-      <Chatbot />
     </main>
   )
 }
