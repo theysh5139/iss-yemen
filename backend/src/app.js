@@ -28,7 +28,19 @@ app.use(express.json());
 app.use(cookieParser());
 
 const corsOptions = {
-  origin: process.env.CLIENT_BASE_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost on any port
+    if (origin.match(/^http:\/\/localhost:\d+$/)) return callback(null, true);
+    
+    // Allow the configured CLIENT_BASE_URL
+    const allowedOrigin = process.env.CLIENT_BASE_URL;
+    if (allowedOrigin && origin === allowedOrigin) return callback(null, true);
+    
+    return callback(new Error('Not allowed by CORS'));
+  },
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204
