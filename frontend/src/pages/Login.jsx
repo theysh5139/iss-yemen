@@ -53,8 +53,8 @@ export default function Login() {
       if (res.user.role === "admin") {
         navigate("/admin/dashboard", { replace: true })
       } else {
-        // Member accounts go to homepage
-        navigate("/", { replace: true })
+        // Test member account goes to dashboard
+        navigate("/dashboard", { replace: true })
       }
       return
     }

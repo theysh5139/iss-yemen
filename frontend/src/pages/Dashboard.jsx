@@ -15,9 +15,6 @@ export default function Dashboard() {
   useEffect(() => {
     if (user?.role === 'admin') {
       navigate("/admin/dashboard", { replace: true })
-    } else if (user?.role === 'member') {
-      // Redirect members to profile page
-      navigate("/profile", { replace: true })
     }
   }, [user, navigate])
   const [registeredEvents, setRegisteredEvents] = useState([])

@@ -54,9 +54,9 @@ router.delete('/events/:id', deleteEvent);
 
 
 // Payment Verification 
-router.get('/payments', verifyPayments);
-router.patch('/payments/:eventId/:registrationIndex/approve', approvePayment);
-router.patch('/payments/:eventId/:registrationIndex/reject', rejectPayment);
+router.get('/payments/verify', verifyPayments);
+router.post('/payments/:eventId/:registrationIndex/approve', approvePayment);
+router.post('/payments/:eventId/:registrationIndex/reject', rejectPayment);
 
 // Email Configuration
 router.get('/email-config', getEmailConfig);

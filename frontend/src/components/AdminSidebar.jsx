@@ -25,16 +25,15 @@ export default function AdminSidebar({ user, onLogout, isOpen, onClose }) {
     setActiveMenu(activeMenu === item.id ? null : item.id)
     if (item.path) {
       navigate(item.path)
-      // Sidebar stays open after navigation to keep the selected item visible
+      // Close sidebar on mobile after navigation
+      if (window.innerWidth <= 1024 && onClose) {
+        onClose()
+      }
     }
   }
 
   const currentPath = location.pathname
-  // Find active item - match by exact path or path prefix (for nested routes)
-  // Sort by path length (longest first) to match more specific paths first
-  const activeItem = [...menuItems]
-    .sort((a, b) => b.path.length - a.path.length)
-    .find(item => currentPath === item.path || currentPath.startsWith(item.path + '/'))
+  const activeItem = menuItems.find(item => currentPath.startsWith(item.path))
 
   return (
     <aside className={`admin-sidebar ${isOpen ? 'open' : ''}`}>

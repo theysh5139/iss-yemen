@@ -13,7 +13,6 @@
     "create-test-member": "node src/scripts/create-test-member.js",
     "seed-events": "node src/scripts/seed-events.js",
     "seed-registrations": "node src/scripts/seed-registrations.js",
-    "seed-chat-rules": "node src/scripts/seed-chat-rules.js",
     "configure-email": "node src/scripts/configure-email.js"
   },
   "dependencies": {

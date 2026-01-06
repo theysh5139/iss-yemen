@@ -61,59 +61,23 @@ export default function Chatbot() {
     }
   };
 
-  const handleFAQClick = async (faq) => {
-    // Clear existing messages and show FAQ question as user message
-    setMessages([{ type: "user", content: faq.keyword }]);
-    setLoading(true);
-    
-    try {
-      const response = await sendChatMessage(faq.keyword);
-      setMessages([
-        { type: "user", content: faq.keyword },
-        {
-          type: "bot",
-          content: response.response,
-          suggestions: response.suggestions || [],
-          matched: response.matched
-        }
-      ]);
-    } catch (err) {
-      setMessages([
-        { type: "user", content: faq.keyword },
-        {
-          type: "bot",
-          content: "Sorry, I'm having trouble connecting. Please try again later.",
-          error: true
-        }
-      ]);
-    } finally {
-      setLoading(false);
-    }
+  const handleFAQClick = (faq) => {
+    setInput(faq.keyword);
+    // Auto-send the FAQ question
+    setTimeout(() => {
+      const fakeEvent = { preventDefault: () => {} };
+      setInput(faq.keyword);
+      handleSend(fakeEvent);
+    }, 100);
   };
 
-  const handleSuggestionClick = async (suggestion) => {
-    // Add suggestion as user message and get response
-    const userMessage = suggestion;
-    setMessages(prev => [...prev, { type: "user", content: userMessage }]);
-    setLoading(true);
-    
-    try {
-      const response = await sendChatMessage(userMessage);
-      setMessages(prev => [...prev, {
-        type: "bot",
-        content: response.response,
-        suggestions: response.suggestions || [],
-        matched: response.matched
-      }]);
-    } catch (err) {
-      setMessages(prev => [...prev, {
-        type: "bot",
-        content: "Sorry, I'm having trouble connecting. Please try again later.",
-        error: true
-      }]);
-    } finally {
-      setLoading(false);
-    }
+  const handleSuggestionClick = (suggestion) => {
+    setInput(suggestion);
+    setTimeout(() => {
+      const fakeEvent = { preventDefault: () => {} };
+      setInput(suggestion);
+      handleSend(fakeEvent);
+    }, 100);
   };
 
   return (
@@ -132,7 +96,7 @@ export default function Chatbot() {
         <div className="chatbot-window">
           <div className="chatbot-header">
             <div className="chatbot-header-content">
-              <h3 className="chatbot-title">ISS Yemen AI Assistant</h3>
+              <h3 className="chatbot-title">ISS Yemen Assistant</h3>
               <p className="chatbot-subtitle">Ask me anything!</p>
             </div>
             <button
@@ -145,26 +109,20 @@ export default function Chatbot() {
           </div>
 
           <div className="chatbot-body">
-            {/* Top FAQs Section - Show exactly 10 FAQs by default */}
-            {messages.length === 0 && (
+            {/* Top FAQs Section */}
+            {messages.length === 0 && faqs.length > 0 && (
               <div className="chatbot-faqs">
                 <h4 className="faq-title">Frequently Asked Questions:</h4>
                 <div className="faq-list">
-                  {faqs.length > 0 ? (
-                    faqs.slice(0, 10).map((faq, index) => (
-                      <button
-                        key={index}
-                        className="faq-item"
-                        onClick={() => handleFAQClick(faq)}
-                      >
-                        {faq.keyword}
-                      </button>
-                    ))
-                  ) : (
-                    <div style={{ padding: '1rem', textAlign: 'center', color: '#64748b' }}>
-                      Loading FAQs...
-                    </div>
-                  )}
+                  {faqs.slice(0, 10).map((faq, index) => (
+                    <button
+                      key={index}
+                      className="faq-item"
+                      onClick={() => handleFAQClick(faq)}
+                    >
+                      {faq.keyword}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
@@ -178,9 +136,7 @@ export default function Chatbot() {
                   </div>
                   {msg.suggestions && msg.suggestions.length > 0 && (
                     <div className="message-suggestions">
-                      <p className="suggestions-label">
-                        {msg.matched === false ? "Here are some questions I can help with:" : "Related questions:"}
-                      </p>
+                      <p className="suggestions-label">Related questions:</p>
                       {msg.suggestions.map((suggestion, idx) => (
                         <button
                           key={idx}
@@ -197,11 +153,7 @@ export default function Chatbot() {
               {loading && (
                 <div className="chatbot-message bot">
                   <div className="message-content">
-                    <span className="typing-indicator">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </span>
+                    <span className="typing-indicator">...</span>
                   </div>
                 </div>
               )}

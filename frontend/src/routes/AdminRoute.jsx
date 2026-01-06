@@ -13,7 +13,7 @@ export default function AdminRoute({ children }) {
   }
 
   if (user.role !== 'admin') {
-    return <Navigate to="/profile" replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   return children

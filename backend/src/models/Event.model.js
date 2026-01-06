@@ -20,8 +20,7 @@ const registrationSchema = new mongoose.Schema({
       default: 'Pending' 
     },
     verifiedAt: { type: Date },
-    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    rejectionReason: { type: String } // Reason for rejection if payment is rejected
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
   }
 }, { _id: false });
 

@@ -129,7 +129,7 @@ export default function VerifyOTP() {
     try {
       const res = await verifyOtpApi({ email, otp })
       setUser(res.user)
-      navigate("/", { replace: true })
+      navigate("/dashboard", { replace: true })
     } catch (err) {
       const errorMessage = err.message || "OTP verification failed"
       setError(errorMessage)

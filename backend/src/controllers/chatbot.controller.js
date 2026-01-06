@@ -52,22 +52,11 @@ function levenshteinDistance(str1, str2) {
 export const createRule = async (req, res) => {
   try {
     const { keyword, response, isFAQ, relatedKeywords, category, priority } = req.body;
-    
-    // Convert relatedKeywords from string to array if needed
-    let keywordsArray = [];
-    if (relatedKeywords) {
-      if (typeof relatedKeywords === 'string') {
-        keywordsArray = relatedKeywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
-      } else if (Array.isArray(relatedKeywords)) {
-        keywordsArray = relatedKeywords;
-      }
-    }
-    
     const newRule = new ChatRule({ 
       keyword, 
       response, 
       isFAQ: isFAQ || false,
-      relatedKeywords: keywordsArray,
+      relatedKeywords: relatedKeywords || [],
       category: category || 'general',
       priority: priority || 0
     });
@@ -83,33 +72,17 @@ export const updateRule = async (req, res) => {
   try {
     const { id } = req.params;
     const { keyword, response, isFAQ, relatedKeywords, category, priority } = req.body;
-    
-    // Convert relatedKeywords from string to array if needed
-    let keywordsArray = [];
-    if (relatedKeywords !== undefined) {
-      if (typeof relatedKeywords === 'string') {
-        keywordsArray = relatedKeywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
-      } else if (Array.isArray(relatedKeywords)) {
-        keywordsArray = relatedKeywords;
-      }
-    }
-    
-    const updateData = { 
-      keyword, 
-      response, 
-      isFAQ,
-      category,
-      priority,
-      updatedAt: new Date()
-    };
-    
-    if (relatedKeywords !== undefined) {
-      updateData.relatedKeywords = keywordsArray;
-    }
-    
     const updatedRule = await ChatRule.findByIdAndUpdate(
       id,
-      updateData,
+      { 
+        keyword, 
+        response, 
+        isFAQ,
+        relatedKeywords,
+        category,
+        priority,
+        updatedAt: new Date()
+      },
       { new: true, runValidators: true }
     );
     if (!updatedRule) {
@@ -211,24 +184,18 @@ export const handleChat = async (req, res) => {
 
     // 3. If match found, return response with related suggestions
     if (rule) {
-      // Get 3-5 random FAQs from top 10 (excluding current matched rule)
-      const topFAQs = await ChatRule.find({ isFAQ: true })
-        .sort({ priority: -1 })
-        .limit(10)
-        .select('keyword _id');
-      
-      // Filter out the current matched rule
-      const availableFAQs = topFAQs.filter(faq => faq._id.toString() !== rule._id.toString());
-      
-      // Shuffle and get 3-5 random FAQs
-      const shuffled = availableFAQs.sort(() => Math.random() - 0.5);
-      const count = Math.min(Math.max(3, Math.floor(Math.random() * 3) + 3), shuffled.length); // 3-5 FAQs
-      const randomFAQs = shuffled.slice(0, count);
+      // Get related questions from same category
+      const relatedQuestions = await ChatRule.find({
+        category: rule.category,
+        _id: { $ne: rule._id }
+      })
+        .limit(3)
+        .select('keyword');
 
       return res.json({
         response: rule.response,
         matched: true,
-        suggestions: randomFAQs.map(q => q.keyword),
+        suggestions: relatedQuestions.map(q => q.keyword),
         source: 'rule'
       });
     }
@@ -259,21 +226,16 @@ Provide a helpful, concise answer (2-3 sentences max). If the question is about 
         const result = await model.generateContent(prompt);
         const aiResponse = result.response.text();
 
-        // Get 3-5 random FAQs from top 10
+        // Get fallback suggestions
         const topFAQs = await ChatRule.find({ isFAQ: true })
           .sort({ priority: -1 })
-          .limit(10)
+          .limit(5)
           .select('keyword');
-        
-        // Shuffle and get 3-5 random FAQs
-        const shuffled = topFAQs.sort(() => Math.random() - 0.5);
-        const count = Math.min(Math.max(3, Math.floor(Math.random() * 3) + 3), shuffled.length); // 3-5 FAQs
-        const randomFAQs = shuffled.slice(0, count);
 
         return res.json({
           response: aiResponse,
           matched: false,
-          suggestions: randomFAQs.map(f => f.keyword),
+          suggestions: topFAQs.map(f => f.keyword),
           source: 'gemini-ai',
           fallback: false
         });
@@ -283,24 +245,36 @@ Provide a helpful, concise answer (2-3 sentences max). If the question is about 
       }
     }
 
-    // 5. No match and no AI - provide fallback suggestions (3-5 random FAQs from top 10)
+    // 5. No match and no AI - provide fallback suggestions
     const topFAQs = await ChatRule.find({ isFAQ: true })
       .sort({ priority: -1 })
-      .limit(10)
+      .limit(5)
+      .select('keyword category');
+
+    const words = userMessage.split(/\s+/).filter(w => w.length > 2);
+    const wordBasedSuggestions = await ChatRule.find({
+      $or: [
+        { keyword: { $regex: new RegExp(words.join('|'), 'i') } },
+        { relatedKeywords: { $in: words } }
+      ]
+    })
+      .limit(3)
       .select('keyword');
-    
-    // Shuffle and get 3-5 random FAQs
-    const shuffled = topFAQs.sort(() => Math.random() - 0.5);
-    const count = Math.min(Math.max(3, Math.floor(Math.random() * 3) + 3), shuffled.length); // 3-5 FAQs
-    const randomFAQs = shuffled.slice(0, count);
+
+    const allSuggestions = [
+      ...topFAQs.map(f => f.keyword),
+      ...wordBasedSuggestions.map(s => s.keyword)
+    ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 5);
 
     return res.json({
       response: "I'm sorry, I don't understand that yet. Here are some questions I can help with:",
       matched: false,
-      suggestions: randomFAQs.length > 0 ? randomFAQs.map(f => f.keyword) : [
-        "How do I register for an event?",
-        "How do I become a member of the ISS Yemen club?",
-        "What are the upcoming events?"
+      suggestions: allSuggestions.length > 0 ? allSuggestions : [
+        "What is ISS Yemen?",
+        "How do I register for events?",
+        "How do I become a member?",
+        "What are the upcoming events?",
+        "How do I contact the admin?"
       ],
       source: 'fallback',
       fallback: true

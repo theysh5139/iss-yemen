@@ -61,11 +61,6 @@ export const resendOtpSchema = Joi.object({
   email: Joi.string().email().required()
 });
 
-export const updateProfileSchema = Joi.object({
-  name: Joi.string().min(2).max(80).optional().allow(''),
-  email: Joi.string().email().optional()
-});
-
 export const createAnnouncementSchema = Joi.object({
   title: Joi.string().min(3).max(200).required(),
   description: Joi.string().min(10).required(),

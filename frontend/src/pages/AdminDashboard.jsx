@@ -5,7 +5,6 @@ import { getUpcomingEvents, getEvents } from "../api/events.js"
 import { getAdminStats, getAllAnnouncements } from "../api/admin.js"
 import { useNavigate } from "react-router-dom"
 import AdminSidebar from "../components/AdminSidebar.jsx"
-import AdminHeaderIcons from "../components/AdminHeaderIcons.jsx"
 import "../styles/admin-dashboard.css"
 
 export default function AdminDashboard() {
@@ -143,7 +142,12 @@ export default function AdminDashboard() {
               <span>Dashboard</span>
             </div>
           </div>
-          <AdminHeaderIcons user={user} />
+          <div className="header-icons">
+            <button className="icon-btn" aria-label="Notifications">🔔</button>
+            <button className="icon-btn" aria-label="Settings">⚙️</button>
+            <button className="icon-btn" aria-label="Search">🔍</button>
+            <button className="icon-btn" aria-label="Profile">👤</button>
+          </div>
         </header>
 
         {/* Main Content */}

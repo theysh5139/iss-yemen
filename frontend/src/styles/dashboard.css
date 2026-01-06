@@ -101,13 +101,6 @@
   padding: 1.75rem;
   border-left: 4px solid #4a6fa5;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  /* Remove hover effect to prevent interference with button clicks */
-}
-
-.user-info-card.card-3d:hover,
-.user-info-card:hover {
-  transform: none;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .user-info-card h3 {
@@ -187,7 +180,9 @@
 }
 
 .event-item:hover {
-  /* Hover effect removed */
+  border-color: #0b6b63;
+  transform: translateX(5px) translateY(-3px);
+  box-shadow: 0 8px 20px rgba(11, 107, 99, 0.15);
 }
 
 .event-item-header {

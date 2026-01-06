@@ -57,9 +57,10 @@ const MainLayout = () => (
   </>
 )
 
-// 3️⃣ Admin Layout (No Chatbot)
+// 3️⃣ Admin Layout (Chatbot only)
 const AdminLayout = () => (
   <>
+    <Chatbot />
     <Outlet />
   </>
 )
