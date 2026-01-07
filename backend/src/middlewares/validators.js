@@ -21,7 +21,7 @@ export const signupSchema = Joi.object({
     .message('Password must include upper, lower, and a digit')
     .required(),
   confirmPassword: Joi.any().valid(Joi.ref('password')).required().messages({ 'any.only': 'Passwords must match' }),
-  role: Joi.string().valid('visitor', 'member').optional()
+  role: Joi.string().valid('member', 'admin').optional()
 });
 
 export const loginSchema = Joi.object({

@@ -42,7 +42,14 @@
       try {
         setLoading(true)
         const res = await getAllEvents()
-        if (res.events) setEvents(res.events)
+        if (res.events) {
+          // Filter out announcements, activities, and news - only show actual events
+          // Backend should already filter, but double-check on frontend
+          const eventsOnly = res.events.filter(event => 
+            event.type === 'event' && event.category !== 'News'
+          )
+          setEvents(eventsOnly)
+        }
       } catch (err) {
         console.error("Failed to fetch events:", err)
       } finally {
@@ -78,7 +85,7 @@
     schedule: event.schedule || "",
     isRecurring: event.isRecurring || false,
     isPublic: event.isPublic !== undefined ? event.isPublic : true,
-    fee: event.fee || 0,           // <-- use fee from backend
+    fee: event.fee || event.paymentAmount || 0,  // Use fee, fallback to paymentAmount for backward compatibility
     qrFile: null,                   // keep file empty on edit
     qrPreview: event.qrCodeUrl || "" // <-- show existing QR if available
   })
@@ -220,7 +227,6 @@ if (formData.qrFile) data.append('qrCode', formData.qrFile);
                           <option value="Cultural">Cultural</option>
                           <option value="Academic">Academic</option>
                           <option value="Social">Social</option>
-                          <option value="Activity">Activity</option>
                         </select>
                       </div>
 
@@ -273,7 +279,7 @@ if (formData.qrFile) data.append('qrCode', formData.qrFile);
               )}
 
               <div className="content-section">
-                <h2 className="section-title">All Events and Activities</h2>
+                <h2 className="section-title">All Events</h2>
                 {loading ? (
                   <p>Loading events...</p>
                 ) : events.length > 0 ? (
@@ -290,7 +296,7 @@ if (formData.qrFile) data.append('qrCode', formData.qrFile);
                             <span>📅 {formatDate(event.date)}</span>
                             <span>📍 {event.location}</span>
                             <span className="badge">{event.category}</span>
-                            <span>💲 Fee: {event.fee > 0 ? `${event.fee} RM` : 'Free'}</span>
+                            <span>💲 Fee: {event.requiresPayment && event.paymentAmount > 0 ? `${event.paymentAmount} RM` : 'Free'}</span>
                             {event.registeredUsers && <span>👥 {event.registeredUsers.length} registered</span>}
                           </div>
                           {event.qrCodeUrl && (

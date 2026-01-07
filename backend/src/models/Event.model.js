@@ -36,6 +36,7 @@ const eventSchema = new mongoose.Schema(
     price: { type: Number, default: 0 }, // Event registration fee
     fee: { type: Number, default: 0 }, // Alternative fee field for compatibility
     qrCodeUrl: { type: String }, // URL to QR code for payment
+    imageUrl: { type: String }, // URL to image for news/announcements/activities
     maxAttendees: { type: Number },
     attendees: { type: Number, default: 0 },
     registeredUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

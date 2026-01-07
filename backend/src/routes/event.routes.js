@@ -22,9 +22,9 @@ router.get('/type/:type', optionalAuth, getEventsByType);
 router.get('/', optionalAuth, getEvents);
 router.get('/:id', optionalAuth, getEventById);
 
-// Protected routes (members only - member role only, not admin)
-router.post('/:id/register', authenticate, requireRole('member'), uploadReceipt.single('receipt'), registerForEvent);
-router.post('/:id/unregister', authenticate, requireRole('member'), unregisterFromEvent);
+// Protected routes (any logged-in user can register)
+router.post('/:id/register', authenticate, uploadReceipt.single('receipt'), registerForEvent);
+router.post('/:id/unregister', authenticate, unregisterFromEvent);
 
 export default router;
 

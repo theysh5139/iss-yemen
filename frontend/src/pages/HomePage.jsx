@@ -8,7 +8,7 @@ import { useAuth } from "../context/AuthProvider.jsx"
 import "../styles/home.css"
 
 export default function HomePage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [summary, setSummary] = useState({ news: 0, announcements: 0, activities: 0 })
@@ -21,7 +21,8 @@ export default function HomePage() {
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false)
 
-  const isMember = user && (user.role === 'member' || user.role === 'admin')
+  // Check if user is member or admin - more robust check
+  const isMember = user && user.role && (user.role === 'member' || user.role === 'admin')
 
   useEffect(() => {
     async function fetchData() {
@@ -29,18 +30,29 @@ export default function HomePage() {
         setLoading(true)
         const [homepageData, eventsData, hodsData] = await Promise.all([
           getHomepageData(),
-          isMember ? getUpcomingEvents() : Promise.resolve({ events: [] }),
+          (user && (user.role === 'member' || user.role === 'admin')) ? getUpcomingEvents() : Promise.resolve({ events: [] }),
           getHODs().catch(() => ({ hods: [] })) // Fetch HODs for all users (members and visitors)
         ])
         
         setSummary(homepageData.summary || { news: 0, announcements: 0, activities: 0 })
-        setLatestNewsAndAnnouncements(homepageData.latestNewsAndAnnouncements || [])
+        const newsAndAnnouncements = homepageData.latestNewsAndAnnouncements || []
+        // Log to verify imageUrl is present in the data
+        console.log('News and Announcements with images:', newsAndAnnouncements.map(item => ({
+          title: item.title,
+          imageUrl: item.imageUrl,
+          fullImageUrl: item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${item.imageUrl}`) : null
+        })))
+        setLatestNewsAndAnnouncements(newsAndAnnouncements)
         setRegularActivities(homepageData.regularActivities || [])
         
         if (eventsData.events) {
-          setUpcomingEvents(eventsData.events)
+          // Filter out announcements, activities, and news - only show actual events
+          const eventsOnly = eventsData.events.filter(event => 
+            event.type === 'event' && event.category !== 'News'
+          )
+          setUpcomingEvents(eventsOnly)
           // Filter events where user is registered
-          const registered = eventsData.events.filter(event => 
+          const registered = eventsOnly.filter(event => 
             event.registeredUsers?.some(regUser => 
               typeof regUser === 'object' ? regUser._id === user?.id : regUser === user?.id
             )
@@ -93,8 +105,12 @@ export default function HomePage() {
     // Refresh events after registration changes
     const eventsData = await getUpcomingEvents()
     if (eventsData.events) {
-      setUpcomingEvents(eventsData.events)
-      const registered = eventsData.events.filter(event => 
+      // Filter out announcements, activities, and news - only show actual events
+      const eventsOnly = eventsData.events.filter(event => 
+        event.type === 'event' && event.category !== 'News'
+      )
+      setUpcomingEvents(eventsOnly)
+      const registered = eventsOnly.filter(event => 
         event.registeredUsers?.some(regUser => 
           typeof regUser === 'object' ? regUser._id === user?.id : regUser === user?.id
         )
@@ -109,7 +125,7 @@ export default function HomePage() {
     )
   }
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <main className="page home-page">
         <div className="loading-container">
@@ -138,7 +154,7 @@ export default function HomePage() {
           <h1 className="hero-title">Welcome to ISS Yemen</h1>
           <p className="hero-subtitle">Your central hub for news, events and activities for Yemeni students at UTM.</p>
           <div className="hero-actions">
-            {isMember ? (
+            {user && user.role === 'member' ? (
               <>
                 <a className="btn btn-primary btn-3d" href="/all-events">Join Events</a>
                 <button 
@@ -148,9 +164,28 @@ export default function HomePage() {
                   View HOD profiles
                 </button>
               </>
+            ) : user && user.role === 'admin' ? (
+              <>
+                {upcomingEvents.length > 0 ? (
+                  <button 
+                    className="btn btn-primary btn-3d" 
+                    onClick={() => handleEventClick(upcomingEvents[0])}
+                  >
+                    Join Event
+                  </button>
+                ) : (
+                  <a className="btn btn-primary btn-3d" href="/all-events">Join Event</a>
+                )}
+                <button 
+                  className="btn btn-secondary btn-3d" 
+                  onClick={() => setShowHODModal(true)}
+                >
+                  View HOD profiles
+                </button>
+              </>
             ) : (
               <>
-                <a className="btn btn-primary btn-3d" href="/events">View upcoming events</a>
+                <a className="btn btn-primary btn-3d" href="/all-events?filter=upcoming">View Upcoming Events</a>
                 <button 
                   className="btn btn-secondary btn-3d" 
                   onClick={() => setShowHODModal(true)}
@@ -178,8 +213,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Registered Events Section (Members Only) */}
-      {isMember && registeredEvents.length > 0 && (
+      {/* Registered Events Section - Visible for all logged-in users */}
+      {user && registeredEvents.length > 0 && (
         <section className="registered-events-section">
           <div className="section-card card-3d">
             <div className="section-header">
@@ -251,8 +286,8 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Upcoming Events Section (Members Only) */}
-      {isMember && upcomingEvents.length > 0 && (
+      {/* Upcoming Events Section - Visible for all logged-in users */}
+      {user && upcomingEvents.length > 0 && (
         <section className="upcoming-events-section">
           <div className="section-card card-3d">
             <div className="section-header">
@@ -263,7 +298,7 @@ export default function HomePage() {
               Register for events directly from this section. Click "Join Event" on any event below to register.
             </p>
             <div className="events-grid">
-              {upcomingEvents.map(event => {
+              {upcomingEvents.slice(0, 4).map(event => {
                 const registered = isRegistered(event)
                 return (
                   <div 
@@ -277,14 +312,14 @@ export default function HomePage() {
                     <div className="event-details">
                       <p className="event-date">📅 {formatDate(event.date)}</p>
                       <p className="event-location">📍 {event.location}</p>
-                      {event.requiresPayment && event.paymentAmount > 0 && (
+                      {((event.requiresPayment && event.paymentAmount > 0) || (event.fee && event.fee > 0)) && (
                         <p className="event-payment" style={{ 
                           color: '#856404', 
                           fontWeight: '600',
                           marginTop: '0.5rem',
                           fontSize: '0.9rem'
                         }}>
-                          💰 Payment Required: RM {event.paymentAmount.toFixed(2)}
+                          💰 Payment Required: RM {(event.paymentAmount || event.fee || 0).toFixed(2)}
                         </p>
                       )}
                     </div>
@@ -301,25 +336,17 @@ export default function HomePage() {
                           View Details / Unregister
                         </button>
                       ) : (
-                        <button
-                          type="button"
+                        <a
+                          href={`/all-events?event=${event._id}`}
                           className="btn btn-primary btn-3d"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            console.log('Join Event button clicked!', event)
-                            if (event && event._id) {
-                              handleEventClick(event)
-                            } else {
-                              console.error('Event is invalid:', event)
-                              alert('Error: Event data is missing. Please refresh the page.')
-                            }
+                          style={{ 
+                            textDecoration: 'none',
+                            display: 'inline-block',
+                            textAlign: 'center'
                           }}
-                          style={{ cursor: 'pointer', pointerEvents: 'auto' }}
-                          disabled={!event || !event._id}
                         >
                           Join Event
-                        </button>
+                        </a>
                       )}
                     </div>
                   </div>
@@ -343,6 +370,28 @@ export default function HomePage() {
               <div className="news-list">
                 {latestNewsAndAnnouncements.map(item => (
                   <article key={item._id} className="news-item card-3d">
+                    {item.imageUrl && (
+                      <div className="news-image-container">
+                        <img 
+                          src={item.imageUrl.startsWith('http') ? item.imageUrl : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${item.imageUrl}`}
+                          alt={item.title} 
+                          className="news-image"
+                          loading="lazy"
+                          onError={(e) => {
+                            const attemptedUrl = item.imageUrl.startsWith('http') ? item.imageUrl : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${item.imageUrl}`;
+                            console.error('Image failed to load:', {
+                              originalUrl: item.imageUrl,
+                              attemptedUrl: attemptedUrl,
+                              itemTitle: item.title
+                            });
+                            e.target.style.display = 'none';
+                          }}
+                          onLoad={() => {
+                            console.log('✅ Image loaded successfully:', item.imageUrl);
+                          }}
+                        />
+                      </div>
+                    )}
                     <div className="news-header">
                       <h3 className="news-title">{item.title}</h3>
                       <span className="news-badge">{item.type === 'announcement' ? 'Announcement' : item.category}</span>

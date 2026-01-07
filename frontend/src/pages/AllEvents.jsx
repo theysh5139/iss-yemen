@@ -15,18 +15,59 @@ export default function AllEvents() {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const isMember = user && user.role === 'member'
+  const isLoggedIn = !!user // Check if user is logged in (any role)
 
   useEffect(() => {
     fetchEvents()
-  }, [])
+    // Check if URL has filter parameter (for visitors coming from homepage)
+    const urlParams = new URLSearchParams(window.location.search)
+    const filterParam = urlParams.get('filter')
+    const eventIdParam = urlParams.get('event')
+    
+    if (filterParam && ['all', 'upcoming', 'past'].includes(filterParam)) {
+      setFilter(filterParam)
+    } else if (!isMember) {
+      // For visitors, default to "upcoming" if no filter specified
+      setFilter("upcoming")
+    }
+    
+  }, [isMember])
+
+  // Scroll to event if event ID is in URL (after events are loaded)
+  useEffect(() => {
+    if (events.length > 0 && !loading) {
+      const urlParams = new URLSearchParams(window.location.search)
+      const eventIdParam = urlParams.get('event')
+      
+      if (eventIdParam) {
+        setTimeout(() => {
+          const eventElement = document.getElementById(`event-${eventIdParam}`)
+          if (eventElement) {
+            eventElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            eventElement.style.border = '2px solid #1e3a8a'
+            eventElement.style.boxShadow = '0 0 20px rgba(30, 58, 138, 0.3)'
+            setTimeout(() => {
+              eventElement.style.border = ''
+              eventElement.style.boxShadow = ''
+            }, 3000)
+          }
+        }, 300)
+      }
+    }
+  }, [events, loading])
 
   async function fetchEvents() {
     try {
       setLoading(true)
       const res = await getEvents()
       if (res.events) {
+        // Filter out announcements, activities, and news - only show actual events
+        // Backend should already filter, but double-check on frontend
+        const eventsOnly = res.events.filter(event => 
+          event.type === 'event' && event.category !== 'News'
+        )
         // Sort by date (upcoming first)
-        const sorted = res.events.sort((a, b) => new Date(a.date) - new Date(b.date))
+        const sorted = eventsOnly.sort((a, b) => new Date(a.date) - new Date(b.date))
         setEvents(sorted)
       }
     } catch (err) {
@@ -88,10 +129,15 @@ export default function AllEvents() {
 
   const now = new Date()
   const filteredEvents = events.filter(event => {
+    // Skip cancelled events
+    if (event.cancelled) return false
+    
     const eventDate = new Date(event.date)
-    if (filter === "upcoming") return eventDate >= now && !event.cancelled
+    
+    // Apply filter for both visitors and members
+    if (filter === "upcoming") return eventDate >= now
     if (filter === "past") return eventDate < now
-    return !event.cancelled
+    return true // Show all for "all" filter
   })
 
   if (loading) {
@@ -122,7 +168,7 @@ export default function AllEvents() {
         <p className="page-subtitle">Join events and activities organized by ISS Yemen</p>
       </div>
 
-      {/* Filter Tabs */}
+      {/* Filter Tabs - Show for both visitors and members */}
       <div className="events-filter-tabs">
         <button
           className={`filter-tab ${filter === "all" ? "active" : ""}`}
@@ -154,9 +200,10 @@ export default function AllEvents() {
 
             return (
               <div 
+                id={`event-${event._id}`}
                 key={event._id} 
                 className={`event-card-large card-3d ${event.cancelled ? "cancelled" : ""}`}
-                style={{ position: 'relative' }}
+                style={{ position: 'relative', scrollMarginTop: '100px' }}
               >
                 <div className="event-card-header">
                   <div className="event-title-section">
@@ -190,16 +237,16 @@ export default function AllEvents() {
                     <span className="detail-icon">📍</span>
                     <span>{event.location}</span>
                   </div>
-                  {event.requiresPayment && event.paymentAmount > 0 && (
+                  {((event.requiresPayment && event.paymentAmount > 0) || (event.fee && event.fee > 0)) && (
                     <div className="event-detail-item" style={{ 
                       color: '#856404', 
                       fontWeight: '600'
                     }}>
                       <span className="detail-icon">💰</span>
-                      <span>RM {event.paymentAmount.toFixed(2)}</span>
+                      <span>RM {(event.paymentAmount || event.fee || 0).toFixed(2)}</span>
                     </div>
                   )}
-                  {!event.requiresPayment || event.paymentAmount === 0 ? (
+                  {(!event.requiresPayment && (!event.paymentAmount || event.paymentAmount === 0) && (!event.fee || event.fee === 0)) && (
                     <div className="event-detail-item" style={{ 
                       color: '#28a745', 
                       fontWeight: '600'
@@ -207,7 +254,7 @@ export default function AllEvents() {
                       <span className="detail-icon">🆓</span>
                       <span>Free</span>
                     </div>
-                  ) : null}
+                  )}
                   {event.registeredUsers && (
                     <div className="event-detail-item">
                       <span className="detail-icon">👥</span>
@@ -220,7 +267,7 @@ export default function AllEvents() {
 
                 {!event.cancelled && (
                   <div className="event-actions">
-                    {isMember ? (
+                    {isLoggedIn ? (
                       registered ? (
                         <button
                           className="btn btn-secondary btn-3d"

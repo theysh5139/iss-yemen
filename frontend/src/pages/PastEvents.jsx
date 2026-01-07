@@ -1,16 +1,27 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { getPastEvents } from "../api/events.js"
+import { useAuth } from "../context/AuthProvider.jsx"
 import "../styles/past-events.css"
 
 export default function PastEvents() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const [events, setEvents] = useState([])
   const [filteredEvents, setFilteredEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [categoryFilter, setCategoryFilter] = useState("All")
   const [dateFilter, setDateFilter] = useState("All")
+
+  // Redirect members to all-events page (past events timeline is only for visitors)
+  useEffect(() => {
+    if (user && (user.role === 'member' || user.role === 'admin')) {
+      navigate("/all-events", { replace: true })
+    }
+  }, [user, navigate])
 
 
   useEffect(() => {
@@ -19,7 +30,12 @@ export default function PastEvents() {
         setLoading(true)
         const res = await getPastEvents()
         if (res.events) {
-          const sortedEvents = res.events.sort((a, b) => new Date(b.date) - new Date(a.date))
+          // Filter out announcements, activities, and news - only show actual events
+          // Backend should already filter, but double-check on frontend
+          const eventsOnly = res.events.filter(event => 
+            event.type === 'event' && event.category !== 'News'
+          )
+          const sortedEvents = eventsOnly.sort((a, b) => new Date(b.date) - new Date(a.date))
           setEvents(sortedEvents)
           setFilteredEvents(sortedEvents)
         }

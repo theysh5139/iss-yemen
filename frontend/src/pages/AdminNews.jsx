@@ -23,6 +23,8 @@ export default function AdminNews() {
     category: "Announcement",
     isPublic: true
   })
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState("")
 
   useEffect(() => {
     if (user?.role !== 'admin') {
@@ -47,11 +49,16 @@ export default function AdminNews() {
   }
 
   function handleInputChange(e) {
-    const { name, value, type, checked } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }))
+    const { name, value, type, checked, files } = e.target
+    if (type === 'file' && files && files[0]) {
+      setImageFile(files[0])
+      setImagePreview(URL.createObjectURL(files[0]))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }))
+    }
   }
 
   function handleEdit(announcement) {
@@ -64,6 +71,8 @@ export default function AdminNews() {
       category: announcement.category || "Announcement",
       isPublic: announcement.isPublic !== undefined ? announcement.isPublic : true
     })
+    setImageFile(null)
+    setImagePreview(announcement.imageUrl || "")
     setShowForm(true)
   }
 
@@ -78,15 +87,28 @@ export default function AdminNews() {
       category: "Announcement",
       isPublic: true
     })
+    setImageFile(null)
+    setImagePreview("")
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     try {
-      const data = {
-        ...formData,
-        date: formData.date ? new Date(formData.date) : new Date(),
-        type: 'announcement'
+      // If category is "News", set type to 'event' so it's counted in news counter
+      // Otherwise, set type to 'announcement'
+      const eventType = formData.category === 'News' ? 'event' : 'announcement'
+      
+      const data = new FormData()
+      data.append('title', formData.title)
+      data.append('description', formData.description)
+      data.append('date', formData.date ? new Date(formData.date).toISOString() : new Date().toISOString())
+      data.append('location', formData.location || '')
+      data.append('category', formData.category)
+      data.append('type', eventType)
+      data.append('isPublic', formData.isPublic)
+      
+      if (imageFile) {
+        data.append('image', imageFile)
       }
 
       if (editingId) {
@@ -239,7 +261,6 @@ export default function AdminNews() {
                       >
                         <option value="Announcement">Announcement</option>
                         <option value="News">News</option>
-                        <option value="Activity">Activity</option>
                       </select>
                     </div>
 
@@ -254,6 +275,31 @@ export default function AdminNews() {
                         Public (visible to visitors)
                       </label>
                     </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Image (Optional)</label>
+                    <input
+                      type="file"
+                      name="image"
+                      accept="image/*"
+                      onChange={handleInputChange}
+                      className="form-input"
+                    />
+                    {(imagePreview || imageFile) && (
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <img 
+                          src={imagePreview} 
+                          alt="Preview" 
+                          style={{ 
+                            maxWidth: '300px', 
+                            maxHeight: '200px', 
+                            borderRadius: '8px',
+                            border: '1px solid #ddd'
+                          }} 
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="form-actions">
