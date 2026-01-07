@@ -148,7 +148,6 @@ export default function AdminManageUsers() {
                           className="role-select"
                           disabled={u.id === user?.id || u._id === user?.id}
                         >
-                          <option value="visitor">Visitor</option>
                           <option value="member">Member</option>
                           <option value="admin">Admin</option>
                         </select>

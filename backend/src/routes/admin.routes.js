@@ -14,6 +14,7 @@ import {
   cancelEvent,
   deleteEvent,
   getAllEvents,
+  syncEventPaymentFields,
   verifyPayments,
   approvePayment,
   rejectPayment
@@ -21,6 +22,7 @@ import {
 import { getEmailConfig, saveEmailConfig, testEmailConfig } from '../controllers/emailConfig.controller.js';
 import { authenticate, requireRole } from '../middlewares/auth.middleware.js';
 import { validateBody, createAnnouncementSchema, updateAnnouncementSchema, createEventSchema, updateEventSchema } from '../middlewares/validators.js';
+import { uploadImage } from '../middlewares/uploadImage.middleware.js';
 
 const router = Router();
 
@@ -39,8 +41,8 @@ router.delete('/users/:id', deleteUser);
 
 // Announcement Management
 router.get('/announcements', getAllAnnouncements);
-router.post('/announcements', validateBody(createAnnouncementSchema), createAnnouncement);
-router.patch('/announcements/:id', validateBody(updateAnnouncementSchema), updateAnnouncement);
+router.post('/announcements', uploadImage.single('image'), validateBody(createAnnouncementSchema), createAnnouncement);
+router.patch('/announcements/:id', uploadImage.single('image'), validateBody(updateAnnouncementSchema), updateAnnouncement);
 router.delete('/announcements/:id', deleteAnnouncement);
 
 // Event Management
@@ -51,6 +53,7 @@ router.post('/events', uploadQR.single('qrCode'), validateBody(createEventSchema
 router.patch('/events/:id', uploadQR.single('qrCode'), validateBody(updateEventSchema), updateEvent);
 router.patch('/events/:id/cancel', cancelEvent);
 router.delete('/events/:id', deleteEvent);
+router.post('/events/sync-payment-fields', syncEventPaymentFields);
 
 
 // Payment Verification 

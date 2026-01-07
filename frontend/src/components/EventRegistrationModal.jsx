@@ -105,7 +105,10 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
       setError('Please enter your phone number')
       return
     }
-    if (event.requiresPayment && event.paymentAmount > 0) {
+    const requiresPayment = (event.requiresPayment && event.paymentAmount > 0) || (event.fee && event.fee > 0)
+    const paymentAmount = event.paymentAmount || event.fee || 0
+    
+    if (requiresPayment && paymentAmount > 0) {
       if (!receiptFile) {
         setError('Please upload your payment receipt (PDF or Image)')
         return
@@ -124,7 +127,8 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
       formDataToSend.append('matricNumber', formData.matricNumber.trim())
       formDataToSend.append('phone', formData.phone.trim())
       formDataToSend.append('notes', formData.notes.trim())
-      if (event.requiresPayment && event.paymentAmount > 0) {
+      const requiresPayment = (event.requiresPayment && event.paymentAmount > 0) || (event.fee && event.fee > 0)
+      if (requiresPayment) {
         // Default payment method for QR code / bank transfer
         formDataToSend.append('paymentMethod', 'QR Code / Bank Transfer')
         if (receiptFile) {
@@ -263,7 +267,7 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                 <span className="detail-value">{event.registeredUsers.length} members</span>
               </div>
             )}
-            {event.requiresPayment && event.paymentAmount > 0 && (
+            {((event.requiresPayment && event.paymentAmount > 0) || (event.fee && event.fee > 0)) && (
               <div className="event-detail-row" style={{ 
                 background: '#fff3cd', 
                 padding: '0.75rem', 
@@ -273,7 +277,7 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
               }}>
                 <span className="detail-label">💰 Payment Required:</span>
                 <span className="detail-value" style={{ fontWeight: 'bold', color: '#856404' }}>
-                  RM {event.paymentAmount.toFixed(2)}
+                  RM {(event.paymentAmount || event.fee || 0).toFixed(2)}
                 </span>
               </div>
             )}
@@ -382,7 +386,7 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                 </>
               ) : !showForm ? (
                 <>
-                  {event.requiresPayment && event.paymentAmount > 0 && (
+                  {((event.requiresPayment && event.paymentAmount > 0) || (event.fee && event.fee > 0)) && (
                     <div className="registration-info" style={{ 
                       background: '#e7f3ff', 
                       padding: '1rem', 
@@ -394,7 +398,7 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                         💳 Payment Information
                       </p>
                       <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
-                        This event requires a payment of <strong>RM {event.paymentAmount.toFixed(2)}</strong>.
+                        This event requires a payment of <strong>RM {(event.paymentAmount || event.fee || 0).toFixed(2)}</strong>.
                         A payment receipt will be generated upon registration and will be pending admin verification.
                       </p>
                     </div>
@@ -405,7 +409,7 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                       <li>You will attend the event on the scheduled date and time</li>
                       <li>You understand the event location and requirements</li>
                       <li>You will notify organizers if you cannot attend</li>
-                      {event.requiresPayment && event.paymentAmount > 0 && (
+                      {((event.requiresPayment && event.paymentAmount > 0) || (event.fee && event.fee > 0)) && (
                         <li>You understand that payment verification is required before event participation</li>
                       )}
                     </ul>
@@ -416,8 +420,8 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                       onClick={handleRegister}
                       disabled={registering}
                     >
-                      {event.requiresPayment && event.paymentAmount > 0 
-                        ? `Register & Pay RM ${event.paymentAmount.toFixed(2)}` 
+                      {((event.requiresPayment && event.paymentAmount > 0) || (event.fee && event.fee > 0))
+                        ? `Register & Pay RM ${(event.paymentAmount || event.fee || 0).toFixed(2)}` 
                         : "Register for Event"}
                     </button>
                   </div>
@@ -478,7 +482,7 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                     />
                   </div>
 
-                  {event.requiresPayment && event.paymentAmount > 0 && (
+                  {((event.requiresPayment && event.paymentAmount > 0) || (event.fee && event.fee > 0)) && (
                     <>
                       <div className="payment-summary" style={{
                         background: '#fff3cd',
@@ -489,7 +493,7 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '1rem' }}>
                           <span style={{ fontWeight: '600' }}>Registration Fee:</span>
-                          <strong style={{ fontSize: '1.2rem', color: '#856404' }}>RM {event.paymentAmount.toFixed(2)}</strong>
+                          <strong style={{ fontSize: '1.2rem', color: '#856404' }}>RM {(event.paymentAmount || event.fee || 0).toFixed(2)}</strong>
                         </div>
                       </div>
 
@@ -630,8 +634,8 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                       className="btn btn-primary"
                       disabled={registering}
                     >
-                      {registering ? "Registering..." : event.requiresPayment && event.paymentAmount > 0 
-                        ? `Complete Registration & Pay RM ${event.paymentAmount.toFixed(2)}` 
+                      {registering ? "Registering..." : ((event.requiresPayment && event.paymentAmount > 0) || (event.fee && event.fee > 0))
+                        ? `Complete Registration & Pay RM ${(event.paymentAmount || event.fee || 0).toFixed(2)}` 
                         : "Complete Registration"}
                     </button>
                   </div>

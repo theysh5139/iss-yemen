@@ -1,13 +1,17 @@
 import { Event } from '../models/Event.model.js';
 
-// Get all events (public events for visitors, all for members)
+// Get all events (public events for non-logged-in users, all for logged-in users)
+// Only returns actual events (type === 'event'), excludes announcements, activities, and news
 export async function getEvents(req, res, next) {
   try {
     const userRole = req.user?.role;
-    const query = {};
+    const query = {
+      type: 'event', // Only show actual events, not announcements or activities
+      category: { $ne: 'News' } // Exclude news items (they have type: 'event' but category: 'News')
+    };
 
-    // Visitors can only see public events
-    if (userRole === 'visitor' || !userRole) {
+    // Non-logged-in users can only see public events
+    if (!userRole) {
       query.isPublic = true;
     }
 
@@ -38,8 +42,8 @@ export async function getEventById(req, res, next) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    // Check if visitor can access this event
-    if ((userRole === 'visitor' || !userRole) && !event.isPublic) {
+    // Check if non-logged-in user can access this event
+    if (!userRole && !event.isPublic) {
       return res.status(403).json({ message: 'Access denied. This event is for members only.' });
     }
 
@@ -49,7 +53,7 @@ export async function getEventById(req, res, next) {
   }
 }
 
-// Register for an event (members only)
+// Register for an event (any logged-in user)
 export async function registerForEvent(req, res, next) {
   try {
     const { id } = req.params;
@@ -91,13 +95,17 @@ export async function registerForEvent(req, res, next) {
     // Generate payment receipt if event requires payment
     let receiptData = null;
     let receiptNumber = null;
-    if (event.requiresPayment && event.paymentAmount > 0) {
+    // Check payment requirement: use paymentAmount if set, otherwise fallback to fee
+    const paymentAmount = event.paymentAmount || event.fee || 0;
+    const requiresPayment = (event.requiresPayment && event.paymentAmount > 0) || (event.fee && event.fee > 0);
+    
+    if (requiresPayment && paymentAmount > 0) {
       const { generateReceiptNumber } = await import('../utils/receipt.js');
       receiptNumber = generateReceiptNumber();
       receiptData = {
         receiptNumber: receiptNumber,
         generatedAt: new Date(),
-        amount: event.paymentAmount,
+        amount: paymentAmount,
         paymentMethod: selectedPaymentMethod,
         paymentStatus: 'Pending',
         registrationName: registrationName,
@@ -139,7 +147,7 @@ export async function registerForEvent(req, res, next) {
         receiptNumber: generateReceiptNumber(),
         receiptUrl: receiptUrl,
         generatedAt: new Date(),
-        amount: event.paymentAmount || 0,
+        amount: paymentAmount || 0,
         paymentStatus: 'Pending'
       };
     }
@@ -187,9 +195,13 @@ export async function unregisterFromEvent(req, res, next) {
 export async function getUpcomingEvents(req, res, next) {
   try {
     const userRole = req.user?.role;
-    const query = { date: { $gte: new Date() } };
+    const query = { 
+      date: { $gte: new Date() },
+      type: 'event', // Only show actual events, not announcements or activities
+      category: { $ne: 'News' } // Exclude news items
+    };
 
-    if (userRole === 'visitor' || !userRole) {
+    if (!userRole) {
       query.isPublic = true;
     }
 
@@ -213,7 +225,7 @@ export async function getEventsByType(req, res, next) {
     const userRole = req.user?.role;
     const query = { type };
 
-    if (userRole === 'visitor' || !userRole) {
+    if (!userRole) {
       query.isPublic = true;
     }
 
@@ -229,16 +241,19 @@ export async function getEventsByType(req, res, next) {
 }
 
 // Get past events (chronological timeline)
+// Only returns actual events (type === 'event'), excludes announcements, activities, and news
 export async function getPastEvents(req, res, next) {
   try {
     const userRole = req.user?.role;
     const query = { 
       date: { $lt: new Date() },
-      cancelled: { $ne: true }
+      cancelled: { $ne: true },
+      type: 'event', // Only show actual events, not announcements or activities
+      category: { $ne: 'News' } // Exclude news items
     };
 
-    // Visitors can only see public events
-    if (userRole === 'visitor' || !userRole) {
+    // Non-logged-in users can only see public events
+    if (!userRole) {
       query.isPublic = true;
     }
 
@@ -257,7 +272,7 @@ export async function getPastEvents(req, res, next) {
 export async function getHomepageData(req, res, next) {
   try {
     const userRole = req.user?.role;
-    const publicQuery = userRole === 'visitor' || !userRole ? { isPublic: true } : {};
+    const publicQuery = !userRole ? { isPublic: true } : {};
 
     const [news, announcements, activities, upcomingEvents] = await Promise.all([
       Event.countDocuments({ type: 'event', category: 'News', ...publicQuery }),

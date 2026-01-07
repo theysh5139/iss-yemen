@@ -65,7 +65,9 @@ export default function AdminDashboard() {
       }
       
       if (eventsData?.events) {
-        setUpcomingEvents(eventsData.events.slice(0, 5))
+        // Filter out announcements - they should not appear in upcoming events
+        const eventsOnly = eventsData.events.filter(event => event.type !== 'announcement')
+        setUpcomingEvents(eventsOnly.slice(0, 5))
       }
 
       // Fetch latest news and announcements

@@ -44,9 +44,15 @@ export default function Navbar() {
           <Link to="/members" className="nav-link" onClick={closeMenu}>
             Members
           </Link>
-          <Link to="/events" className="nav-link" onClick={closeMenu}>
-            Events
-          </Link>
+          {user && (user.role === 'member' || user.role === 'admin') ? (
+            <Link to="/all-events" className="nav-link" onClick={closeMenu}>
+              Events
+            </Link>
+          ) : (
+            <Link to="/events" className="nav-link" onClick={closeMenu}>
+              Events
+            </Link>
+          )}
           {!user ? (
             <>
               <Link to="/signup" className="nav-link" onClick={closeMenu}>
@@ -58,12 +64,10 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              {user.role === 'member' && (
-                <Link to="/profile" className="nav-link" onClick={closeMenu}>
-                  Profile
-                </Link>
-              )}
-              {user.role === 'admin' && (
+              <Link to="/profile" className="nav-link" onClick={closeMenu}>
+                Profile
+              </Link>
+              {user && user.role === 'admin' && (
                 <Link to="/admin/dashboard" className="nav-link" onClick={closeMenu}>
                   Dashboard
                 </Link>

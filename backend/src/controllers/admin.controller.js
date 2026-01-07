@@ -57,7 +57,7 @@ export async function updateUserRole(req, res, next) {
     const { id } = req.params;
     const { role } = req.body;
 
-    if (!['visitor', 'member', 'admin'].includes(role)) {
+    if (!['member', 'admin'].includes(role)) {
       return res.status(400).json({ message: 'Invalid role' });
     }
 
@@ -95,8 +95,9 @@ export async function deactivateUser(req, res, next) {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    user.role = 'visitor';
-    await user.save();
+    // Deactivate user by deleting their account
+    // Don't set role to 'visitor' - visitors don't have accounts
+    await User.findByIdAndDelete(req.params.id);
 
     res.json({ success: true });
   } catch (err) {
@@ -109,11 +110,16 @@ export async function deactivateUser(req, res, next) {
 ================================ */
 export async function createAnnouncement(req, res, next) {
   try {
+    // If category is "News", set type to 'event' so it's counted in news counter
+    // Otherwise, set type to 'announcement'
+    const eventType = req.body.category === 'News' ? 'event' : (req.body.type || 'announcement');
+    
     const event = await Event.create({
       ...req.body,
-      type: 'announcement',
+      type: eventType,
       date: req.body.date || new Date(),
-      isPublic: req.body.isPublic ?? true
+      isPublic: req.body.isPublic ?? true,
+      imageUrl: req.file ? `/uploads/images/${req.file.filename}` : undefined
     });
 
     res.status(201).json({ success: true, event });
@@ -125,8 +131,23 @@ export async function createAnnouncement(req, res, next) {
 export async function updateAnnouncement(req, res, next) {
   try {
     const event = await Event.findById(req.params.id);
-    if (!event || event.type !== 'announcement') {
+    // Allow updating announcements and news (events with category 'News')
+    if (!event || (event.type !== 'announcement' && !(event.type === 'event' && event.category === 'News'))) {
       return res.status(404).json({ message: 'Announcement not found' });
+    }
+
+    // If category is "News", ensure type is 'event' so it's counted in news counter
+    // Otherwise, keep type as 'announcement' if it was an announcement
+    if (req.body.category === 'News') {
+      req.body.type = 'event';
+    } else if (event.type === 'announcement' && !req.body.type) {
+      // Keep as announcement if it was originally an announcement and type not specified
+      req.body.type = 'announcement';
+    }
+
+    // Handle image upload
+    if (req.file) {
+      req.body.imageUrl = `/uploads/images/${req.file.filename}`;
     }
 
     Object.assign(event, req.body);
@@ -154,6 +175,10 @@ export async function deleteAnnouncement(req, res, next) {
 
 export async function createEvent(req, res, next) {
   try {
+    const fee = Number(req.body.fee) || 0;
+    const requiresPayment = fee > 0;
+    const paymentAmount = fee;
+
     const event = await Event.create({
       title: req.body.title,
       description: req.body.description,
@@ -164,7 +189,9 @@ export async function createEvent(req, res, next) {
       schedule: req.body.schedule,
       isRecurring: req.body.isRecurring === 'true' || req.body.isRecurring === true,
       isPublic: req.body.isPublic === 'true' || req.body.isPublic === true,
-      fee: Number(req.body.fee) || 0,
+      fee: fee,
+      requiresPayment: requiresPayment,
+      paymentAmount: paymentAmount,
       qrCodeUrl: req.file ? `/uploads/qr/${req.file.filename}` : undefined
     });
 
@@ -182,6 +209,10 @@ export async function updateEvent(req, res, next) {
 
     const { title, description, date, location, category, type, schedule, isRecurring, isPublic, fee } = req.body
 
+    const feeAmount = Number(fee) || 0;
+    const requiresPayment = feeAmount > 0;
+    const paymentAmount = feeAmount;
+
     event.title = title
     event.description = description
     event.date = new Date(date)
@@ -191,7 +222,9 @@ export async function updateEvent(req, res, next) {
     event.schedule = schedule
     event.isRecurring = Boolean(isRecurring)
     event.isPublic = Boolean(isPublic)
-    event.fee = Number(fee) || 0
+    event.fee = feeAmount
+    event.requiresPayment = requiresPayment
+    event.paymentAmount = paymentAmount
 
     if (req.file) {
       const uploadDir = path.join(__dirname, '../uploads/qr')
@@ -230,7 +263,13 @@ export async function deleteEvent(req, res, next) {
 
 export async function getAllAnnouncements(req, res, next) {
   try {
-    const announcements = await Event.find({ type: 'announcement' }).sort({ date: -1 });
+    // Return both announcements and news items (events with category 'News')
+    const announcements = await Event.find({ 
+      $or: [
+        { type: 'announcement' },
+        { type: 'event', category: 'News' }
+      ]
+    }).sort({ date: -1 });
     res.json({ announcements });
   } catch (err) {
     next(err);
@@ -239,11 +278,45 @@ export async function getAllAnnouncements(req, res, next) {
 
 export async function getAllEvents(req, res, next) {
   try {
-    const events = await Event.find({ $or: [{ type: 'event' }, { type: 'activity' }] })
+    // Only return actual events, exclude announcements, activities, and news
+    const events = await Event.find({ 
+      type: 'event', // Only actual events
+      category: { $ne: 'News' } // Exclude news items
+    })
       .sort({ date: -1 })
       .populate('registeredUsers', 'name email')
 
     res.json({ events })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// Sync payment fields for all existing events (migration function)
+export async function syncEventPaymentFields(req, res, next) {
+  try {
+    const events = await Event.find({ type: 'event', category: { $ne: 'News' } })
+    
+    let updated = 0
+    for (const event of events) {
+      const fee = event.fee || 0
+      const requiresPayment = fee > 0
+      const paymentAmount = fee
+      
+      // Only update if fields are not already synchronized
+      if (event.requiresPayment !== requiresPayment || event.paymentAmount !== paymentAmount) {
+        event.requiresPayment = requiresPayment
+        event.paymentAmount = paymentAmount
+        await event.save()
+        updated++
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `Synchronized payment fields for ${updated} events`,
+      updated 
+    })
   } catch (err) {
     next(err)
   }

@@ -25,7 +25,8 @@ export async function signup(req, res, next) {
       email,
       passwordHash,
       emailVerificationTokenHash,
-      emailVerificationTokenExpiresAt
+      emailVerificationTokenExpiresAt,
+      role: 'member' // Automatically set new users as members
     });
 
     const baseUrl = process.env.SERVER_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
@@ -128,7 +129,7 @@ export async function login(req, res, next) {
       });
     }
 
-    // Regular users (visitors) require OTP
+    // Regular users require OTP
     // If OTP is provided, verify it
     if (otp) {
       if (!user.mfaOtpHash || !user.mfaOtpExpiresAt) {
