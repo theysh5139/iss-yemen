@@ -62,7 +62,7 @@ If you need to manage access or the cluster:
 
 3. Connection: Use the "Connect" button in Atlas to generate new connection strings for different drivers.
 
-⚠️ Important Rules
+## ⚠️ Important Rules
 Shared Data: Deleting a record or collection affects all developers. Use caution when testing destructive features.
 
 Security: Never commit your .env file to GitHub. It is already included in .gitignore. Use .env.example as a template for new team members.
