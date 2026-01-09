@@ -46,7 +46,7 @@ export async function downloadReceipt(req, res, next) {
   try {
     const { eventId } = req.params;
     const userId = req.user?.id || req.query.userId; // Allow userId in query for admin viewing
-    const format = req.query.format || 'html'; // html or pdf
+    const format = req.query.format || 'pdf'; // html or pdf (default to PDF)
     
     if (!userId) {
       return res.status(401).json({ message: 'Authentication required' });
@@ -74,20 +74,57 @@ export async function downloadReceipt(req, res, next) {
       ...registration.paymentReceipt,
       eventTitle: event.title,
       eventDate: event.date,
-      userName: user.name,
-      userEmail: user.email
+      userName: user.name || registration.registrationName || user.email,
+      userEmail: user.email || registration.registrationEmail
     };
 
-    const receiptHTML = generateReceiptHTML(receiptData);
+    // Generate transaction ID if not exists
+    const transactionId = receiptData.transactionId || `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
-    if (format === 'html') {
-      res.setHeader('Content-Type', 'text/html');
-      res.setHeader('Content-Disposition', `attachment; filename="receipt-${receiptData.receiptNumber}.html"`);
-      return res.send(receiptHTML);
+    // Generate PDF receipt (preferred format) - only if payment is verified
+    if (format === 'pdf' || !format) {
+      // Check if payment is verified before generating official receipt
+      if (receiptData.paymentStatus !== 'Verified') {
+        return res.status(400).json({ 
+          message: 'Official receipt can only be generated after payment verification. Current status: ' + (receiptData.paymentStatus || 'Pending')
+        });
+      }
+      
+      try {
+        const { generateReceiptPDF } = await import('../utils/pdfGenerator.js');
+        
+        const pdfBuffer = await generateReceiptPDF({
+          receiptId: receiptData.receiptNumber,
+          userName: receiptData.userName || registration.registrationName || user.name,
+          matricNumber: registration.matricNumber || null,
+          userEmail: receiptData.userEmail || registration.registrationEmail || user.email,
+          eventName: event.title,
+          eventDate: event.date,
+          paymentDate: receiptData.generatedAt || registration.registeredAt || new Date(),
+          registrationDate: registration.registeredAt || new Date(),
+          amount: receiptData.amount || 0,
+          currency: 'MYR',
+          transactionId: transactionId || receiptData.transactionId,
+          paymentMethod: receiptData.paymentMethod || 'QR Code / Bank Transfer',
+          paymentStatus: receiptData.paymentStatus || 'Verified'
+        });
+
+        // Set headers for PDF download
+        const fileName = `Receipt-${receiptData.receiptNumber}-${event.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+        
+        return res.send(pdfBuffer);
+      } catch (pdfError) {
+        console.error('PDF generation failed, falling back to HTML:', pdfError);
+        // Fall through to HTML generation
+      }
     }
 
-    // For PDF, you would need a library like puppeteer or pdfkit
-    // For now, return HTML which can be printed as PDF
+    // Generate HTML receipt (fallback or if format=html)
+    const receiptHTML = generateReceiptHTML(receiptData);
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('Content-Disposition', `attachment; filename="receipt-${receiptData.receiptNumber}.html"`);
     return res.send(receiptHTML);

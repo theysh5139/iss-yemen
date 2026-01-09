@@ -64,7 +64,7 @@ export default function Dashboard() {
       await logoutApi()
     } catch {}
     setUser(null)
-    navigate("/", { replace: true }) // Redirect to homepage as visitor
+    navigate("/", { replace: true }) // Redirect to homepage
   }
 
   function formatDate(dateString) {
@@ -250,18 +250,36 @@ export default function Dashboard() {
                         )}
                         
                         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
-                          <a href={`/all-events#${event._id}`} className="event-item-link">
-                            View Details →
-                          </a>
-                          {registration?.paymentReceipt?.receiptUrl && (
-                            <a 
-                              href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${registration.paymentReceipt.receiptUrl}`}
-                              target="_blank"
-                              className="event-item-link"
-                              style={{ color: '#1e3a8a' }}
+                          {registration?.paymentReceipt?.receiptUrl ? (
+                            <button
+                              className="btn btn-primary"
+                              onClick={() => {
+                                // Open proof of payment in new tab
+                                const receiptUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${registration.paymentReceipt.receiptUrl}`
+                                window.open(receiptUrl, '_blank')
+                              }}
+                              style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
                             >
-                              📥 View Receipt File
-                            </a>
+                              👁️ View Proof of Payment
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: '0.85rem', color: '#666', fontStyle: 'italic' }}>
+                              No payment proof uploaded
+                            </span>
+                          )}
+                          {registration?.paymentReceipt?.paymentStatus === 'Verified' && (
+                            <button
+                              className="btn btn-secondary"
+                              onClick={() => {
+                                // Download official receipt
+                                const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+                                const downloadUrl = `${API_BASE_URL}/api/receipts/event/${event._id}/download?userId=${user?.id}&format=pdf`
+                                window.open(downloadUrl, '_blank')
+                              }}
+                              style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                            >
+                              📄 Download Official Receipt
+                            </button>
                           )}
                         </div>
                       </div>

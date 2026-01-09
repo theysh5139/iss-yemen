@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
     emailVerificationTokenExpiresAt: { type: Date },
     passwordResetTokenHash: { type: String },
     passwordResetTokenExpiresAt: { type: Date },
-    role: { type: String, enum: ['member', 'admin', 'user'], default: 'member' },
+    role: { type: String, enum: ['member', 'admin'], default: 'member' },
     // MFA/OTP fields
     otp: { type: String }, // Hashed OTP
     otpExpires: { type: Date },

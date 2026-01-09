@@ -59,7 +59,7 @@ export default function Login() {
       return
     }
 
-    // Normal users (visitors) → OTP flow
+    // Regular members → OTP flow
     navigate("/verify-otp", {
       replace: true,
       state: { email: form.email }

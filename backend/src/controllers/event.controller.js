@@ -155,8 +155,50 @@ export async function registerForEvent(req, res, next) {
     event.registrations.push(registrationData);
     await event.save();
 
+    // Generate official PDF receipt for paid events
+    let pdfReceiptGenerated = false;
+    if (requiresPayment && paymentAmount > 0 && registrationData.paymentReceipt) {
+      try {
+        const { generateReceiptPDF } = await import('../utils/pdfGenerator.js');
+        const { generateRandomToken } = await import('../utils/tokens.js');
+        
+        // Generate transaction ID if not exists
+        const transactionId = `TXN-${Date.now()}-${generateRandomToken(8).toUpperCase()}`;
+        
+        // Generate PDF receipt
+        const pdfBuffer = await generateReceiptPDF({
+          receiptId: registrationData.paymentReceipt.receiptNumber,
+          userName: registrationName,
+          eventName: event.title,
+          eventDate: event.date,
+          paymentDate: new Date(),
+          amount: paymentAmount,
+          currency: 'MYR',
+          transactionId: transactionId
+        });
+        
+        // Store PDF receipt (optional - can also generate on-demand)
+        // For now, we'll generate on-demand via the receipt download endpoint
+        // But mark that receipt is ready for PDF generation
+        pdfReceiptGenerated = true;
+        
+        // Update registration with transaction ID
+        const lastRegistration = event.registrations[event.registrations.length - 1];
+        if (lastRegistration.paymentReceipt) {
+          lastRegistration.paymentReceipt.transactionId = transactionId;
+          await event.save();
+        }
+      } catch (pdfError) {
+        console.error('Failed to generate PDF receipt:', pdfError);
+        // Don't fail registration if PDF generation fails - receipt data is still saved
+      }
+    }
+
     // Return receipt data from registration
     const returnReceipt = registrationData.paymentReceipt || null;
+    if (returnReceipt) {
+      returnReceipt.pdfGenerated = pdfReceiptGenerated;
+    }
 
     return res.json({ 
       message: 'Successfully registered for event', 

@@ -307,59 +307,248 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
                     </div>
                   </div>
                   
-                  {/* Receipt Section */}
-                  {receipt && (
-                    <div className="receipt-section" style={{ 
-                      marginTop: '1.5rem', 
-                      padding: '1rem', 
-                      background: '#f0f9ff', 
-                      borderRadius: '8px',
-                      border: '1px solid #1e3a8a'
-                    }}>
-                      <h4 style={{ margin: '0 0 0.75rem 0', color: '#1e3a8a', fontWeight: '600' }}>
-                        🧾 Payment Receipt Generated
-                      </h4>
-                      <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', color: '#666' }}>
-                        Receipt Number: <strong>{receipt.receiptNumber}</strong>
-                      </p>
-                      {receipt.amount > 0 && (
-                        <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', color: '#666' }}>
-                          Amount: <strong>RM {receipt.amount.toFixed(2)}</strong>
-                        </p>
-                      )}
-                      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                        <button
-                          className="btn btn-primary"
-                          onClick={handleDownloadReceipt}
-                          style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
-                        >
-                          📥 Download Receipt
-                        </button>
-                        <button
-                          className="btn btn-secondary"
-                          onClick={handleShareReceipt}
-                          style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
-                        >
-                          🔗 Share Receipt
-                        </button>
-                        {shareUrl && (
-                          <input
-                            type="text"
-                            value={shareUrl}
-                            readOnly
-                            style={{ 
-                              flex: 1, 
-                              padding: '0.5rem', 
-                              border: '1px solid #ccc', 
-                              borderRadius: '4px',
-                              fontSize: '0.85rem'
-                            }}
-                            onClick={(e) => e.target.select()}
-                          />
-                        )}
+                  {/* Registration Details Section */}
+                  {(() => {
+                    // Find user's registration details
+                    const registration = event.registrations?.find(reg => {
+                      const regUserId = typeof reg.user === 'object' ? reg.user._id?.toString() : reg.user?.toString()
+                      return regUserId === user?.id?.toString()
+                    })
+                    
+                    if (!registration) return null
+                    
+                    return (
+                      <div style={{
+                        marginTop: '1.5rem',
+                        padding: '1rem',
+                        background: '#f8f9fa',
+                        borderRadius: '8px',
+                        border: '1px solid #dee2e6'
+                      }}>
+                        <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: '600', color: '#1e3a8a' }}>
+                          📋 Registration Details
+                        </h4>
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'auto 1fr',
+                          gap: '0.75rem 1.5rem',
+                          fontSize: '0.9rem'
+                        }}>
+                          {registration.registrationName && (
+                            <>
+                              <span style={{ fontWeight: '600', color: '#666' }}>Name:</span>
+                              <span style={{ color: '#333' }}>{registration.registrationName}</span>
+                            </>
+                          )}
+                          {registration.registrationEmail && (
+                            <>
+                              <span style={{ fontWeight: '600', color: '#666' }}>Email:</span>
+                              <span style={{ color: '#333' }}>{registration.registrationEmail}</span>
+                            </>
+                          )}
+                          {registration.matricNumber && (
+                            <>
+                              <span style={{ fontWeight: '600', color: '#666' }}>Matric Number:</span>
+                              <span style={{ color: '#333' }}>{registration.matricNumber}</span>
+                            </>
+                          )}
+                          {registration.phone && (
+                            <>
+                              <span style={{ fontWeight: '600', color: '#666' }}>Phone:</span>
+                              <span style={{ color: '#333' }}>{registration.phone}</span>
+                            </>
+                          )}
+                          {registration.registeredAt && (
+                            <>
+                              <span style={{ fontWeight: '600', color: '#666' }}>Registered At:</span>
+                              <span style={{ color: '#333' }}>{formatDate(registration.registeredAt)}</span>
+                            </>
+                          )}
+                          {registration.notes && (
+                            <>
+                              <span style={{ fontWeight: '600', color: '#666' }}>Notes:</span>
+                              <span style={{ color: '#333', fontStyle: 'italic' }}>{registration.notes}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )
+                  })()}
+                  
+                  {/* Receipt Section */}
+                  {(() => {
+                    // Get receipt from registration or from state
+                    const registration = event.registrations?.find(reg => {
+                      const regUserId = typeof reg.user === 'object' ? reg.user._id?.toString() : reg.user?.toString()
+                      return regUserId === user?.id?.toString()
+                    })
+                    const receiptData = receipt || registration?.paymentReceipt
+                    
+                    if (!receiptData) return null
+                    
+                    return (
+                      <div className="receipt-section" style={{ 
+                        marginTop: '1.5rem', 
+                        padding: '1rem', 
+                        background: '#f0f9ff', 
+                        borderRadius: '8px',
+                        border: '1px solid #1e3a8a'
+                      }}>
+                        <h4 style={{ margin: '0 0 0.75rem 0', color: '#1e3a8a', fontWeight: '600' }}>
+                          🧾 Payment Receipt
+                        </h4>
+                        
+                        {/* Receipt Details */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'auto 1fr',
+                          gap: '0.5rem 1rem',
+                          fontSize: '0.9rem',
+                          marginBottom: '1rem'
+                        }}>
+                          {receiptData.receiptNumber && (
+                            <>
+                              <span style={{ fontWeight: '600', color: '#666' }}>Receipt Number:</span>
+                              <span style={{ color: '#333' }}><strong>{receiptData.receiptNumber}</strong></span>
+                            </>
+                          )}
+                          {receiptData.amount > 0 && (
+                            <>
+                              <span style={{ fontWeight: '600', color: '#666' }}>Amount:</span>
+                              <span style={{ color: '#856404', fontWeight: '600' }}>RM {receiptData.amount.toFixed(2)}</span>
+                            </>
+                          )}
+                          {receiptData.paymentMethod && (
+                            <>
+                              <span style={{ fontWeight: '600', color: '#666' }}>Payment Method:</span>
+                              <span style={{ color: '#333' }}>{receiptData.paymentMethod}</span>
+                            </>
+                          )}
+                          {receiptData.paymentStatus && (
+                            <>
+                              <span style={{ fontWeight: '600', color: '#666' }}>Status:</span>
+                              <span style={{ 
+                                color: receiptData.paymentStatus === 'Verified' ? '#155724' : 
+                                       receiptData.paymentStatus === 'Rejected' ? '#721c24' : '#856404',
+                                fontWeight: '600'
+                              }}>
+                                {receiptData.paymentStatus === 'Verified' ? '✅ Verified' :
+                                 receiptData.paymentStatus === 'Rejected' ? '❌ Rejected' :
+                                 '⏳ Pending'}
+                              </span>
+                            </>
+                          )}
+                          {receiptData.generatedAt && (
+                            <>
+                              <span style={{ fontWeight: '600', color: '#666' }}>Generated:</span>
+                              <span style={{ color: '#333' }}>{formatDate(receiptData.generatedAt)}</span>
+                            </>
+                          )}
+                        </div>
+                        
+                        {/* Display Uploaded Receipt File */}
+                        {receiptData.receiptUrl && (() => {
+                          const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+                          const receiptFileUrl = receiptData.receiptUrl.startsWith('http') 
+                            ? receiptData.receiptUrl 
+                            : `${apiBaseUrl}${receiptData.receiptUrl}`
+                          const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(receiptData.receiptUrl)
+                          const isPDF = /\.pdf$/i.test(receiptData.receiptUrl)
+                          
+                          return (
+                            <div style={{
+                              marginTop: '1rem',
+                              padding: '1rem',
+                              background: '#fff',
+                              borderRadius: '6px',
+                              border: '1px solid #dee2e6'
+                            }}>
+                              <h5 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: '600', color: '#1e3a8a' }}>
+                                📎 Uploaded Receipt File
+                              </h5>
+                              {isImage ? (
+                                <div style={{ textAlign: 'center' }}>
+                                  <img 
+                                    src={receiptFileUrl}
+                                    alt="Payment Receipt"
+                                    style={{
+                                      maxWidth: '100%',
+                                      maxHeight: '400px',
+                                      border: '1px solid #dee2e6',
+                                      borderRadius: '6px',
+                                      marginBottom: '0.75rem'
+                                    }}
+                                    onError={(e) => {
+                                      e.target.style.display = 'none'
+                                      e.target.nextSibling.style.display = 'block'
+                                    }}
+                                  />
+                                  <div style={{ display: 'none', color: '#721c24', fontSize: '0.85rem' }}>
+                                    Failed to load image. <a href={receiptFileUrl} target="_blank" rel="noopener noreferrer">Click here to view</a>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div style={{ textAlign: 'center' }}>
+                                  <p style={{ margin: '0 0 0.75rem 0', color: '#666' }}>PDF Receipt File</p>
+                                  <a 
+                                    href={receiptFileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn btn-primary"
+                                    style={{ fontSize: '0.9rem', padding: '0.5rem 1rem', textDecoration: 'none', display: 'inline-block' }}
+                                  >
+                                    📄 View PDF Receipt
+                                  </a>
+                                </div>
+                              )}
+                              <div style={{ marginTop: '0.75rem', textAlign: 'center' }}>
+                                <a 
+                                  href={receiptFileUrl}
+                                  download
+                                  style={{ fontSize: '0.85rem', color: '#1e3a8a', textDecoration: 'none' }}
+                                >
+                                  ⬇️ Download Receipt File
+                                </a>
+                              </div>
+                            </div>
+                          )
+                        })()}
+                        
+                        {/* Receipt Actions */}
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+                          <button
+                            className="btn btn-primary"
+                            onClick={handleDownloadReceipt}
+                            style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                          >
+                            📥 Download Official Receipt
+                          </button>
+                          <button
+                            className="btn btn-secondary"
+                            onClick={handleShareReceipt}
+                            style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                          >
+                            🔗 Share Receipt
+                          </button>
+                          {shareUrl && (
+                            <input
+                              type="text"
+                              value={shareUrl}
+                              readOnly
+                              style={{ 
+                                flex: 1, 
+                                padding: '0.5rem', 
+                                border: '1px solid #ccc', 
+                                borderRadius: '4px',
+                                fontSize: '0.85rem'
+                              }}
+                              onClick={(e) => e.target.select()}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })()}
                   
                   <div className="registration-form-actions" style={{ marginTop: '1rem' }}>
                     <button

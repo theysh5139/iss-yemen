@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
         const res = await getCurrentUserApi()
         setUser(res.user)
       } catch (err) {
-        // Not logged in - user is null (visitor)
+        // Not logged in - user is null
         localStorage.removeItem('authToken')
         setUser(null)
       } finally {

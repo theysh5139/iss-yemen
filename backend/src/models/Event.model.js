@@ -8,21 +8,24 @@ const registrationSchema = new mongoose.Schema({
   matricNumber: { type: String }, // Matric number from registration form
   phone: { type: String }, // Phone number from registration form
   notes: { type: String }, // Additional notes from registration form
-  paymentReceipt: {
-    receiptNumber: { type: String },
-    receiptUrl: { type: String }, // URL to uploaded receipt PDF file
-    generatedAt: { type: Date },
-    amount: { type: Number },
-    paymentMethod: { type: String },
-    paymentStatus: { 
-      type: String, 
-      enum: ['Pending', 'Verified', 'Rejected'], 
-      default: 'Pending' 
-    },
-    verifiedAt: { type: Date },
-    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    rejectionReason: { type: String } // Reason for rejection if payment is rejected
-  }
+    paymentReceipt: {
+      receiptNumber: { type: String },
+      receiptUrl: { type: String }, // URL to uploaded receipt PDF file
+      generatedAt: { type: Date },
+      amount: { type: Number },
+      paymentMethod: { type: String },
+      paymentStatus: { 
+        type: String, 
+        enum: ['Pending', 'Verified', 'Rejected'], 
+        default: 'Pending' 
+      },
+      verifiedAt: { type: Date },
+      verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      rejectionReason: { type: String }, // Reason for rejection if payment is rejected
+      officialReceiptGenerated: { type: Boolean, default: false }, // Flag to prevent regeneration
+      officialReceiptGeneratedAt: { type: Date }, // Timestamp when official receipt was generated
+      transactionId: { type: String } // Transaction ID for receipt
+    }
 }, { _id: false });
 
 const eventSchema = new mongoose.Schema(
@@ -43,7 +46,7 @@ const eventSchema = new mongoose.Schema(
     registrations: [registrationSchema], // Detailed registration with payment info
     schedule: { type: String }, // For recurring activities like "Every Wednesday, 8:00 PM"
     isRecurring: { type: Boolean, default: false },
-    isPublic: { type: Boolean, default: true }, // Public events visible to visitors, private only to members
+    isPublic: { type: Boolean, default: true }, // Public events visible to non-logged-in users, private only to members
     cancelled: { type: Boolean, default: false }, // For cancelled events
     isActive: { type: Boolean, default: true },
     registrationOpen: { type: Boolean, default: true },
