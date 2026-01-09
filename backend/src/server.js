@@ -4,6 +4,7 @@ dotenv.config();
 import http from 'http';
 import app from './app.js';
 import { connectToDatabase } from './startup/db.js';
+import { initRealtime } from './utils/realtime.js';
 
 const port = process.env.PORT || 5000;
 
@@ -18,6 +19,10 @@ async function start() {
   }
   
   const server = http.createServer(app);
+  
+  // Initialize real-time updates (WebSocket)
+  initRealtime(server);
+  
   server.listen(port, () => {
     // eslint-disable-next-line no-console
     console.log(`API listening on port ${port}`);

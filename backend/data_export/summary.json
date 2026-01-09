@@ -1,0 +1,92 @@
+{
+  "timestamp": "2026-01-09T01:53:57.433Z",
+  "total": 15,
+  "counts": {
+    "events": 12,
+    "news": 1,
+    "announcements": 1,
+    "activities": 1
+  },
+  "breakdown": {
+    "events": [
+      {
+        "id": "69565952037e01285ee4f709",
+        "title": "Yemeni Cultural Night 2025",
+        "category": "Cultural"
+      },
+      {
+        "id": "69565952037e01285ee4f70d",
+        "title": "Academic Workshop: Research Methods & Thesis Writing",
+        "category": "Academic"
+      },
+      {
+        "id": "69565952037e01285ee4f70f",
+        "title": "Networking Meetup for New Members",
+        "category": "Social"
+      },
+      {
+        "id": "69565952037e01285ee4f711",
+        "title": "Eid Al-Fitr Community Celebration",
+        "category": "Cultural"
+      },
+      {
+        "id": "69565952037e01285ee4f713",
+        "title": "Study Group Formation Session",
+        "category": "Academic"
+      },
+      {
+        "id": "69565952037e01285ee4f715",
+        "title": "Welcome New Students Orientation",
+        "category": "Social"
+      },
+      {
+        "id": "69565952037e01285ee4f717",
+        "title": "Yemeni Traditional Cooking Class",
+        "category": "Cultural"
+      },
+      {
+        "id": "69565952037e01285ee4f719",
+        "title": "Career Development Seminar",
+        "category": "Academic"
+      },
+      {
+        "id": "69565952037e01285ee4f71b",
+        "title": "Monthly Social Gathering",
+        "category": "Social"
+      },
+      {
+        "id": "69565952037e01285ee4f71f",
+        "title": "Yemeni History & Heritage Exhibition",
+        "category": "Cultural"
+      },
+      {
+        "id": "69565952037e01285ee4f721",
+        "title": "Sports Day: Football Tournament",
+        "category": "Social"
+      },
+      {
+        "id": "695e6b2379e44e7172753932",
+        "title": "Innovation & Sustainability Summit 2026",
+        "category": "Academic"
+      }
+    ],
+    "news": [
+      {
+        "id": "695e5e44b9726d0819bfc3a8",
+        "title": "Global Tech Giants Announce Major Investment in Southeast Asia’s AI Infrastructure"
+      }
+    ],
+    "announcements": [
+      {
+        "id": "695e7186766a86c00d057297",
+        "title": "Community Wellness Fair 2026"
+      }
+    ],
+    "activities": [
+      {
+        "id": "69565952037e01285ee4f71d",
+        "title": "Arabic Language Exchange Program"
+      }
+    ]
+  }
+}

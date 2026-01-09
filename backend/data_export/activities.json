@@ -1,0 +1,23 @@
+[
+  {
+    "_id": "69565952037e01285ee4f71d",
+    "title": "Arabic Language Exchange Program",
+    "description": "Practice Arabic and English in a friendly language exchange setting. Open to all proficiency levels. Great way to maintain your Arabic skills and help others learn.",
+    "date": "2025-04-05T08:00:00.000Z",
+    "location": "UTM Language Center, Room 201",
+    "category": "Academic",
+    "type": "activity",
+    "attendees": 0,
+    "registeredUsers": [],
+    "schedule": "Every Saturday, 4:00 PM",
+    "isRecurring": true,
+    "isPublic": true,
+    "cancelled": false,
+    "requiresPayment": false,
+    "paymentAmount": 0,
+    "registrations": [],
+    "createdAt": "2026-01-01T11:24:02.540Z",
+    "updatedAt": "2026-01-01T11:24:02.540Z",
+    "__v": 0
+  }
+]

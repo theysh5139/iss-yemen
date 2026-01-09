@@ -23,6 +23,8 @@ import { getEmailConfig, saveEmailConfig, testEmailConfig } from '../controllers
 import { authenticate, requireRole } from '../middlewares/auth.middleware.js';
 import { validateBody, createAnnouncementSchema, updateAnnouncementSchema, createEventSchema, updateEventSchema } from '../middlewares/validators.js';
 import { uploadImage } from '../middlewares/uploadImage.middleware.js';
+import { uploadImageGridFS, processGridFSUpload } from '../middlewares/uploadImageGridFS.middleware.js';
+import { STORAGE_CONFIG } from '../config/storage.js';
 
 const router = Router();
 
@@ -41,8 +43,14 @@ router.delete('/users/:id', deleteUser);
 
 // Announcement Management
 router.get('/announcements', getAllAnnouncements);
-router.post('/announcements', uploadImage.single('image'), validateBody(createAnnouncementSchema), createAnnouncement);
-router.patch('/announcements/:id', uploadImage.single('image'), validateBody(updateAnnouncementSchema), updateAnnouncement);
+// Use GridFS if enabled, otherwise use filesystem
+if (STORAGE_CONFIG.useGridFS) {
+  router.post('/announcements', uploadImageGridFS, processGridFSUpload, validateBody(createAnnouncementSchema), createAnnouncement);
+  router.patch('/announcements/:id', uploadImageGridFS, processGridFSUpload, validateBody(updateAnnouncementSchema), updateAnnouncement);
+} else {
+  router.post('/announcements', uploadImage.single('image'), validateBody(createAnnouncementSchema), createAnnouncement);
+  router.patch('/announcements/:id', uploadImage.single('image'), validateBody(updateAnnouncementSchema), updateAnnouncement);
+}
 router.delete('/announcements/:id', deleteAnnouncement);
 
 // Event Management

@@ -1,0 +1,26 @@
+[
+  {
+    "_id": "695e5e44b9726d0819bfc3a8",
+    "title": "Global Tech Giants Announce Major Investment in Southeast Asia’s AI Infrastructure",
+    "description": "In a landmark move, leading technology companies have pledged billions to expand artificial intelligence infrastructure across Southeast Asia. The initiative aims to boost regional innovation, create thousands of jobs, and strengthen digital resilience. Industry experts say the investment could position the region as a global hub for AI development, with Malaysia and Singapore expected to play pivotal roles in the rollout.",
+    "date": "2026-01-07T00:00:00.000Z",
+    "location": "UTM Sports Complex, Football Field",
+    "category": "News",
+    "type": "event",
+    "price": 0,
+    "fee": 0,
+    "attendees": 0,
+    "registeredUsers": [],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "isActive": true,
+    "registrationOpen": true,
+    "requiresPayment": false,
+    "paymentAmount": 0,
+    "registrations": [],
+    "createdAt": "2026-01-07T13:23:16.732Z",
+    "updatedAt": "2026-01-07T13:23:16.732Z",
+    "__v": 0
+  }
+]

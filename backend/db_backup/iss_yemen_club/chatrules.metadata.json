@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"keyword":{"$numberInt":"1"}},"name":"keyword_1","background":true,"unique":true}],"uuid":"36f1fb41e96c42ecadf2b5be7da91cba","collectionName":"chatrules","type":"collection"}

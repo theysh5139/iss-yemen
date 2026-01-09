@@ -1,0 +1,512 @@
+[
+  {
+    "_id": "69565952037e01285ee4f709",
+    "title": "Yemeni Cultural Night 2025",
+    "description": "Join us for an evening celebrating Yemeni culture with traditional food, music, dance performances, and cultural exhibitions. Experience the rich heritage of Yemen through interactive displays and live entertainment.",
+    "date": "2025-02-15T10:00:00.000Z",
+    "location": "UTM Student Center, Main Hall",
+    "category": "Cultural",
+    "type": "event",
+    "attendees": 3,
+    "registeredUsers": [
+      "69562081371985a935cef222",
+      "6956317cbc3b67aff7dc9572",
+      "695718a81da9f469c0ae95f6"
+    ],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "requiresPayment": true,
+    "paymentAmount": 25,
+    "registrations": [
+      {
+        "user": "69562081371985a935cef222",
+        "registeredAt": "2026-01-01T12:47:10.352Z",
+        "paymentReceipt": {
+          "receiptNumber": "REC-20260101-234400",
+          "generatedAt": "2026-01-01T12:47:10.349Z",
+          "amount": 25,
+          "paymentMethod": "Online",
+          "paymentStatus": "Pending"
+        }
+      },
+      {
+        "user": "6956317cbc3b67aff7dc9572",
+        "registeredAt": "2026-01-01T12:47:10.371Z",
+        "paymentReceipt": {
+          "receiptNumber": "REC-20260101-66963F",
+          "generatedAt": "2026-01-01T12:47:10.370Z",
+          "amount": 25,
+          "paymentMethod": "Online",
+          "paymentStatus": "Pending"
+        }
+      },
+      {
+        "user": "695718a81da9f469c0ae95f6",
+        "registeredAt": "2026-01-02T03:30:19.235Z",
+        "registrationName": "Member User",
+        "registrationEmail": "member@issyemen.com",
+        "matricNumber": "A23CS0098",
+        "phone": "0198776549",
+        "notes": null,
+        "paymentReceipt": {
+          "receiptNumber": "REC-20260102-FF8139",
+          "receiptUrl": "/uploads/receipts/1767324619211-x693z.jpeg",
+          "generatedAt": "2026-01-02T03:30:19.234Z",
+          "amount": 25,
+          "paymentMethod": "QR Code / Bank Transfer",
+          "paymentStatus": "Pending"
+        }
+      },
+      {
+        "user": "695718a81da9f469c0ae95f6",
+        "registeredAt": "2026-01-02T03:44:09.145Z",
+        "registrationName": "Member User",
+        "registrationEmail": "member@issyemen.com",
+        "matricNumber": "A23CS0098",
+        "phone": "0198776549",
+        "notes": null,
+        "paymentReceipt": {
+          "receiptNumber": "REC-20260102-3F4A3F",
+          "receiptUrl": "/uploads/receipts/1767325449134-4sh77f.jpeg",
+          "generatedAt": "2026-01-02T03:44:09.145Z",
+          "amount": 25,
+          "paymentMethod": "QR Code / Bank Transfer",
+          "paymentStatus": "Verified",
+          "verifiedAt": "2026-01-06T15:30:56.253Z",
+          "verifiedBy": "695625835ea725221286be4b"
+        }
+      }
+    ],
+    "createdAt": "2026-01-01T11:24:02.487Z",
+    "updatedAt": "2026-01-06T15:30:56.257Z",
+    "__v": 5,
+    "fee": 0,
+    "isActive": true,
+    "price": 0,
+    "registrationOpen": true
+  },
+  {
+    "_id": "69565952037e01285ee4f70d",
+    "title": "Academic Workshop: Research Methods & Thesis Writing",
+    "description": "A comprehensive workshop for graduate students covering research methodologies, academic writing, thesis structure, and citation styles. Perfect for students working on their dissertations.",
+    "date": "2025-02-20T06:00:00.000Z",
+    "location": "UTM Library, Seminar Room 3",
+    "category": "Academic",
+    "type": "event",
+    "attendees": 1,
+    "registeredUsers": [
+      "695718a81da9f469c0ae95f6"
+    ],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "requiresPayment": false,
+    "paymentAmount": 0,
+    "registrations": [
+      {
+        "user": "695718a81da9f469c0ae95f6",
+        "registeredAt": "2026-01-02T02:14:22.508Z",
+        "registrationName": "Member User",
+        "registrationEmail": "member@issyemen.com",
+        "matricNumber": "A23CS0098",
+        "phone": "0198776549",
+        "notes": null,
+        "paymentReceipt": {
+          "paymentStatus": "Pending"
+        }
+      }
+    ],
+    "createdAt": "2026-01-01T11:24:02.524Z",
+    "updatedAt": "2026-01-02T02:14:22.511Z",
+    "__v": 1,
+    "fee": 0,
+    "isActive": true,
+    "price": 0,
+    "registrationOpen": true
+  },
+  {
+    "_id": "69565952037e01285ee4f70f",
+    "title": "Networking Meetup for New Members",
+    "description": "Casual meetup for new and existing members to network, socialize, and build connections. Light refreshments will be provided. Great opportunity to meet fellow Yemeni students at UTM.",
+    "date": "2025-02-25T09:00:00.000Z",
+    "location": "UTM Cafeteria, Second Floor",
+    "category": "Social",
+    "type": "event",
+    "attendees": 1,
+    "registeredUsers": [
+      "695718a81da9f469c0ae95f6"
+    ],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "requiresPayment": false,
+    "paymentAmount": 0,
+    "registrations": [
+      {
+        "user": "695718a81da9f469c0ae95f6",
+        "registeredAt": "2026-01-02T14:35:06.125Z",
+        "registrationName": "Member User",
+        "registrationEmail": "member@issyemen.com",
+        "matricNumber": "A23CS0098",
+        "phone": "0198776549",
+        "notes": null,
+        "paymentReceipt": {
+          "paymentStatus": "Verified",
+          "verifiedAt": "2026-01-02T14:48:49.743Z",
+          "verifiedBy": "695625835ea725221286be4b"
+        }
+      }
+    ],
+    "createdAt": "2026-01-01T11:24:02.528Z",
+    "updatedAt": "2026-01-02T14:48:49.747Z",
+    "__v": 1,
+    "fee": 0,
+    "isActive": true,
+    "price": 0,
+    "registrationOpen": true
+  },
+  {
+    "_id": "69565952037e01285ee4f711",
+    "title": "Eid Al-Fitr Community Celebration",
+    "description": "Community celebration of Eid Al-Fitr with prayers, traditional Yemeni breakfast, family activities, and cultural performances. All members and their families are welcome.",
+    "date": "2025-03-31T00:00:00.000Z",
+    "location": "UTM Student Center, Grand Hall",
+    "category": "Cultural",
+    "type": "event",
+    "attendees": 2,
+    "registeredUsers": [
+      "69562081371985a935cef222",
+      "6956317cbc3b67aff7dc9572"
+    ],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "requiresPayment": true,
+    "paymentAmount": 20,
+    "registrations": [
+      {
+        "user": "69562081371985a935cef222",
+        "registeredAt": "2026-01-01T12:47:10.376Z",
+        "paymentReceipt": {
+          "receiptNumber": "REC-20260101-057820",
+          "generatedAt": "2026-01-01T12:47:10.376Z",
+          "amount": 20,
+          "paymentMethod": "Online",
+          "paymentStatus": "Pending"
+        }
+      },
+      {
+        "user": "6956317cbc3b67aff7dc9572",
+        "registeredAt": "2026-01-01T12:47:10.378Z",
+        "paymentReceipt": {
+          "receiptNumber": "REC-20260101-FD22A7",
+          "generatedAt": "2026-01-01T12:47:10.378Z",
+          "amount": 20,
+          "paymentMethod": "Online",
+          "paymentStatus": "Pending"
+        }
+      },
+      {
+        "user": "695718a81da9f469c0ae95f6",
+        "registeredAt": "2026-01-02T03:40:34.713Z",
+        "registrationName": "Member User",
+        "registrationEmail": "member@issyemen.com",
+        "matricNumber": "A23CS0098",
+        "phone": "0198776549",
+        "notes": null,
+        "paymentReceipt": {
+          "receiptNumber": "REC-20260102-EF6857",
+          "receiptUrl": "/uploads/receipts/1767325234684-j9o8.jpeg",
+          "generatedAt": "2026-01-02T03:40:34.713Z",
+          "amount": 20,
+          "paymentMethod": "QR Code / Bank Transfer",
+          "paymentStatus": "Pending"
+        }
+      }
+    ],
+    "createdAt": "2026-01-01T11:24:02.530Z",
+    "updatedAt": "2026-01-02T03:42:20.443Z",
+    "__v": 4,
+    "fee": 0,
+    "isActive": true,
+    "price": 0,
+    "registrationOpen": true
+  },
+  {
+    "_id": "69565952037e01285ee4f713",
+    "title": "Study Group Formation Session",
+    "description": "Organizing study groups for various majors to support academic success. Find study partners, form groups by subject, and enhance your learning experience through collaborative study.",
+    "date": "2025-03-10T07:00:00.000Z",
+    "location": "UTM Library, Study Room 5",
+    "category": "Academic",
+    "type": "event",
+    "attendees": 1,
+    "registeredUsers": [
+      "695718a81da9f469c0ae95f6"
+    ],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "requiresPayment": false,
+    "paymentAmount": 0,
+    "registrations": [
+      {
+        "user": "695718a81da9f469c0ae95f6",
+        "registeredAt": "2026-01-02T02:24:22.381Z",
+        "registrationName": "Member",
+        "registrationEmail": "member@issyemen.com",
+        "matricNumber": "A23CS0098",
+        "phone": "0198776549",
+        "notes": null,
+        "paymentReceipt": {
+          "paymentStatus": "Pending"
+        }
+      }
+    ],
+    "createdAt": "2026-01-01T11:24:02.532Z",
+    "updatedAt": "2026-01-02T02:24:22.384Z",
+    "__v": 1,
+    "fee": 0,
+    "isActive": true,
+    "price": 0,
+    "registrationOpen": true
+  },
+  {
+    "_id": "69565952037e01285ee4f715",
+    "title": "Welcome New Students Orientation",
+    "description": "Orientation event for new Yemeni students joining UTM. Learn about campus resources, club activities, academic support services, and meet current members. Essential for newcomers!",
+    "date": "2025-03-01T02:00:00.000Z",
+    "location": "UTM Main Hall, Auditorium",
+    "category": "Social",
+    "type": "event",
+    "attendees": 0,
+    "registeredUsers": [],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "requiresPayment": false,
+    "paymentAmount": 0,
+    "registrations": [],
+    "createdAt": "2026-01-01T11:24:02.534Z",
+    "updatedAt": "2026-01-01T11:24:02.534Z",
+    "__v": 0
+  },
+  {
+    "_id": "69565952037e01285ee4f717",
+    "title": "Yemeni Traditional Cooking Class",
+    "description": "Learn to cook authentic Yemeni dishes including Mandi, Saltah, and traditional desserts. Hands-on cooking experience with ingredients provided. Limited spots available!",
+    "date": "2025-03-15T08:00:00.000Z",
+    "location": "UTM Culinary Lab, Building B",
+    "category": "Cultural",
+    "type": "event",
+    "attendees": 3,
+    "registeredUsers": [
+      "69562081371985a935cef222",
+      "6956317cbc3b67aff7dc9572",
+      "695718a81da9f469c0ae95f6"
+    ],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "requiresPayment": true,
+    "paymentAmount": 30,
+    "registrations": [
+      {
+        "user": "69562081371985a935cef222",
+        "registeredAt": "2026-01-01T12:47:10.380Z",
+        "paymentReceipt": {
+          "receiptNumber": "REC-20260101-B78C28",
+          "generatedAt": "2026-01-01T12:47:10.380Z",
+          "amount": 30,
+          "paymentMethod": "Online",
+          "paymentStatus": "Pending"
+        }
+      },
+      {
+        "user": "6956317cbc3b67aff7dc9572",
+        "registeredAt": "2026-01-01T12:47:10.382Z",
+        "paymentReceipt": {
+          "receiptNumber": "REC-20260101-DB9082",
+          "generatedAt": "2026-01-01T12:47:10.382Z",
+          "amount": 30,
+          "paymentMethod": "Online",
+          "paymentStatus": "Verified",
+          "verifiedAt": "2026-01-01T12:52:01.735Z",
+          "verifiedBy": "695625835ea725221286be4b"
+        }
+      },
+      {
+        "user": "695718a81da9f469c0ae95f6",
+        "registeredAt": "2026-01-02T03:41:15.465Z",
+        "registrationName": "Member User",
+        "registrationEmail": "member@issyemen.com",
+        "matricNumber": "A23CS0098",
+        "phone": "0198776549",
+        "notes": null,
+        "paymentReceipt": {
+          "receiptNumber": "REC-20260102-6822E4",
+          "receiptUrl": "/uploads/receipts/1767325275451-g7vzvj.jpeg",
+          "generatedAt": "2026-01-02T03:41:15.465Z",
+          "amount": 30,
+          "paymentMethod": "QR Code / Bank Transfer",
+          "paymentStatus": "Rejected",
+          "rejectionReason": "not approved",
+          "verifiedAt": "2026-01-06T15:31:19.819Z",
+          "verifiedBy": "695625835ea725221286be4b"
+        }
+      }
+    ],
+    "createdAt": "2026-01-01T11:24:02.536Z",
+    "updatedAt": "2026-01-06T15:31:19.821Z",
+    "__v": 3,
+    "fee": 0,
+    "isActive": true,
+    "price": 0,
+    "registrationOpen": true
+  },
+  {
+    "_id": "69565952037e01285ee4f719",
+    "title": "Career Development Seminar",
+    "description": "Professional development workshop covering resume writing, interview skills, networking strategies, and career planning. Guest speakers from various industries will share insights.",
+    "date": "2025-03-22T05:00:00.000Z",
+    "location": "UTM Career Center, Conference Room",
+    "category": "Academic",
+    "type": "event",
+    "attendees": 0,
+    "registeredUsers": [],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "requiresPayment": false,
+    "paymentAmount": 0,
+    "registrations": [],
+    "createdAt": "2026-01-01T11:24:02.537Z",
+    "updatedAt": "2026-01-01T11:24:02.537Z",
+    "__v": 0
+  },
+  {
+    "_id": "69565952037e01285ee4f71b",
+    "title": "Monthly Social Gathering",
+    "description": "Regular monthly gathering for all ISS Yemen members. Casual atmosphere with games, discussions, and community bonding. Food and drinks provided.",
+    "date": "2025-03-28T10:00:00.000Z",
+    "location": "UTM Student Center, Lounge Area",
+    "category": "Social",
+    "type": "event",
+    "attendees": 0,
+    "registeredUsers": [],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "requiresPayment": false,
+    "paymentAmount": 0,
+    "registrations": [],
+    "createdAt": "2026-01-01T11:24:02.539Z",
+    "updatedAt": "2026-01-01T11:24:02.539Z",
+    "__v": 0
+  },
+  {
+    "_id": "69565952037e01285ee4f71f",
+    "title": "Yemeni History & Heritage Exhibition",
+    "description": "Explore Yemen's rich history through artifacts, photographs, and interactive displays. Learn about ancient civilizations, architecture, and cultural traditions of Yemen.",
+    "date": "2025-04-12T03:00:00.000Z",
+    "location": "UTM Cultural Center, Exhibition Hall",
+    "category": "Cultural",
+    "type": "event",
+    "attendees": 1,
+    "registeredUsers": [
+      "695718a81da9f469c0ae95f6"
+    ],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "requiresPayment": false,
+    "paymentAmount": 0,
+    "registrations": [
+      {
+        "user": "695718a81da9f469c0ae95f6",
+        "registeredAt": "2026-01-02T02:15:28.397Z",
+        "registrationName": "Member User",
+        "registrationEmail": "member@issyemen.com",
+        "matricNumber": "A23CS0098",
+        "phone": "0198776549",
+        "notes": null,
+        "paymentReceipt": {
+          "paymentStatus": "Pending"
+        }
+      }
+    ],
+    "createdAt": "2026-01-01T11:24:02.542Z",
+    "updatedAt": "2026-01-02T02:15:28.399Z",
+    "__v": 1,
+    "fee": 0,
+    "isActive": true,
+    "price": 0,
+    "registrationOpen": true
+  },
+  {
+    "_id": "69565952037e01285ee4f721",
+    "title": "Sports Day: Football Tournament",
+    "description": "Friendly football tournament for ISS Yemen members. Teams will be formed on the day. All skill levels welcome. Refreshments and prizes for winners!",
+    "date": "2025-04-19T00:00:00.000Z",
+    "location": "UTM Sports Complex, Football Field",
+    "category": "Social",
+    "type": "event",
+    "attendees": 0,
+    "registeredUsers": [],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "requiresPayment": false,
+    "paymentAmount": 0,
+    "registrations": [
+      {
+        "user": "695718a81da9f469c0ae95f6",
+        "registeredAt": "2026-01-02T01:49:34.822Z",
+        "registrationName": "Member User",
+        "registrationEmail": "member@issyemen.com",
+        "matricNumber": "gkgkugui",
+        "phone": "900990786",
+        "notes": null,
+        "paymentReceipt": {
+          "paymentStatus": "Pending"
+        }
+      }
+    ],
+    "createdAt": "2026-01-01T11:24:02.543Z",
+    "updatedAt": "2026-01-02T02:42:25.163Z",
+    "__v": 2,
+    "fee": 3,
+    "isActive": true,
+    "price": 0,
+    "registrationOpen": true,
+    "qrCodeUrl": "/uploads/qr/1767321689582-WhatsApp Image 2026-01-02 at 9.58.49 AM.jpeg",
+    "schedule": ""
+  },
+  {
+    "_id": "695e6b2379e44e7172753932",
+    "title": "Innovation & Sustainability Summit 2026",
+    "description": "Join industry leaders, entrepreneurs, and changemakers at the Innovation & Sustainability Summit 2026 in Johor Bahru.",
+    "date": "2026-01-18T00:00:00.000Z",
+    "location": "Dewan Perdana",
+    "category": "Academic",
+    "type": "event",
+    "price": 0,
+    "fee": 15,
+    "qrCodeUrl": "/uploads/qr/1767795491073-WhatsApp Image 2026-01-02 at 9.58.49 AM.jpeg",
+    "attendees": 0,
+    "registeredUsers": [],
+    "schedule": "",
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "isActive": true,
+    "registrationOpen": true,
+    "requiresPayment": false,
+    "paymentAmount": 0,
+    "registrations": [],
+    "createdAt": "2026-01-07T14:18:11.080Z",
+    "updatedAt": "2026-01-07T14:18:11.080Z",
+    "__v": 0
+  }
+]

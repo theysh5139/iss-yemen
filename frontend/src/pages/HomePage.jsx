@@ -24,59 +24,85 @@ export default function HomePage() {
   // Check if user is member or admin - more robust check
   const isMember = user && user.role && (user.role === 'member' || user.role === 'admin')
 
+  // Fetch data function (extracted for reuse)
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [homepageData, eventsData, hodsData] = await Promise.all([
+        getHomepageData(),
+        (user && (user.role === 'member' || user.role === 'admin')) ? getUpcomingEvents() : Promise.resolve({ events: [] }),
+        getHODs().catch(() => ({ hods: [] })) // Fetch HODs for all users (members and visitors)
+      ])
+      
+      setSummary(homepageData.summary || { news: 0, announcements: 0, activities: 0 })
+      const newsAndAnnouncements = homepageData.latestNewsAndAnnouncements || []
+      setLatestNewsAndAnnouncements(newsAndAnnouncements)
+      setRegularActivities(homepageData.regularActivities || [])
+      
+      if (eventsData.events) {
+        // Filter out announcements, activities, and news - only show actual events
+        const eventsOnly = eventsData.events.filter(event => 
+          event.type === 'event' && event.category !== 'News'
+        )
+        setUpcomingEvents(eventsOnly)
+        // Filter events where user is registered
+        const registered = eventsOnly.filter(event => 
+          event.registeredUsers?.some(regUser => 
+            typeof regUser === 'object' ? regUser._id === user?.id : regUser === user?.id
+          )
+        )
+        setRegisteredEvents(registered)
+      }
+      
+      // Set HODs for all users
+      if (hodsData && hodsData.hods) {
+        setHods(hodsData.hods)
+      } else {
+        setHods([])
+      }
+      
+      setError(null)
+    } catch (err) {
+      console.error("Failed to fetch homepage data:", err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Initial data fetch
   useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true)
-        const [homepageData, eventsData, hodsData] = await Promise.all([
-          getHomepageData(),
-          (user && (user.role === 'member' || user.role === 'admin')) ? getUpcomingEvents() : Promise.resolve({ events: [] }),
-          getHODs().catch(() => ({ hods: [] })) // Fetch HODs for all users (members and visitors)
-        ])
-        
-        setSummary(homepageData.summary || { news: 0, announcements: 0, activities: 0 })
-        const newsAndAnnouncements = homepageData.latestNewsAndAnnouncements || []
-        // Log to verify imageUrl is present in the data
-        console.log('News and Announcements with images:', newsAndAnnouncements.map(item => ({
-          title: item.title,
-          imageUrl: item.imageUrl,
-          fullImageUrl: item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${item.imageUrl}`) : null
-        })))
-        setLatestNewsAndAnnouncements(newsAndAnnouncements)
-        setRegularActivities(homepageData.regularActivities || [])
-        
-        if (eventsData.events) {
-          // Filter out announcements, activities, and news - only show actual events
-          const eventsOnly = eventsData.events.filter(event => 
-            event.type === 'event' && event.category !== 'News'
-          )
-          setUpcomingEvents(eventsOnly)
-          // Filter events where user is registered
-          const registered = eventsOnly.filter(event => 
-            event.registeredUsers?.some(regUser => 
-              typeof regUser === 'object' ? regUser._id === user?.id : regUser === user?.id
-            )
-          )
-          setRegisteredEvents(registered)
-        }
-        
-        // Set HODs for all users
-        if (hodsData && hodsData.hods) {
-          setHods(hodsData.hods)
-          console.log(`Loaded ${hodsData.hods.length} HOD profiles for display`)
-        } else {
-          setHods([])
-        }
-        
-        setError(null)
-      } catch (err) {
-        console.error("Failed to fetch homepage data:", err)
-        setError(err.message)
-      } finally {
-        setLoading(false)
+    fetchData()
+  }, [user, isMember])
+
+  // Real-time updates: Auto-refresh every 30 seconds + on visibility change
+  useEffect(() => {
+    // Set up polling for automatic refresh (30 seconds)
+    const pollInterval = setInterval(() => {
+      fetchData()
+    }, 30000) // Poll every 30 seconds
+
+    // Refresh when page becomes visible (user switches back to tab)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchData()
       }
     }
-    fetchData()
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // Listen for HOD updates
+    const handleHODUpdate = () => {
+      console.log('[HomePage] HOD data updated, refreshing...')
+      fetchData()
+    }
+    window.addEventListener('hodDataUpdated', handleHODUpdate)
+
+    // Cleanup
+    return () => {
+      clearInterval(pollInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('hodDataUpdated', handleHODUpdate)
+    }
   }, [user, isMember])
 
   function formatDate(dateString) {
