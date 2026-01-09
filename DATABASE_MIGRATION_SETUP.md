@@ -52,7 +52,7 @@ You **must not** commit database credentials to GitHub.
 4. Copy the connection string
 
 ```env
-mongodb+srv://iss_yemen:hij4tNwfvZwGBZN@cluster0.bsd9msg.mongodb.net/iss_yemen_club
+mongodb+srv://iss_yemen:<PASSWORD>@cluster0.bsd9msg.mongodb.net/iss_yemen_club
 ```
 ---
 
