@@ -74,7 +74,7 @@ Check your downloaded Mongodb Tools path
 ### 2. Import to Cloud Cluster
 Replace <PASSWORD> with your Atlas database user password:
 ```bash
-mongorestore --uri="mongodb+srv://iss_yemen:hij4tNwfvZwGBZNi@cluster0.bsd9msg.mongodb.net/" ./db_backup
+mongorestore --uri="mongodb+srv://iss_yemen:<PASSWORD>@cluster0.bsd9msg.mongodb.net/" ./db_backup
 ```
 
 ### 3. Handle _id Conflicts
@@ -106,7 +106,7 @@ MONGO_URI=mongodb://localhost:27017/iss_yemen_club
 ```
 To this:
 ```
-MONGO_URI=mongodb+srv://iss_yemen:hij4tNwfvZwGBZNi@cluster0.bsd9msg.mongodb.net/iss_yemen_club
+MONGO_URI=mongodb+srv://iss_yemen:<PASSWORD>@cluster0.bsd9msg.mongodb.net/iss_yemen_club
 ```
 
 ## ☁️ Setting Up MongoDB Atlas (For Admins)
