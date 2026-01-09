@@ -82,11 +82,6 @@
   box-shadow: 0 4px 15px rgba(240, 173, 78, 0.3);
 }
 
-.role-badge.role-visitor {
-  background: linear-gradient(135deg, #5bc0de 0%, #46b8da 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(91, 192, 222, 0.3);
-}
 
 .dashboard-content {
   display: flex;

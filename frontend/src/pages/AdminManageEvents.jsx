@@ -252,7 +252,7 @@ if (formData.qrFile) data.append('qrCode', formData.qrFile);
                       </div>
                       <div className="form-group">
                         <label className="checkbox-label">
-                          <input type="checkbox" name="isPublic" checked={formData.isPublic} onChange={handleInputChange} /> Public (visible to visitors)
+                          <input type="checkbox" name="isPublic" checked={formData.isPublic} onChange={handleInputChange} /> Public (visible to non-logged-in users)
                         </label>
                       </div>
                     </div>

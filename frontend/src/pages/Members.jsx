@@ -1,103 +1,43 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { getHODs } from "../api/hods.js"
 import "../styles/members.css"
 
 export default function Members() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [hods, setHods] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Mock data - replace with API call later
-  const executiveCommittee = [
-    { id: 1, name: "Ahmed Al-Hashimi", role: "President", email: "ahmed@student.utm.my", year: "2024", major: "Computer Science", bio: "Leading ISS Yemen with passion and dedication" },
-    { id: 2, name: "Fatima Al-Mansouri", role: "Vice President", email: "fatima@student.utm.my", year: "2024", major: "Engineering", bio: "Supporting the community and driving initiatives" },
-    { id: 3, name: "Amina Al-Sayed", role: "Secretary", email: "amina@student.utm.my", year: "2024", major: "Medicine", bio: "Organizing events and managing communications" },
-    { id: 4, name: "Mohammed Al-Zahra", role: "Treasurer", email: "mohammed@student.utm.my", year: "2023", major: "Business", bio: "Managing finances and budgets" },
-  ]
+  useEffect(() => {
+    async function fetchHODs() {
+      try {
+        setLoading(true)
+        const response = await getHODs()
+        if (response && response.hods) {
+          setHods(response.hods)
+        }
+      } catch (err) {
+        console.error("Failed to fetch HODs:", err)
+        setError("Failed to load HOD profiles. Please try again later.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchHODs()
+  }, [])
 
-  const committeeHeads = [
-    { id: 5, name: "Yusuf Al-Qadri", role: "Cultural Committee Head", committee: "cultural", email: "yusuf@student.utm.my", year: "2025", major: "Computer Science", bio: "Promoting Yemeni culture and traditions" },
-    { id: 6, name: "Khadija Al-Mutawakel", role: "Academic Committee Head", committee: "academic", email: "khadija@student.utm.my", year: "2023", major: "Engineering", bio: "Supporting academic excellence" },
-    { id: 7, name: "Omar Al-Hakim", role: "Sports Committee Head", committee: "sports", email: "omar@student.utm.my", year: "2024", major: "Business", bio: "Organizing sports activities and events" },
-    { id: 8, name: "Layla Al-Shami", role: "Social Committee Head", committee: "social", email: "layla@student.utm.my", year: "2025", major: "Medicine", bio: "Fostering social connections" },
-    { id: 9, name: "Hassan Al-Awadhi", role: "Media Committee Head", committee: "media", email: "hassan@student.utm.my", year: "2023", major: "Computer Science", bio: "Managing social media and content" },
-    { id: 10, name: "Noor Al-Battawi", role: "Logistics Committee Head", committee: "logistics", email: "noor@student.utm.my", year: "2024", major: "Engineering", bio: "Handling event logistics and planning" },
-    { id: 11, name: "Rashid Al-Hamdan", role: "YSAG Committee Head", committee: "ysag", email: "rashid@student.utm.my", year: "2024", major: "Science", bio: "Leading academic group initiatives" },
-    { id: 12, name: "Mariam Al-Hadi", role: "Women Affairs Committee Head", committee: "womenAffairs", email: "mariam@student.utm.my", year: "2023", major: "Medicine", bio: "Supporting women students' needs" },
-  ]
-
-  const committeeMembers = {
-    cultural: [
-      { id: 13, name: "Bilal Al-Shaibi", email: "bilal@student.utm.my", year: "2024", major: "Arts" },
-      { id: 14, name: "Huda Al-Maqtari", email: "huda@student.utm.my", year: "2025", major: "Literature" },
-      { id: 15, name: "Tariq Al-Awadhi", email: "tariq@student.utm.my", year: "2023", major: "History" },
-    ],
-    academic: [
-      { id: 16, name: "Sara Al-Hamdani", email: "sara@student.utm.my", year: "2024", major: "Computer Science" },
-      { id: 17, name: "Khalid Al-Salami", email: "khalid@student.utm.my", year: "2024", major: "Engineering" },
-      { id: 18, name: "Nadia Al-Hajri", email: "nadia@student.utm.my", year: "2025", major: "Science" },
-    ],
-    sports: [
-      { id: 19, name: "Waleed Al-Abdali", email: "waleed@student.utm.my", year: "2023", major: "Sports Science" },
-      { id: 20, name: "Salma Al-Rashidi", email: "salma@student.utm.my", year: "2024", major: "Business" },
-    ],
-    social: [
-      { id: 21, name: "Ibrahim Al-Mahdi", email: "ibrahim@student.utm.my", year: "2024", major: "Social Science" },
-      { id: 22, name: "Rana Al-Qasimi", email: "rana@student.utm.my", year: "2025", major: "Arts" },
-    ],
-    media: [
-      { id: 23, name: "Adel Al-Shamiri", email: "adel@student.utm.my", year: "2024", major: "Media Studies" },
-      { id: 24, name: "Lina Al-Makki", email: "lina@student.utm.my", year: "2023", major: "Communications" },
-    ],
-    logistics: [
-      { id: 25, name: "Zaid Al-Attas", email: "zaid@student.utm.my", year: "2024", major: "Business" },
-      { id: 26, name: "Yasmin Al-Hadi", email: "yasmin@student.utm.my", year: "2025", major: "Management" },
-    ],
-    ysag: [
-      { id: 27, name: "Faisal Al-Shami", email: "faisal@student.utm.my", year: "2024", major: "Science" },
-      { id: 28, name: "Aisha Al-Salami", email: "aisha@student.utm.my", year: "2023", major: "Engineering" },
-    ],
-    womenAffairs: [
-      { id: 29, name: "Rania Al-Hashimi", email: "rania@student.utm.my", year: "2024", major: "Medicine" },
-      { id: 30, name: "Lubna Al-Mansouri", email: "lubna@student.utm.my", year: "2025", major: "Education" },
-    ],
-  }
-
-  // Helper function to check if item matches search
-  const matchesSearch = (item, searchTerm) => {
+  // Filter HODs based on search
+  const filteredHODs = hods.filter(hod => {
     const search = searchTerm.toLowerCase()
     return (
-      item.name.toLowerCase().includes(search) ||
-      item.role?.toLowerCase().includes(search) ||
-      item.major.toLowerCase().includes(search) ||
-      item.committee?.toLowerCase().includes(search) ||
-      item.bio?.toLowerCase().includes(search)
+      hod.name?.toLowerCase().includes(search) ||
+      hod.designation?.toLowerCase().includes(search)
     )
-  }
+  })
 
-  // Filter all members based on search
-  const filteredExecutive = executiveCommittee.filter(m => matchesSearch(m, searchTerm))
-  const filteredHeads = committeeHeads.filter(m => matchesSearch(m, searchTerm))
-  const filteredMembers = Object.entries(committeeMembers).reduce((acc, [committee, members]) => {
-    const filtered = members.filter(m => matchesSearch(m, searchTerm))
-    if (filtered.length > 0) {
-      acc[committee] = filtered
-    }
-    return acc
-  }, {})
-
-  const totalCount = filteredExecutive.length + filteredHeads.length + 
-    Object.values(filteredMembers).flat().length
-
-  const committeeNames = {
-    cultural: "Cultural Committee",
-    academic: "Academic Committee",
-    sports: "Sports Committee",
-    social: "Social Committee",
-    media: "Media Committee",
-    logistics: "Logistics Committee",
-    ysag: "YSAG (Yemeni Students Academic Group)",
-    womenAffairs: "Women Affairs Committee"
-  }
+  const totalCount = filteredHODs.length
 
   return (
     <div className="members-container animate-fadeInUp">
@@ -111,7 +51,7 @@ export default function Members() {
           <div className="search-box">
             <input
               type="text"
-              placeholder="Search by name, role, committee, or major..."
+              placeholder="Search by name or designation..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -123,117 +63,57 @@ export default function Members() {
           </div>
         </div>
 
-        {/* 1. Executive Committee Section */}
-        {filteredExecutive.length > 0 && (
-          <div className="members-section executive-section">
-            <h2 className="section-group-title">Executive Committee</h2>
-            <p className="section-description">The main leaders of ISS Yemen</p>
-            <div className="members-grid executive-grid">
-              {filteredExecutive.map((member) => (
-                <div key={member.id} className="member-card executive-card animate-scaleIn">
-                  <div className="member-avatar executive-avatar">
-                    {member.name.charAt(0)}
-                  </div>
-                  <div className="member-info">
-                    <h3 className="member-name">{member.name}</h3>
-                    <p className="member-role">{member.role}</p>
-                    {member.bio && <p className="member-bio">{member.bio}</p>}
-                    <div className="member-details">
-                      <p className="member-detail">
-                        <span className="detail-label">Major:</span> {member.major}
-                      </p>
-                      <p className="member-detail">
-                        <span className="detail-label">Year:</span> {member.year}
-                      </p>
-                      <p className="member-detail">
-                        <span className="detail-label">Email:</span>{" "}
-                        <a href={`mailto:${member.email}`} className="member-email">
-                          {member.email}
-                        </a>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        {/* Heads of Department (HODs) Section - Connected to Admin Manage HOD */}
+        {loading ? (
+          <div className="members-section">
+            <h2 className="section-group-title">Heads of Department</h2>
+            <p className="section-description">Loading HOD profiles...</p>
+          </div>
+        ) : error ? (
+          <div className="members-section">
+            <h2 className="section-group-title">Heads of Department</h2>
+            <div className="error-message" style={{ padding: '1rem', color: '#721c24', background: '#f8d7da', borderRadius: '8px' }}>
+              {error}
             </div>
           </div>
-        )}
-
-        {/* 2. Committee Heads Section */}
-        {filteredHeads.length > 0 && (
+        ) : filteredHODs.length > 0 ? (
           <div className="members-section">
-            <h2 className="section-group-title">Committee Heads</h2>
-            <p className="section-description">Heads of major departments</p>
+            <h2 className="section-group-title">Heads of Department</h2>
+            <p className="section-description">Meet our distinguished department heads</p>
             <div className="members-grid">
-              {filteredHeads.map((member) => (
-                <div key={member.id} className="member-card committee-head-card animate-scaleIn">
-                  <div className="member-avatar">
-                    {member.name.charAt(0)}
-                  </div>
-                  <div className="member-info">
-                    <h3 className="member-name">{member.name}</h3>
-                    <p className="member-role">{member.role}</p>
-                    {member.bio && <p className="member-bio">{member.bio}</p>}
-                    <div className="member-details">
-                      <p className="member-detail">
-                        <span className="detail-label">Major:</span> {member.major}
-                      </p>
-                      <p className="member-detail">
-                        <span className="detail-label">Year:</span> {member.year}
-                      </p>
-                      <p className="member-detail">
-                        <span className="detail-label">Email:</span>{" "}
-                        <a href={`mailto:${member.email}`} className="member-email">
-                          {member.email}
-                        </a>
-                      </p>
+              {filteredHODs.map((hod) => {
+                const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+                const photoUrl = hod.photo?.startsWith('http') 
+                  ? hod.photo 
+                  : hod.photo?.startsWith('/') 
+                    ? `${apiBaseUrl}${hod.photo}` 
+                    : hod.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(hod.name)}&size=200&background=1e3a8a&color=fff`
+                
+                return (
+                  <div key={hod._id || hod.id} className="member-card committee-head-card animate-scaleIn">
+                    <div className="member-avatar" style={{ 
+                      backgroundImage: `url(${photoUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}>
+                      {!hod.photo && hod.name?.charAt(0)}
+                    </div>
+                    <div className="member-info">
+                      <h3 className="member-name">{hod.name}</h3>
+                      <p className="member-role">{hod.designation}</p>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
+          </div>
+        ) : (
+          <div className="members-section">
+            <h2 className="section-group-title">Heads of Department</h2>
+            <p className="section-description">No HOD profiles available at this time.</p>
           </div>
         )}
 
-        {/* 3. Committee Members Section */}
-        {Object.keys(filteredMembers).length > 0 && (
-          <div className="members-section">
-            <h2 className="section-group-title">Committee Members</h2>
-            <p className="section-description">Members organized by committee</p>
-            {Object.entries(filteredMembers).map(([committee, members]) => (
-              <div key={committee} className="committee-group">
-                <h3 className="committee-title">{committeeNames[committee]}</h3>
-                <div className="members-grid">
-                  {members.map((member) => (
-                    <div key={member.id} className="member-card animate-scaleIn">
-                      <div className="member-avatar">
-                        {member.name.charAt(0)}
-                      </div>
-                      <div className="member-info">
-                        <h3 className="member-name">{member.name}</h3>
-                        <p className="member-role">Committee Member</p>
-                        <div className="member-details">
-                          <p className="member-detail">
-                            <span className="detail-label">Major:</span> {member.major}
-                          </p>
-                          <p className="member-detail">
-                            <span className="detail-label">Year:</span> {member.year}
-                          </p>
-                          <p className="member-detail">
-                            <span className="detail-label">Email:</span>{" "}
-                            <a href={`mailto:${member.email}`} className="member-email">
-                              {member.email}
-                            </a>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
 
         {totalCount === 0 && (
           <div className="no-results">

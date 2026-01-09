@@ -109,7 +109,7 @@ export default function AdminDashboard() {
       await logoutApi()
     } catch {}
     setUser(null)
-    navigate("/", { replace: true }) // Redirect to homepage as visitor
+    navigate("/", { replace: true }) // Redirect to homepage
   }
 
   function formatDate(dateString) {

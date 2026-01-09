@@ -72,21 +72,18 @@ export default function HomePage() {
 
   // Initial data fetch
   useEffect(() => {
+
     fetchData()
   }, [user, isMember])
 
   // Real-time updates: Auto-refresh every 30 seconds + on visibility change
   useEffect(() => {
     // Set up polling for automatic refresh (30 seconds)
-    const pollInterval = setInterval(() => {
-      fetchData()
-    }, 30000) // Poll every 30 seconds
+    const pollInterval = setInterval(() => fetchData(), 30000)
 
     // Refresh when page becomes visible (user switches back to tab)
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchData()
-      }
+      if (!document.hidden) fetchData()
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
@@ -290,18 +287,38 @@ export default function HomePage() {
                     </div>
                     <p className="event-description">{event.description}</p>
                     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
-                      <a href={`/events#${event._id}`} className="event-link">View Details →</a>
-                      {hasReceipt && (
-                        <>
-                          <a 
-                            href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/receipts/event/${event._id}/download`}
-                            target="_blank"
-                            className="event-link"
-                            style={{ color: '#1e3a8a' }}
-                          >
-                            📥 Download Receipt
-                          </a>
-                        </>
+                      {registration?.paymentReceipt?.receiptUrl ? (
+                        <button
+                          className="btn btn-primary"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            // Open proof of payment in new tab
+                            const receiptUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${registration.paymentReceipt.receiptUrl}`
+                            window.open(receiptUrl, '_blank')
+                          }}
+                          style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                        >
+                          👁️ View Proof of Payment
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '0.85rem', color: '#666', fontStyle: 'italic' }}>
+                          No payment proof uploaded
+                        </span>
+                      )}
+                      {registration?.paymentReceipt?.paymentStatus === 'Verified' && (
+                        <button
+                          className="btn btn-secondary"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            // Download official receipt
+                            const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+                            const downloadUrl = `${API_BASE_URL}/api/receipts/event/${event._id}/download?userId=${user?.id}&format=pdf`
+                            window.open(downloadUrl, '_blank')
+                          }}
+                          style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                        >
+                          📄 Download Official Receipt
+                        </button>
                       )}
                     </div>
                   </div>

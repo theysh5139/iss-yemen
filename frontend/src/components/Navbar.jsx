@@ -13,7 +13,7 @@ export default function Navbar() {
 
   async function handleLogout() {
     setUser(null)
-    navigate("/", { replace: true }) // Redirect to homepage as visitor
+    navigate("/", { replace: true }) // Redirect to homepage
     setMenuOpen(false)
   }
 

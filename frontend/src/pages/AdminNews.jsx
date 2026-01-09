@@ -272,7 +272,7 @@ export default function AdminNews() {
                           checked={formData.isPublic}
                           onChange={handleInputChange}
                         />
-                        Public (visible to visitors)
+                        Public (visible to non-logged-in users)
                       </label>
                     </div>
                   </div>

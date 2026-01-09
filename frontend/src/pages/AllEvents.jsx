@@ -19,7 +19,7 @@ export default function AllEvents() {
 
   useEffect(() => {
     fetchEvents()
-    // Check if URL has filter parameter (for visitors coming from homepage)
+    // Check if URL has filter parameter (for non-logged-in users coming from homepage)
     const urlParams = new URLSearchParams(window.location.search)
     const filterParam = urlParams.get('filter')
     const eventIdParam = urlParams.get('event')
@@ -27,7 +27,7 @@ export default function AllEvents() {
     if (filterParam && ['all', 'upcoming', 'past'].includes(filterParam)) {
       setFilter(filterParam)
     } else if (!isMember) {
-      // For visitors, default to "upcoming" if no filter specified
+      // For non-logged-in users, default to "upcoming" if no filter specified
       setFilter("upcoming")
     }
     
@@ -155,7 +155,7 @@ export default function AllEvents() {
     
     const eventDate = new Date(event.date)
     
-    // Apply filter for both visitors and members
+    // Apply filter for both non-logged-in users and members
     if (filter === "upcoming") return eventDate >= now
     if (filter === "past") return eventDate < now
     return true // Show all for "all" filter
@@ -189,7 +189,7 @@ export default function AllEvents() {
         <p className="page-subtitle">Join events and activities organized by ISS Yemen</p>
       </div>
 
-      {/* Filter Tabs - Show for both visitors and members */}
+      {/* Filter Tabs - Show for both non-logged-in users and members */}
       <div className="events-filter-tabs">
         <button
           className={`filter-tab ${filter === "all" ? "active" : ""}`}

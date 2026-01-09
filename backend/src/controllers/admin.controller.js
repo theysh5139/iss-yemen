@@ -96,7 +96,7 @@ export async function deactivateUser(req, res, next) {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     // Deactivate user by deleting their account
-    // Don't set role to 'visitor' - visitors don't have accounts
+    // Delete user account (non-logged-in users don't have accounts)
     await User.findByIdAndDelete(req.params.id);
 
     res.json({ success: true });
@@ -521,29 +521,85 @@ export const verifyPayments = async (req, res, next) => {
 export const approvePayment = async (req, res, next) => {
   try {
     const event = await Event.findById(req.params.eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+    
     const reg = event.registrations[req.params.registrationIndex];
+    if (!reg || !reg.paymentReceipt) {
+      return res.status(404).json({ message: 'Registration or payment receipt not found' });
+    }
 
+    // Update payment status to Verified
     reg.paymentReceipt.paymentStatus = 'Verified';
     reg.paymentReceipt.verifiedAt = new Date();
     reg.paymentReceipt.verifiedBy = req.user.id;
 
+    // Generate official receipt only if not already generated (prevent regeneration on refresh)
+    if (!reg.paymentReceipt.officialReceiptGenerated) {
+      try {
+        const { generateReceiptPDF } = await import('../utils/pdfGenerator.js');
+        const User = (await import('../models/User.model.js')).User;
+        
+        // Get user details for receipt
+        const user = await User.findById(reg.user);
+        if (!user) {
+          console.error('User not found for receipt generation');
+        } else {
+          // Generate transaction ID if not exists
+          const transactionId = reg.paymentReceipt.transactionId || `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+          
+          // Generate PDF receipt with all required fields
+          const pdfBuffer = await generateReceiptPDF({
+            receiptId: reg.paymentReceipt.receiptNumber,
+            userName: reg.registrationName || user.name || user.email,
+            eventName: event.title,
+            eventDate: event.date,
+            paymentDate: reg.paymentReceipt.generatedAt || reg.registeredAt || new Date(),
+            amount: reg.paymentReceipt.amount || event.paymentAmount || 0,
+            currency: 'MYR',
+            transactionId: transactionId,
+            matricNumber: reg.matricNumber || null,
+            userEmail: reg.registrationEmail || user.email,
+            paymentMethod: reg.paymentReceipt.paymentMethod || 'QR Code / Bank Transfer',
+            registrationDate: reg.registeredAt || new Date(),
+            paymentStatus: 'Verified'
+          });
+          
+          // Mark official receipt as generated (prevent regeneration)
+          reg.paymentReceipt.officialReceiptGenerated = true;
+          reg.paymentReceipt.officialReceiptGeneratedAt = new Date();
+          
+          // Store transaction ID if not exists
+          if (!reg.paymentReceipt.transactionId) {
+            reg.paymentReceipt.transactionId = transactionId;
+          }
+          
+          console.log(`Official receipt generated for registration: ${reg.paymentReceipt.receiptNumber}`);
+        }
+      } catch (receiptError) {
+        console.error('Failed to generate official receipt:', receiptError);
+        // Don't fail the approval if receipt generation fails - payment is still verified
+      }
+    }
+
     await event.save();
-    
+
     // Also update Payment and Receipt documents in MongoDB if they exist
     try {
       const { Payment } = await import('../models/Payment.model.js');
       const { Receipt } = await import('../models/Receipt.model.js');
-      
+
       // Find Payment by eventId and userId
       const payment = await Payment.findOne({
         eventId: event._id,
         userId: reg.user
       });
-      
+
       if (payment) {
         payment.status = 'paid';
         await payment.save();
-        
+
         // Update Receipt if it exists
         const receipt = await Receipt.findOne({ paymentId: payment._id });
         if (receipt) {
@@ -555,8 +611,8 @@ export const approvePayment = async (req, res, next) => {
       console.error('[approvePayment] Error updating Payment/Receipt documents:', paymentUpdateError);
       // Don't fail the request if Payment/Receipt update fails
     }
-    
-    res.json({ success: true });
+
+    res.json({ success: true, message: 'Payment verified and official receipt generated' });
   } catch (err) {
     next(err);
   }

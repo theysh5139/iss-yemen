@@ -16,7 +16,7 @@ export default function PastEvents() {
   const [categoryFilter, setCategoryFilter] = useState("All")
   const [dateFilter, setDateFilter] = useState("All")
 
-  // Redirect members to all-events page (past events timeline is only for visitors)
+  // Redirect members to all-events page (past events timeline is for non-logged-in users)
   useEffect(() => {
     if (user && (user.role === 'member' || user.role === 'admin')) {
       navigate("/all-events", { replace: true })
