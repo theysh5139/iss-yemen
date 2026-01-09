@@ -1,0 +1,27 @@
+[
+  {
+    "_id": "695e7186766a86c00d057297",
+    "title": "Community Wellness Fair 2026",
+    "description": "We are excited to invite you to the Community Wellness Fair 2026, happening on Saturday, March 14th at the Kulai Town Hal",
+    "date": "2026-01-07T00:00:00.000Z",
+    "location": "Kulai Town Hal",
+    "category": "Announcement",
+    "type": "announcement",
+    "price": 0,
+    "fee": 0,
+    "imageUrl": "/uploads/images/1767797126555-3j04h.png",
+    "attendees": 0,
+    "registeredUsers": [],
+    "isRecurring": false,
+    "isPublic": true,
+    "cancelled": false,
+    "isActive": true,
+    "registrationOpen": true,
+    "requiresPayment": false,
+    "paymentAmount": 0,
+    "registrations": [],
+    "createdAt": "2026-01-07T14:45:26.569Z",
+    "updatedAt": "2026-01-07T14:45:26.569Z",
+    "__v": 0
+  }
+]

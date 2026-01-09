@@ -14,7 +14,15 @@
     "seed-events": "node src/scripts/seed-events.js",
     "seed-registrations": "node src/scripts/seed-registrations.js",
     "seed-chat-rules": "node src/scripts/seed-chat-rules.js",
-    "configure-email": "node src/scripts/configure-email.js"
+    "configure-email": "node src/scripts/configure-email.js",
+    "migrate-to-cloud": "node src/scripts/migrate-to-cloud.js",
+    "restore-all-data": "node src/scripts/restore-all-data.js",
+    "separate-data-types": "node src/scripts/separate-data-types.js",
+    "migrate-to-separate-collections": "node src/scripts/migrate-to-separate-collections.js",
+    "restore-payment-receipts": "node src/scripts/restore-payment-receipts.js",
+    "check-hods": "node src/scripts/check-hods.js",
+    "fix-hods": "node src/scripts/fix-hods-display.js",
+    "test-cloud-updates": "node src/scripts/test-cloud-updates.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

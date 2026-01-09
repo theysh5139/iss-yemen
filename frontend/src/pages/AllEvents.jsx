@@ -78,6 +78,27 @@ export default function AllEvents() {
     }
   }
 
+  // Real-time updates: Auto-refresh every 30 seconds
+  useEffect(() => {
+    // Set up polling for automatic refresh (30 seconds)
+    const pollInterval = setInterval(() => {
+      fetchEvents()
+    }, 30000) // Poll every 30 seconds
+
+    // Refresh when page becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchEvents()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      clearInterval(pollInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
+
   function handleEventClick(event) {
     console.log('handleEventClick called with event:', event)
     if (!event || !event._id) {

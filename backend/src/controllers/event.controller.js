@@ -1,4 +1,7 @@
 import { Event } from '../models/Event.model.js';
+import { Payment } from '../models/Payment.model.js';
+import { Receipt } from '../models/Receipt.model.js';
+import { generateRandomToken } from '../utils/tokens.js';
 
 // Get all events (public events for non-logged-in users, all for logged-in users)
 // Only returns actual events (type === 'event'), excludes announcements, activities, and news
@@ -95,6 +98,8 @@ export async function registerForEvent(req, res, next) {
     // Generate payment receipt if event requires payment
     let receiptData = null;
     let receiptNumber = null;
+    let paymentDoc = null;
+    let receiptDoc = null;
     // Check payment requirement: use paymentAmount if set, otherwise fallback to fee
     const paymentAmount = event.paymentAmount || event.fee || 0;
     const requiresPayment = (event.requiresPayment && event.paymentAmount > 0) || (event.fee && event.fee > 0);
@@ -102,6 +107,45 @@ export async function registerForEvent(req, res, next) {
     if (requiresPayment && paymentAmount > 0) {
       const { generateReceiptNumber } = await import('../utils/receipt.js');
       receiptNumber = generateReceiptNumber();
+      
+      // Generate unique transaction ID
+      const transactionId = `TXN-${Date.now()}-${generateRandomToken(8).toUpperCase()}`;
+      
+      // Create Payment document in MongoDB
+      try {
+        paymentDoc = await Payment.create({
+          userId: userId,
+          eventId: event._id,
+          amount: parseFloat(paymentAmount),
+          currency: 'MYR',
+          transactionId: transactionId,
+          status: 'pending', // Starts as pending until admin verifies
+          paymentMethod: selectedPaymentMethod.toLowerCase().replace(/\s+/g, '_'),
+          paymentDate: new Date()
+        });
+        
+        // Create Receipt document in MongoDB
+        receiptDoc = await Receipt.create({
+          receiptId: receiptNumber,
+          paymentId: paymentDoc._id,
+          userId: userId,
+          eventId: event._id,
+          amount: paymentDoc.amount,
+          currency: paymentDoc.currency,
+          transactionId: paymentDoc.transactionId,
+          userName: registrationName,
+          eventName: event.title,
+          eventDate: event.date,
+          paymentDate: paymentDoc.paymentDate
+        });
+        
+        console.log(`[registerForEvent] Created Payment and Receipt documents: Payment ID: ${paymentDoc._id}, Receipt ID: ${receiptDoc._id}`);
+      } catch (paymentError) {
+        console.error('[registerForEvent] Error creating Payment/Receipt documents:', paymentError);
+        // Continue with registration even if Payment/Receipt creation fails
+        // The embedded receipt data will still be saved in the Event document
+      }
+      
       receiptData = {
         receiptNumber: receiptNumber,
         generatedAt: new Date(),
@@ -111,7 +155,8 @@ export async function registerForEvent(req, res, next) {
         registrationName: registrationName,
         registrationEmail: registrationEmail,
         matricNumber: matricNumber || null,
-        phone: phone || null
+        phone: phone || null,
+        transactionId: transactionId
       };
       
       // If user uploaded a receipt, use that URL

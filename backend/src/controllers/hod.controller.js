@@ -65,6 +65,15 @@ export async function createHOD(req, res, next) {
       order: order || 0
     });
 
+    // Broadcast real-time update
+    try {
+      const { broadcastHODUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      broadcastHODUpdate(hod, 'created');
+      broadcastDataRefresh('hods');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
+
     return res.status(201).json({ message: 'HOD created successfully', hod });
   } catch (err) {
     if (err.name === 'ValidationError') {
@@ -120,6 +129,16 @@ export async function updateHOD(req, res, next) {
     if (order !== undefined) hod.order = order;
 
     await hod.save();
+    
+    // Broadcast real-time update
+    try {
+      const { broadcastHODUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      broadcastHODUpdate(hod, 'updated');
+      broadcastDataRefresh('hods');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
+    
     return res.json({ message: 'HOD updated successfully', hod });
   } catch (err) {
     if (err.name === 'ValidationError') {
@@ -133,10 +152,22 @@ export async function updateHOD(req, res, next) {
 export async function deleteHOD(req, res, next) {
   try {
     const { id } = req.params;
-    const hod = await HOD.findByIdAndDelete(id);
+    const hod = await HOD.findById(id);
     if (!hod) {
       return res.status(404).json({ message: 'HOD not found' });
     }
+    
+    await HOD.findByIdAndDelete(id);
+    
+    // Broadcast real-time update
+    try {
+      const { broadcastHODUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      broadcastHODUpdate(hod, 'deleted');
+      broadcastDataRefresh('hods');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
+    
     return res.json({ message: 'HOD deleted successfully' });
   } catch (err) {
     next(err);

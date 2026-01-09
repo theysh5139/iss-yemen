@@ -114,13 +114,37 @@ export async function createAnnouncement(req, res, next) {
     // Otherwise, set type to 'announcement'
     const eventType = req.body.category === 'News' ? 'event' : (req.body.type || 'announcement');
     
+    // Determine image URL based on storage method
+    let imageUrl = undefined;
+    if (req.file) {
+      // Check if GridFS is being used (file has gridfsId)
+      if (req.file.gridfsId) {
+        imageUrl = req.file.gridfsUrl; // GridFS URL: /api/images/gridfs/{fileId}
+      } else {
+        imageUrl = `/uploads/images/${req.file.filename}`; // Filesystem URL
+      }
+    }
+    
     const event = await Event.create({
       ...req.body,
       type: eventType,
       date: req.body.date || new Date(),
       isPublic: req.body.isPublic ?? true,
-      imageUrl: req.file ? `/uploads/images/${req.file.filename}` : undefined
+      imageUrl: imageUrl
     });
+
+    // Broadcast real-time update
+    try {
+      const { broadcastNewsUpdate, broadcastAnnouncementUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      if (eventType === 'event' && req.body.category === 'News') {
+        broadcastNewsUpdate(event, 'created');
+      } else if (eventType === 'announcement') {
+        broadcastAnnouncementUpdate(event, 'created');
+      }
+      broadcastDataRefresh('announcements');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
 
     res.status(201).json({ success: true, event });
   } catch (err) {
@@ -134,6 +158,16 @@ export async function updateAnnouncement(req, res, next) {
     // Allow updating announcements and news (events with category 'News')
     if (!event || (event.type !== 'announcement' && !(event.type === 'event' && event.category === 'News'))) {
       return res.status(404).json({ message: 'Announcement not found' });
+    }
+
+    // Handle image upload - support both GridFS and filesystem
+    if (req.file) {
+      // Check if GridFS is being used (file has gridfsId)
+      if (req.file.gridfsId) {
+        req.body.imageUrl = req.file.gridfsUrl; // GridFS URL: /api/images/gridfs/{fileId}
+      } else {
+        req.body.imageUrl = `/uploads/images/${req.file.filename}`; // Filesystem URL
+      }
     }
 
     // If category is "News", ensure type is 'event' so it's counted in news counter
@@ -153,6 +187,19 @@ export async function updateAnnouncement(req, res, next) {
     Object.assign(event, req.body);
     await event.save();
 
+    // Broadcast real-time update
+    try {
+      const { broadcastNewsUpdate, broadcastAnnouncementUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      if (event.type === 'event' && event.category === 'News') {
+        broadcastNewsUpdate(event, 'updated');
+      } else if (event.type === 'announcement') {
+        broadcastAnnouncementUpdate(event, 'updated');
+      }
+      broadcastDataRefresh('announcements');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
+
     res.json({ success: true, event });
   } catch (err) {
     next(err);
@@ -161,7 +208,24 @@ export async function updateAnnouncement(req, res, next) {
 
 export async function deleteAnnouncement(req, res, next) {
   try {
+    const event = await Event.findById(req.params.id);
     await Event.findByIdAndDelete(req.params.id);
+    
+    // Broadcast real-time update
+    try {
+      const { broadcastNewsUpdate, broadcastAnnouncementUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      if (event) {
+        if (event.type === 'event' && event.category === 'News') {
+          broadcastNewsUpdate(event, 'deleted');
+        } else if (event.type === 'announcement') {
+          broadcastAnnouncementUpdate(event, 'deleted');
+        }
+      }
+      broadcastDataRefresh('announcements');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
+    
     res.json({ success: true });
   } catch (err) {
     next(err);
@@ -194,6 +258,15 @@ export async function createEvent(req, res, next) {
       paymentAmount: paymentAmount,
       qrCodeUrl: req.file ? `/uploads/qr/${req.file.filename}` : undefined
     });
+
+    // Broadcast real-time update
+    try {
+      const { broadcastEventUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      broadcastEventUpdate(event, 'created');
+      broadcastDataRefresh('events');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
 
     res.status(201).json({ success: true, event });
   } catch (err) {
@@ -233,6 +306,16 @@ export async function updateEvent(req, res, next) {
     }
 
     await event.save()
+    
+    // Broadcast real-time update
+    try {
+      const { broadcastEventUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      broadcastEventUpdate(event, 'updated');
+      broadcastDataRefresh('events');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
+    
     res.json({ success: true, event })
   } catch (err) {
     next(err)
@@ -246,6 +329,16 @@ export async function cancelEvent(req, res, next) {
 
     event.cancelled = true
     await event.save()
+    
+    // Broadcast real-time update
+    try {
+      const { broadcastEventUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      broadcastEventUpdate(event, 'updated');
+      broadcastDataRefresh('events');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
+    
     res.json({ success: true })
   } catch (err) {
     next(err)
@@ -254,7 +347,20 @@ export async function cancelEvent(req, res, next) {
 
 export async function deleteEvent(req, res, next) {
   try {
+    const event = await Event.findById(req.params.id)
+    if (!event) return res.status(404).json({ message: 'Event not found' })
+    
     await Event.findByIdAndDelete(req.params.id)
+    
+    // Broadcast real-time update
+    try {
+      const { broadcastEventUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      broadcastEventUpdate(event, 'deleted');
+      broadcastDataRefresh('events');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
+    
     res.json({ success: true })
   } catch (err) {
     next(err)
@@ -422,6 +528,34 @@ export const approvePayment = async (req, res, next) => {
     reg.paymentReceipt.verifiedBy = req.user.id;
 
     await event.save();
+    
+    // Also update Payment and Receipt documents in MongoDB if they exist
+    try {
+      const { Payment } = await import('../models/Payment.model.js');
+      const { Receipt } = await import('../models/Receipt.model.js');
+      
+      // Find Payment by eventId and userId
+      const payment = await Payment.findOne({
+        eventId: event._id,
+        userId: reg.user
+      });
+      
+      if (payment) {
+        payment.status = 'paid';
+        await payment.save();
+        
+        // Update Receipt if it exists
+        const receipt = await Receipt.findOne({ paymentId: payment._id });
+        if (receipt) {
+          // Receipt model doesn't have paymentStatus, but we can add metadata if needed
+          console.log(`[approvePayment] Updated Payment ${payment._id} to 'paid' status`);
+        }
+      }
+    } catch (paymentUpdateError) {
+      console.error('[approvePayment] Error updating Payment/Receipt documents:', paymentUpdateError);
+      // Don't fail the request if Payment/Receipt update fails
+    }
+    
     res.json({ success: true });
   } catch (err) {
     next(err);
@@ -449,6 +583,41 @@ export const rejectPayment = async (req, res, next) => {
     reg.paymentReceipt.rejectionReason = reason || 'No reason provided';
 
     await event.save();
+    
+    // Broadcast real-time update
+    try {
+      const { broadcastPaymentReceiptUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      broadcastPaymentReceiptUpdate({ eventId: event._id, registration: reg }, 'updated');
+      broadcastDataRefresh('payments');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
+    
+    // Also update Payment document in MongoDB if it exists
+    try {
+      const { Payment } = await import('../models/Payment.model.js');
+      
+      // Find Payment by eventId and userId
+      const payment = await Payment.findOne({
+        eventId: event._id,
+        userId: reg.user
+      });
+      
+      if (payment) {
+        payment.status = 'failed';
+        if (payment.metadata) {
+          payment.metadata.rejectionReason = reason || 'No reason provided';
+        } else {
+          payment.metadata = { rejectionReason: reason || 'No reason provided' };
+        }
+        await payment.save();
+        console.log(`[rejectPayment] Updated Payment ${payment._id} to 'failed' status`);
+      }
+    } catch (paymentUpdateError) {
+      console.error('[rejectPayment] Error updating Payment document:', paymentUpdateError);
+      // Don't fail the request if Payment update fails
+    }
+    
     res.json({ success: true, message: 'Payment rejected successfully' });
   } catch (err) {
     next(err);

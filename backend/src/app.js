@@ -15,6 +15,7 @@ import adminRoutes from './routes/admin.routes.js';
 import hodRoutes from './routes/hod.routes.js';
 import aboutUsRoutes from './routes/aboutus.routes.js';
 import receiptRoutes from './routes/receipt.routes.js';
+import imageRoutes from './routes/image.routes.js';
 import mongoose from 'mongoose';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -96,6 +97,7 @@ app.use('/api/aboutus', aboutUsRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/receipts', receiptRoutes);
+app.use('/api/images', imageRoutes);
 
 // Test routes (useful for debugging email configuration)
 // In production, you might want to protect these routes or remove them

@@ -29,6 +29,24 @@ export default function AdminManageHODs() {
       return
     }
     fetchHODs()
+    
+    // Auto-refresh every 30 seconds to sync with cloud DB
+    const pollInterval = setInterval(() => {
+      fetchHODs()
+    }, 30000) // Poll every 30 seconds
+    
+    // Refresh when page becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchHODs()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      clearInterval(pollInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [user])
 
   async function fetchHODs() {
@@ -247,6 +265,11 @@ export default function AdminManageHODs() {
       await fetchHODs()
       console.log("HOD list refreshed")
       
+      // Dispatch custom event to refresh other pages (homepage, etc.)
+      window.dispatchEvent(new CustomEvent('hodDataUpdated', { 
+        detail: { action: editingHOD ? 'updated' : 'created', hod: result.hod }
+      }))
+      
       // Keep form open for 2.5 seconds to show success message, then close
       setTimeout(() => {
         console.log("Closing form")
@@ -270,6 +293,11 @@ export default function AdminManageHODs() {
     try {
       await deleteHOD(hodId)
       await fetchHODs()
+      
+      // Dispatch custom event to refresh other pages
+      window.dispatchEvent(new CustomEvent('hodDataUpdated', { 
+        detail: { action: 'deleted', hodId }
+      }))
     } catch (err) {
       alert(err.message || "Failed to delete HOD")
     }
