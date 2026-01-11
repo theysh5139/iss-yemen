@@ -369,14 +369,76 @@ export async function deleteEvent(req, res, next) {
 
 export async function getAllAnnouncements(req, res, next) {
   try {
-    // Return both announcements and news items (events with category 'News')
-    const announcements = await Event.find({ 
-      $or: [
-        { type: 'announcement' },
-        { type: 'event', category: 'News' }
-      ]
-    }).sort({ date: -1 });
-    res.json({ announcements });
+    const mongoose = await import('mongoose');
+    const db = mongoose.default.connection?.db || mongoose.default.connection.getClient().db();
+    
+    // Check if separate collections exist
+    let hasNewsCollection = false;
+    let hasAnnouncementsCollection = false;
+    
+    try {
+      const collections = await db.listCollections().toArray();
+      const collectionNames = collections.map(c => c.name);
+      hasNewsCollection = collectionNames.includes('news');
+      hasAnnouncementsCollection = collectionNames.includes('announcements');
+    } catch (err) {
+      console.warn('[getAllAnnouncements] Could not list collections:', err.message);
+    }
+    
+    let allAnnouncements = [];
+    
+    // Query from Event model (events collection)
+    try {
+      const eventAnnouncements = await Event.find({ 
+        $or: [
+          { type: 'announcement' },
+          { type: 'event', category: 'News' }
+        ]
+      }).sort({ date: -1 }).lean();
+      
+      allAnnouncements.push(...eventAnnouncements);
+    } catch (err) {
+      console.warn('[getAllAnnouncements] Error querying Event model:', err.message);
+    }
+    
+    // Query from separate collections if they exist
+    if (hasAnnouncementsCollection) {
+      try {
+        const announcementsCollection = db.collection('announcements');
+        const separateAnnouncements = await announcementsCollection.find({})
+          .sort({ date: -1 })
+          .toArray();
+        allAnnouncements.push(...separateAnnouncements);
+      } catch (err) {
+        console.warn('[getAllAnnouncements] Error querying announcements collection:', err.message);
+      }
+    }
+    
+    if (hasNewsCollection) {
+      try {
+        const newsCollection = db.collection('news');
+        const separateNews = await newsCollection.find({})
+          .sort({ date: -1 })
+          .toArray();
+        allAnnouncements.push(...separateNews);
+      } catch (err) {
+        console.warn('[getAllAnnouncements] Error querying news collection:', err.message);
+      }
+    }
+    
+    // Remove duplicates based on _id and sort by date
+    const uniqueAnnouncements = Array.from(
+      new Map(allAnnouncements.map(item => {
+        const id = item._id?.toString() || String(item._id);
+        return [id, item];
+      })).values()
+    ).sort((a, b) => {
+      const dateA = new Date(a.date || a.createdAt || 0);
+      const dateB = new Date(b.date || b.createdAt || 0);
+      return dateB - dateA;
+    });
+    
+    res.json({ announcements: uniqueAnnouncements });
   } catch (err) {
     next(err);
   }

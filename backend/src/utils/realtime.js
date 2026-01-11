@@ -3,6 +3,8 @@
  * Broadcasts data changes to connected clients
  */
 
+import { Server } from 'socket.io';
+
 let io = null;
 
 /**
@@ -10,7 +12,6 @@ let io = null;
  */
 export function initRealtime(server) {
   try {
-    const { Server } = require('socket.io');
     io = new Server(server, {
       cors: {
         origin: process.env.CLIENT_BASE_URL || 'http://localhost:5173',

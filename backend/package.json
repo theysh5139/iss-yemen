@@ -22,7 +22,8 @@
     "restore-payment-receipts": "node src/scripts/restore-payment-receipts.js",
     "check-hods": "node src/scripts/check-hods.js",
     "fix-hods": "node src/scripts/fix-hods-display.js",
-    "test-cloud-updates": "node src/scripts/test-cloud-updates.js"
+    "test-cloud-updates": "node src/scripts/test-cloud-updates.js",
+    "verify-data-sync": "node src/scripts/verify-data-sync.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -40,6 +41,7 @@
     "multer": "^2.0.2",
     "nodemailer": "^7.0.11",
     "pdfkit": "^0.17.2",
+    "socket.io": "^4.8.3",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

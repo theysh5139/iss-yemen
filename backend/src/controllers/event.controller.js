@@ -355,44 +355,137 @@ export async function getPastEvents(req, res, next) {
   }
 }
 
+// Helper function to query from both Event model and separate collections
+async function queryNewsAndAnnouncements(publicQuery) {
+  const mongoose = await import('mongoose');
+  const db = mongoose.default.connection?.db || mongoose.default.connection.getClient().db();
+  
+  // Check if separate collections exist
+  let hasNewsCollection = false;
+  let hasAnnouncementsCollection = false;
+  let hasActivitiesCollection = false;
+  
+  try {
+    const collections = await db.listCollections().toArray();
+    const collectionNames = collections.map(c => c.name);
+    hasNewsCollection = collectionNames.includes('news');
+    hasAnnouncementsCollection = collectionNames.includes('announcements');
+    hasActivitiesCollection = collectionNames.includes('activities');
+  } catch (err) {
+    console.warn('[queryNewsAndAnnouncements] Could not list collections:', err.message);
+  }
+  
+  let news = [];
+  let announcements = [];
+  let activities = [];
+  
+  // Query from Event model (events collection)
+  try {
+    const eventNews = await Event.find({ type: 'event', category: 'News', ...publicQuery }).lean();
+    const eventAnnouncements = await Event.find({ type: 'announcement', ...publicQuery }).lean();
+    const eventActivities = await Event.find({ type: 'activity', ...publicQuery }).lean();
+    
+    news.push(...eventNews);
+    announcements.push(...eventAnnouncements);
+    activities.push(...eventActivities);
+  } catch (err) {
+    console.warn('[queryNewsAndAnnouncements] Error querying Event model:', err.message);
+  }
+  
+  // Query from separate collections if they exist
+  if (hasNewsCollection) {
+    try {
+      const newsCollection = db.collection('news');
+      const separateNews = await newsCollection.find(publicQuery).toArray();
+      news.push(...separateNews);
+    } catch (err) {
+      console.warn('[queryNewsAndAnnouncements] Error querying news collection:', err.message);
+    }
+  }
+  
+  if (hasAnnouncementsCollection) {
+    try {
+      const announcementsCollection = db.collection('announcements');
+      const separateAnnouncements = await announcementsCollection.find(publicQuery).toArray();
+      announcements.push(...separateAnnouncements);
+    } catch (err) {
+      console.warn('[queryNewsAndAnnouncements] Error querying announcements collection:', err.message);
+    }
+  }
+  
+  if (hasActivitiesCollection) {
+    try {
+      const activitiesCollection = db.collection('activities');
+      const separateActivities = await activitiesCollection.find(publicQuery).toArray();
+      activities.push(...separateActivities);
+    } catch (err) {
+      console.warn('[queryNewsAndAnnouncements] Error querying activities collection:', err.message);
+    }
+  }
+  
+  // Remove duplicates based on _id (convert all _id to strings for comparison)
+  const uniqueNews = Array.from(new Map(news.map(item => {
+    const id = item._id?.toString() || String(item._id);
+    return [id, item];
+  })).values());
+  const uniqueAnnouncements = Array.from(new Map(announcements.map(item => {
+    const id = item._id?.toString() || String(item._id);
+    return [id, item];
+  })).values());
+  const uniqueActivities = Array.from(new Map(activities.map(item => {
+    const id = item._id?.toString() || String(item._id);
+    return [id, item];
+  })).values());
+  
+  return {
+    news: uniqueNews,
+    announcements: uniqueAnnouncements,
+    activities: uniqueActivities
+  };
+}
+
 // Get homepage summary data
 export async function getHomepageData(req, res, next) {
   try {
     const userRole = req.user?.role;
     const publicQuery = !userRole ? { isPublic: true } : {};
 
-    const [news, announcements, activities, upcomingEvents] = await Promise.all([
-      Event.countDocuments({ type: 'event', category: 'News', ...publicQuery }),
-      Event.countDocuments({ type: 'announcement', ...publicQuery }),
-      Event.countDocuments({ type: 'activity', ...publicQuery }),
-      Event.find({ type: 'event', date: { $gte: new Date() }, ...publicQuery })
-        .sort({ date: 1 })
-        .limit(5)
-        .lean()
-    ]);
+    // Query news, announcements, and activities from both sources
+    const { news: allNews, announcements: allAnnouncements, activities: allActivities } = 
+      await queryNewsAndAnnouncements(publicQuery);
 
-    const latestNewsAndAnnouncements = await Event.find({
-      $or: [{ type: 'event', category: 'News' }, { type: 'announcement' }],
-      ...publicQuery
-    })
-      .sort({ date: -1 })
-      .limit(4)
-      .lean();
+    // Get counts
+    const newsCount = allNews.length;
+    const announcementsCount = allAnnouncements.length;
+    const activitiesCount = allActivities.length;
 
-    const regularActivities = await Event.find({
-      type: 'activity',
-      isRecurring: true,
-      ...publicQuery
+    // Get upcoming events (only from Event model, not from separate collections)
+    const upcomingEvents = await Event.find({ 
+      type: 'event', 
+      date: { $gte: new Date() }, 
+      category: { $ne: 'News' },
+      ...publicQuery 
     })
-      .sort({ date: -1 })
+      .sort({ date: 1 })
       .limit(5)
       .lean();
 
+    // Combine news and announcements, sort by date, and limit
+    const latestNewsAndAnnouncements = [...allNews, ...allAnnouncements]
+      .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
+      .slice(0, 4);
+
+    // Get regular activities
+    const regularActivities = allActivities
+      .filter(activity => activity.isRecurring === true)
+      .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
+      .slice(0, 5);
+
     return res.json({
       summary: {
-        news: news,
-        announcements: announcements,
-        activities: activities
+        news: newsCount,
+        announcements: announcementsCount,
+        activities: activitiesCount
       },
       latestNewsAndAnnouncements,
       regularActivities,
