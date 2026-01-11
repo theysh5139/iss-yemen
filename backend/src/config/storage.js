@@ -20,3 +20,4 @@ export function getImageUrl(file) {
   return `/uploads/images/${file.filename}`;
 }
 
+

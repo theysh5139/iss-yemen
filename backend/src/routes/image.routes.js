@@ -15,3 +15,4 @@ router.delete('/gridfs/:fileId', authenticate, requireRole('admin'), deleteImage
 
 export default router;
 
+

@@ -217,3 +217,4 @@ useAutoRefresh(fetchData, [], {
 
 The system works smoothly with polling by default. WebSocket is optional for even better performance.
 
+
