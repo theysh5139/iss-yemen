@@ -96,7 +96,7 @@ export async function verifyEmail(req, res, next) {
 
 export async function login(req, res, next) {
   try {
-    const { email, password, otp } = req.body;
+    const { email, password } = req.body;
     const user = await User.findOne({ email: String(email).toLowerCase() });
     if (!user) return res.status(401).json({ message: 'Invalid email or password' });
 
@@ -107,150 +107,28 @@ export async function login(req, res, next) {
       return res.status(403).json({ message: 'Email not verified' });
     }
 
-    // Admin users skip OTP/TAC verification
-    if (user.role === 'admin') {
-      const token = signAccessToken({ sub: user._id.toString(), role: user.role });
-      res.cookie('access_token', token, authCookieOptions());
-      return res.json({
-        message: 'Login successful',
-        user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role }
-      });
-    }
-
-    // TEST MEMBER ACCOUNT: Bypass OTP/TAC for test member account only (for testing purposes)
-    // Default test account: member@issyemen.com (configurable via TEST_MEMBER_EMAIL env variable)
-    const TEST_MEMBER_EMAIL = process.env.TEST_MEMBER_EMAIL || 'member@issyemen.com';
-    if (user.email.toLowerCase() === TEST_MEMBER_EMAIL.toLowerCase() && user.role === 'member') {
-      const token = signAccessToken({ sub: user._id.toString(), role: user.role });
-      res.cookie('access_token', token, authCookieOptions());
-      return res.json({
-        message: 'Login successful',
-        user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role }
-      });
-    }
-
-    // Regular users require OTP
-    // If OTP is provided, verify it
-    if (otp) {
-      if (!user.otp || !user.otpExpires) {
-        return res.status(400).json({ message: 'No OTP found. Please request a new OTP.' });
-      }
-
-      if (user.otpExpires < new Date()) {
-        user.otp = undefined;
-        user.otpExpires = undefined;
-        await user.save();
-        return res.status(400).json({ message: 'OTP has expired. Please request a new OTP.' });
-      }
-
-      const otpHash = hashToken(String(otp));
-      if (otpHash !== user.otp) {
-        // Increment failed attempts
-        user.failedOtpAttempts = (user.failedOtpAttempts || 0) + 1;
-
-        // Lock out after 3 failed attempts
-        if (user.failedOtpAttempts >= 3) {
-          user.lockoutUntil = addSeconds(new Date(), 30); // Lock for 30 seconds
-          await user.save();
-          return res.status(429).json({
-            message: 'Too many failed attempts. Account locked for 30 seconds.',
-            lockoutSeconds: 30
-          });
-        }
-
-        await user.save();
-        const attemptsRemaining = 3 - user.failedOtpAttempts;
-        return res.status(401).json({ 
-          message: `Invalid OTP. ${attemptsRemaining} attempt(s) remaining before account lockout.`,
-          attemptsRemaining
-        });
-      }
-
-      // OTP verified, clear it and proceed with login
+    // Direct login for all users - bypassing OTP
+    const token = signAccessToken({ sub: user._id.toString(), role: user.role });
+    res.cookie('access_token', token, authCookieOptions());
+    
+    // Clear any existing OTP data just in case
+    if (user.otp || user.otpExpires || user.failedOtpAttempts > 0) {
       user.otp = undefined;
       user.otpExpires = undefined;
       user.failedOtpAttempts = 0;
       user.lockoutUntil = undefined;
       await user.save();
-
-      // Issue JWT token
-      const token = signAccessToken({ sub: user._id.toString(), role: user.role });
-      res.cookie('access_token', token, authCookieOptions());
-
-      return res.json({
-        message: 'Login successful',
-        user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role }
-      });
-    } else {
-      // No OTP provided, generate and send one immediately
-      const otpCode = generateOTP(6);
-      const otpHash = hashToken(otpCode);
-      const otpExpires = addSeconds(new Date(), 60); // 60 seconds expiration
-      
-      // Save OTP to database BEFORE sending email to ensure it's stored
-      user.otp = otpHash;
-      user.otpExpires = otpExpires;
-      user.failedOtpAttempts = 0; // Reset failed attempts on new OTP
-      user.lockoutUntil = undefined; // Clear lockout on new OTP
-      await user.save();
-
-      // Send OTP email
-      try {
-        await sendEmail({
-          to: user.email,
-          subject: 'Your Login Verification Code',
-          text: `Your verification code is: ${otpCode}\n\nThis code will expire in 60 seconds.\n\nIf you did not request this code, please ignore this email.`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #333;">Your Login Verification Code</h2>
-              <p>Hello ${user.name || 'there'},</p>
-              <p>Your verification code is:</p>
-              <div style="background-color: #f5f5f5; border: 2px solid #ddd; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
-                <h1 style="font-size: 32px; letter-spacing: 8px; color: #2563eb; margin: 0;">${otpCode}</h1>
-              </div>
-              <p style="color: #666; font-size: 14px;">This code will expire in <strong>60 seconds</strong>.</p>
-              <p style="color: #666; font-size: 14px;">If you did not request this code, please ignore this email.</p>
-            </div>
-          `
-        });
-
-        // In development, log OTP to console for debugging
-        if (process.env.NODE_ENV !== 'production') {
-          console.log(`[DEV] OTP for ${user.email}: ${otpCode}`);
-        }
-
-        return res.json({
-          message: 'OTP sent to your email. Please verify to complete login.',
-          email: user.email // Return email so frontend can use it for OTP verification
-        });
-      } catch (emailError) {
-        console.error('Failed to send OTP email:', emailError);
-        // Clear OTP if email fails
-        user.otp = undefined;
-        user.otpExpires = undefined;
-        await user.save();
-        
-        // In development, still return success with OTP in response
-        if (process.env.NODE_ENV !== 'production') {
-          return res.json({
-            message: 'OTP generated (email failed, see console for OTP). Please verify to complete login.',
-            email: user.email,
-            devOtp: otpCode // Only in development
-          });
-        }
-        
-        return res.status(500).json({
-          message: 'Failed to send OTP email. Please try again later.',
-          error: process.env.NODE_ENV !== 'production' ? emailError.message : undefined
-        });
-      }
     }
+
+    return res.json({
+      message: 'Login successful',
+      user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role }
+    });
 
   } catch (err) {
     next(err);
   }
 }
-
 export async function verifyOTP(req, res, next) {
   try {
     const { email, otp } = req.body;
