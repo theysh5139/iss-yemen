@@ -7,7 +7,20 @@ function addConnectionLogging() {
   hasListeners = true;
   mongoose.connection.on('connected', () => {
     // eslint-disable-next-line no-console
-    console.log('[DB] Connected to MongoDB');
+    try {
+      const dbName = mongoose.connection.db?.databaseName || 'unknown';
+      const host = mongoose.connection.host || mongoose.connection.client?.s?.url || 'unknown';
+      const mongoUri = process.env.MONGO_URI || '';
+      const isAtlas = mongoUri.includes('mongodb+srv://');
+      const connectionType = isAtlas ? '☁️  MongoDB Atlas (Cloud)' : '💻 MongoDB';
+      // eslint-disable-next-line no-console
+      console.log(`[DB] Connected to ${connectionType}`);
+      // eslint-disable-next-line no-console
+      console.log(`[DB] Database: ${dbName} | Host: ${host}`);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.log('[DB] Connected to MongoDB');
+    }
   });
   mongoose.connection.on('disconnected', () => {
     // eslint-disable-next-line no-console
