@@ -329,12 +329,21 @@
   width: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .event-card:hover {
   border-color: var(--primary-dark);
   transform: translateY(-6px) rotateX(3deg) scale(1.03);
   box-shadow: var(--shadow-lg);
+}
+
+.event-card:hover .event-actions {
+  z-index: 10000;
+}
+
+.event-card:hover .event-actions .btn {
+  z-index: 10000;
 }
 
 .event-card-header {
@@ -411,6 +420,8 @@
   display: flex;
   gap: 0.75rem;
   justify-content: center;
+  position: relative;
+  z-index: 9999;
 }
 
 .event-actions .btn {
@@ -421,6 +432,9 @@
   border-radius: 8px;
   transition: all 0.3s ease;
   min-width: 180px;
+  position: relative;
+  z-index: 9999;
+  pointer-events: auto;
 }
 
 .event-actions .btn:hover {

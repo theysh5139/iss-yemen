@@ -380,7 +380,7 @@ export default function AllEvents() {
                             handleEventClick(event)
                           }}
                         >
-                          View Details / Unregister
+                          Unregister
                         </button>
                       ) : (
                         <button
