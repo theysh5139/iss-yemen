@@ -4,6 +4,10 @@ export function getHomepageData() {
   return apiFetch('/api/events/homepage')
 }
 
+export function getAllActivities() {
+  return apiFetch('/api/events/activities')
+}
+
 export function getEvents() {
   return apiFetch('/api/events')
 }

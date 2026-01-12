@@ -458,13 +458,16 @@ export default function HomePage() {
         {/* Sidebar */}
         <aside className="sidebar">
           <div className="section-card card-3d sticky-card">
-            <h3 className="section-title">Regular Activities</h3>
+            <div className="section-header">
+              <h3 className="section-title">Activities</h3>
+              <a href="/activities" className="view-all-btn btn-3d">View All</a>
+            </div>
             <p className="section-subtitle">
               Join ongoing programmes and gatherings.
             </p>
             {regularActivities.length > 0 ? (
               <div className="activities-list">
-                {regularActivities.map(act => (
+                {regularActivities.slice(0, 2).map(act => (
                   <div key={act._id} className="activity-item card-3d">
                     <div className="activity-icon">🎯</div>
                     <div className="activity-content">
@@ -472,15 +475,22 @@ export default function HomePage() {
                       <div className="activity-meta">
                         {act.schedule || formatDate(act.date)} • {act.location}
                       </div>
+                      {act.category && (
+                        <span className="activity-category">{act.category}</span>
+                      )}
                     </div>
                   </div>
                 ))}
-                <a href="/events" className="link-btn btn-3d">See all activities & events →</a>
+                {regularActivities.length > 2 && (
+                  <a href="/activities" className="link-btn btn-3d">
+                    View all {regularActivities.length} activities →
+                  </a>
+                )}
               </div>
             ) : (
               <>
-                <p className="empty-state">No regular activities scheduled.</p>
-                <a href="/events" className="link-btn btn-3d">See all activities & events →</a>
+                <p className="empty-state">No activities scheduled.</p>
+                <a href="/activities" className="link-btn btn-3d">View all activities →</a>
               </>
             )}
           </div>
