@@ -308,16 +308,16 @@ export default function AdminDashboard() {
             <div className="sidebar-section">
               <h3 className="sidebar-title">Quick Links</h3>
               <div className="quick-links">
-                <a href="#" className="quick-link">
+                <a href="https://www.whatsapp.com/channel/0029VaxSoEV7DAWpxM5ucw0l" target="_blank" rel="noopener noreferrer" className="quick-link">
                   <span>📱</span> WhatsApp Community
                 </a>
-                <a href="#" className="quick-link">
+                <a href="https://www.instagram.com/issyemen/" target="_blank" rel="noopener noreferrer" className="quick-link">
                   <span>📷</span> Instagram
                 </a>
-                <a href="#" className="quick-link">
-                  <span>💼</span> LinkedIn
+                <a href="https://linktr.ee/ISS_YEMEN25" target="_blank" rel="noopener noreferrer" className="quick-link">
+                  <span>🔗</span> Linktree
                 </a>
-                <a href="#" className="quick-link">
+                <a href="https://my.utm.my/home" target="_blank" rel="noopener noreferrer" className="quick-link">
                   <span>🏢</span> UTM Portal
                 </a>
               </div>
