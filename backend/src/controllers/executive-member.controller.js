@@ -29,7 +29,6 @@ function validatePhoto(photo) {
 export async function getExecutiveMembers(req, res, next) {
   try {
     const members = await ExecutiveCommitteeMember.find()
-      .populate('committeeId', 'name priority')
       .sort({ role: 1, name: 1 })
       .lean();
     return res.json({ members });
@@ -43,7 +42,6 @@ export async function getExecutiveMemberById(req, res, next) {
   try {
     const { id } = req.params;
     const member = await ExecutiveCommitteeMember.findById(id)
-      .populate('committeeId', 'name priority')
       .lean();
     if (!member) {
       return res.status(404).json({ message: 'Executive member not found' });
@@ -57,7 +55,7 @@ export async function getExecutiveMemberById(req, res, next) {
 // Create Executive Member (admin only)
 export async function createExecutiveMember(req, res, next) {
   try {
-    const { name, role, email, phone, photo, committeeId } = req.body;
+    const { name, role, email, phone, photo } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ message: 'Name is required' });
@@ -67,15 +65,6 @@ export async function createExecutiveMember(req, res, next) {
     }
     if (!email || !email.trim()) {
       return res.status(400).json({ message: 'Email is required' });
-    }
-    if (!committeeId) {
-      return res.status(400).json({ message: 'Committee is required' });
-    }
-
-    // Verify committee exists
-    const committee = await Committee.findById(committeeId);
-    if (!committee) {
-      return res.status(400).json({ message: 'Committee not found' });
     }
 
     // Validate photo
@@ -89,12 +78,10 @@ export async function createExecutiveMember(req, res, next) {
       role,
       email: email.trim().toLowerCase(),
       phone: phone ? phone.trim() : undefined,
-      photo,
-      committeeId
+      photo
     });
 
     const populatedMember = await ExecutiveCommitteeMember.findById(member._id)
-      .populate('committeeId', 'name priority')
       .lean();
 
     return res.status(201).json({ message: 'Executive member created successfully', member: populatedMember });
@@ -110,7 +97,7 @@ export async function createExecutiveMember(req, res, next) {
 export async function updateExecutiveMember(req, res, next) {
   try {
     const { id } = req.params;
-    const { name, role, email, phone, photo, committeeId } = req.body;
+    const { name, role, email, phone, photo } = req.body;
 
     const member = await ExecutiveCommitteeMember.findById(id);
     if (!member) {
@@ -145,20 +132,12 @@ export async function updateExecutiveMember(req, res, next) {
       }
       member.photo = photo;
     }
-    if (committeeId !== undefined) {
-      const committee = await Committee.findById(committeeId);
-      if (!committee) {
-        return res.status(400).json({ message: 'Committee not found' });
-      }
-      member.committeeId = committeeId;
-    }
 
     await member.save();
-    
+
     const populatedMember = await ExecutiveCommitteeMember.findById(member._id)
-      .populate('committeeId', 'name priority')
       .lean();
-    
+
     return res.json({ message: 'Executive member updated successfully', member: populatedMember });
   } catch (err) {
     if (err.name === 'ValidationError') {
@@ -176,9 +155,9 @@ export async function deleteExecutiveMember(req, res, next) {
     if (!member) {
       return res.status(404).json({ message: 'Executive member not found' });
     }
-    
+
     await ExecutiveCommitteeMember.findByIdAndDelete(id);
-    
+
     return res.json({ message: 'Executive member deleted successfully' });
   } catch (err) {
     next(err);

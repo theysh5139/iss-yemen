@@ -1,24 +1,22 @@
-const { Client } = require('pg');
+const { MongoClient } = require('mongodb');
 
 // Define your connection details
-const client = new Client({
-  user: 'your_db_user',
-  host: 'localhost',
-  database: 'your_db_name',
-  password: 'zakwan',
-  port: 5432, 
-});
+const uri = "mongodb+srv://moqbelali_db_user:vdntP1HoAQrpSYUt@cluster.mongodb.net/iss_yemen_club?retryWrites=true&w=majority";
+const client = new MongoClient(uri);
 
 async function connectAndQuery() {
   try {
     await client.connect();
-    console.log('Successfully connected to PostgreSQL!');
+    console.log('Successfully connected to MongoDB Atlas!');
+    
+    const database = client.db('iss_yemen_club');
+    const collection = database.collection('users');
     
     // Example query
-    const res = await client.query('SELECT * FROM users WHERE id = $1', [1]);
-    console.log('Query result:', res.rows);
+    const user = await collection.findOne({ id: 1 });
+    console.log('Query result:', user);
 
-    await client.end();
+    await client.close();
   } catch (err) {
     console.error('Connection or Query Error:', err);
   }

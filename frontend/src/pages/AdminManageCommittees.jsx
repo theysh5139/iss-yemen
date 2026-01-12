@@ -3,7 +3,7 @@ import AdminSidebar from "../components/AdminSidebar.jsx"
 import AdminHeaderIcons from "../components/AdminHeaderIcons.jsx"
 import { useAuth } from "../context/AuthProvider.jsx"
 import { logoutApi } from "../api/auth.js"
-import { 
+import {
   getCommittees, createCommittee, updateCommittee, deleteCommittee,
   getExecutiveMembers, createExecutiveMember, updateExecutiveMember, deleteExecutiveMember,
   getCommitteeHeads, createCommitteeHead, updateCommitteeHead, deleteCommitteeHead,
@@ -20,17 +20,17 @@ export default function AdminManageCommittees() {
   const { user, setUser } = useAuth()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('committees')
-  
+
   // Committees state
   const [committees, setCommittees] = useState([])
   const [executiveMembers, setExecutiveMembers] = useState([])
   const [committeeHeads, setCommitteeHeads] = useState([])
   const [committeeMembersGrouped, setCommitteeMembersGrouped] = useState([])
-  
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  
+
   // Form states
   const [showForm, setShowForm] = useState(false)
   const [formType, setFormType] = useState(null) // 'committee', 'executive', 'head', 'member'
@@ -47,18 +47,18 @@ export default function AdminManageCommittees() {
       return
     }
     fetchAllData()
-    
+
     const pollInterval = setInterval(() => {
       fetchAllData()
     }, 30000)
-    
+
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchAllData()
       }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    
+
     return () => {
       clearInterval(pollInterval)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
@@ -75,7 +75,7 @@ export default function AdminManageCommittees() {
         getCommitteeHeads(),
         getCommitteeMembersGrouped()
       ])
-      
+
       if (committeesRes?.committees) setCommittees(committeesRes.committees)
       if (execRes?.members) setExecutiveMembers(execRes.members)
       if (headsRes?.heads) setCommitteeHeads(headsRes.heads)
@@ -99,13 +99,13 @@ export default function AdminManageCommittees() {
     setPhotoPreview("")
     setPhotoFile(null)
     setUploadMethod("url")
-    
-    switch(type) {
+
+    switch (type) {
       case 'committee':
         setFormData({ name: "", priority: null })
         break
       case 'executive':
-        setFormData({ name: "", role: "", email: "", phone: "", photo: "", committeeId: "" })
+        setFormData({ name: "", role: "", email: "", phone: "", photo: "" })
         break
       case 'head':
         setFormData({ name: "", committeeId: "", email: "", phone: "", photo: "" })
@@ -125,8 +125,8 @@ export default function AdminManageCommittees() {
     setPhotoPreview(item.photo || "")
     setPhotoFile(null)
     setUploadMethod("url")
-    
-    switch(type) {
+
+    switch (type) {
       case 'committee':
         setFormData({ name: item.name || "", priority: item.priority !== undefined ? item.priority : null })
         break
@@ -136,8 +136,7 @@ export default function AdminManageCommittees() {
           role: item.role || "",
           email: item.email || "",
           phone: item.phone || "",
-          photo: item.photo || "",
-          committeeId: item.committeeId?._id || item.committeeId || ""
+          photo: item.photo || ""
         })
         break
       case 'head':
@@ -234,10 +233,6 @@ export default function AdminManageCommittees() {
         setError("Email is required")
         return false
       }
-      if (!formData.committeeId) {
-        setError("Committee is required")
-        return false
-      }
       if (!formData.photo || !formData.photo.trim()) {
         setError("Photo is required")
         return false
@@ -322,7 +317,7 @@ export default function AdminManageCommittees() {
           setSuccess("✓ Committee member created successfully!")
         }
       }
-      
+
       await fetchAllData()
       setTimeout(() => {
         closeForm()
@@ -339,7 +334,7 @@ export default function AdminManageCommittees() {
     if (!confirm(`Are you sure you want to delete this ${type}? This cannot be undone.`)) return
 
     try {
-      switch(type) {
+      switch (type) {
         case 'committee':
           await deleteCommittee(id)
           break
@@ -362,7 +357,7 @@ export default function AdminManageCommittees() {
   async function onLogout() {
     try {
       await logoutApi()
-    } catch {}
+    } catch { }
     setUser(null)
     navigate("/", { replace: true })
   }
@@ -374,7 +369,7 @@ export default function AdminManageCommittees() {
   return (
     <div className="admin-dashboard">
       <AdminSidebar user={user} onLogout={onLogout} />
-      
+
       <div className="admin-main-content">
         <header className="admin-header">
           <div className="breadcrumbs">
@@ -391,7 +386,7 @@ export default function AdminManageCommittees() {
             </div>
 
             {error && !showForm && (
-              <div className="alert alert-error" style={{marginBottom: '1rem'}}>
+              <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
                 <span className="alert-icon">⚠️</span>
                 <span>{error}</span>
               </div>
@@ -399,25 +394,25 @@ export default function AdminManageCommittees() {
 
             {/* Tabs */}
             <div className="settings-tabs">
-              <button 
+              <button
                 className={`settings-tab ${activeTab === 'committees' ? 'active' : ''}`}
                 onClick={() => setActiveTab('committees')}
               >
                 📋 Committees
               </button>
-              <button 
+              <button
                 className={`settings-tab ${activeTab === 'executive' ? 'active' : ''}`}
                 onClick={() => setActiveTab('executive')}
               >
                 👔 Executive Members
               </button>
-              <button 
+              <button
                 className={`settings-tab ${activeTab === 'heads' ? 'active' : ''}`}
                 onClick={() => setActiveTab('heads')}
               >
                 🎯 Committee Heads
               </button>
-              <button 
+              <button
                 className={`settings-tab ${activeTab === 'members' ? 'active' : ''}`}
                 onClick={() => setActiveTab('members')}
               >
@@ -428,8 +423,8 @@ export default function AdminManageCommittees() {
             {/* Tab Content */}
             <div className="settings-content">
               {loading ? (
-                <div style={{textAlign: 'center', padding: '2rem'}}>
-                  <div className="spinner" style={{margin: '0 auto 1rem', width: '40px', height: '40px', borderWidth: '3px'}}></div>
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                  <div className="spinner" style={{ margin: '0 auto 1rem', width: '40px', height: '40px', borderWidth: '3px' }}></div>
                   <p>Loading...</p>
                 </div>
               ) : (
@@ -484,8 +479,8 @@ export default function AdminManageCommittees() {
                           {executiveMembers.map(member => (
                             <div key={member._id} className="hod-admin-card">
                               <div className="hod-admin-photo">
-                                <img 
-                                  src={member.photo} 
+                                <img
+                                  src={member.photo}
                                   alt={member.name}
                                   onError={(e) => {
                                     e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&size=200&background=0b6b63&color=fff`
@@ -495,9 +490,8 @@ export default function AdminManageCommittees() {
                               <div className="hod-admin-info">
                                 <h3>{member.name}</h3>
                                 <p><strong>{member.role}</strong></p>
-                                {member.committeeId?.name && <p>{member.committeeId.name}</p>}
-                                <p style={{fontSize: '0.85rem', color: '#666'}}>{member.email}</p>
-                                {member.phone && <p style={{fontSize: '0.85rem', color: '#666'}}>{member.phone}</p>}
+                                <p style={{ fontSize: '0.85rem', color: '#666' }}>{member.email}</p>
+                                {member.phone && <p style={{ fontSize: '0.85rem', color: '#666' }}>{member.phone}</p>}
                                 <div className="hod-admin-actions">
                                   <button className="btn btn-secondary btn-sm" onClick={() => openEditForm(member, 'executive')}>
                                     Edit
@@ -530,8 +524,8 @@ export default function AdminManageCommittees() {
                           {committeeHeads.map(head => (
                             <div key={head._id} className="hod-admin-card">
                               <div className="hod-admin-photo">
-                                <img 
-                                  src={head.photo} 
+                                <img
+                                  src={head.photo}
                                   alt={head.name}
                                   onError={(e) => {
                                     e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(head.name)}&size=200&background=0b6b63&color=fff`
@@ -541,8 +535,8 @@ export default function AdminManageCommittees() {
                               <div className="hod-admin-info">
                                 <h3>{head.name}</h3>
                                 {head.committeeId?.name && <p><strong>{head.committeeId.name}</strong></p>}
-                                <p style={{fontSize: '0.85rem', color: '#666'}}>{head.email}</p>
-                                {head.phone && <p style={{fontSize: '0.85rem', color: '#666'}}>{head.phone}</p>}
+                                <p style={{ fontSize: '0.85rem', color: '#666' }}>{head.email}</p>
+                                {head.phone && <p style={{ fontSize: '0.85rem', color: '#666' }}>{head.phone}</p>}
                                 <div className="hod-admin-actions">
                                   <button className="btn btn-secondary btn-sm" onClick={() => openEditForm(head, 'head')}>
                                     Edit
@@ -573,16 +567,16 @@ export default function AdminManageCommittees() {
                       {committeeMembersGrouped.length > 0 ? (
                         <div>
                           {committeeMembersGrouped.map(group => (
-                            <div key={group.committee._id} style={{marginBottom: '2rem'}}>
-                              <h3 style={{marginBottom: '1rem', color: '#1a2a4a', fontSize: '1.25rem'}}>
+                            <div key={group.committee._id} style={{ marginBottom: '2rem' }}>
+                              <h3 style={{ marginBottom: '1rem', color: '#1a2a4a', fontSize: '1.25rem' }}>
                                 {group.committee.name}
                               </h3>
                               <div className="hods-grid">
                                 {group.members.map(member => (
                                   <div key={member._id} className="hod-admin-card">
                                     <div className="hod-admin-photo">
-                                      <img 
-                                        src={member.photo} 
+                                      <img
+                                        src={member.photo}
                                         alt={member.name}
                                         onError={(e) => {
                                           e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&size=200&background=0b6b63&color=fff`
@@ -624,24 +618,24 @@ export default function AdminManageCommittees() {
               <div className="modal-header">
                 <div>
                   <h2>
-                    {editingItem 
-                      ? `Edit ${formType === 'committee' ? 'Committee' : formType === 'executive' ? 'Executive Member' : formType === 'head' ? 'Committee Head' : 'Committee Member'}` 
+                    {editingItem
+                      ? `Edit ${formType === 'committee' ? 'Committee' : formType === 'executive' ? 'Executive Member' : formType === 'head' ? 'Committee Head' : 'Committee Member'}`
                       : `Create ${formType === 'committee' ? 'Committee' : formType === 'executive' ? 'Executive Member' : formType === 'head' ? 'Committee Head' : 'Committee Member'}`}
                   </h2>
                 </div>
                 <button className="modal-close" onClick={closeForm} aria-label="Close">×</button>
               </div>
-              
+
               <div className="modal-body">
                 <form onSubmit={handleSubmit} className="admin-form hod-form">
                   {error && (
-                    <div className="alert alert-error" style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+                    <div className="alert alert-error" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <span className="alert-icon">⚠️</span>
-                      <span style={{flex: 1}}>{error}</span>
-                      <button type="button" onClick={() => setError("")} style={{background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#c33', padding: '0', lineHeight: '1', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center'}} aria-label="Dismiss error">×</button>
+                      <span style={{ flex: 1 }}>{error}</span>
+                      <button type="button" onClick={() => setError("")} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#c33', padding: '0', lineHeight: '1', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Dismiss error">×</button>
                     </div>
                   )}
-                  
+
                   {success && (
                     <div className="alert alert-success">
                       <span className="alert-icon">✓</span>
@@ -654,11 +648,11 @@ export default function AdminManageCommittees() {
                     <>
                       <div className="form-group">
                         <label htmlFor="name">Committee Name <span className="required">*</span></label>
-                        <input id="name" type="text" value={formData.name || ""} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="e.g., Academic Committee" required className="form-input" disabled={isSubmitting} />
+                        <input id="name" type="text" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Academic Committee" required className="form-input" disabled={isSubmitting} />
                       </div>
                       <div className="form-group">
                         <label htmlFor="priority">Priority (Optional)</label>
-                        <input id="priority" type="number" value={formData.priority !== null && formData.priority !== undefined ? formData.priority : ""} onChange={(e) => setFormData({...formData, priority: e.target.value ? parseInt(e.target.value) : null})} placeholder="Lower number = higher priority" className="form-input" disabled={isSubmitting} />
+                        <input id="priority" type="number" value={formData.priority !== null && formData.priority !== undefined ? formData.priority : ""} onChange={(e) => setFormData({ ...formData, priority: e.target.value ? parseInt(e.target.value) : null })} placeholder="Lower number = higher priority" className="form-input" disabled={isSubmitting} />
                         <small className="form-hint">Lower numbers appear first. Leave empty for no priority.</small>
                       </div>
                     </>
@@ -670,11 +664,11 @@ export default function AdminManageCommittees() {
                       <div className="form-row">
                         <div className="form-group">
                           <label htmlFor="name">Name <span className="required">*</span></label>
-                          <input id="name" type="text" value={formData.name || ""} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="e.g., Ahmed Hassan" required className="form-input" disabled={isSubmitting} />
+                          <input id="name" type="text" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Ahmed Hassan" required className="form-input" disabled={isSubmitting} />
                         </div>
                         <div className="form-group">
                           <label htmlFor="role">Role <span className="required">*</span></label>
-                          <select id="role" value={formData.role || ""} onChange={(e) => setFormData({...formData, role: e.target.value})} required className="form-input" disabled={isSubmitting}>
+                          <select id="role" value={formData.role || ""} onChange={(e) => setFormData({ ...formData, role: e.target.value })} required className="form-input" disabled={isSubmitting}>
                             <option value="">Select Role</option>
                             {EXECUTIVE_ROLES.map(role => <option key={role} value={role}>{role}</option>)}
                           </select>
@@ -683,25 +677,18 @@ export default function AdminManageCommittees() {
                       <div className="form-row">
                         <div className="form-group">
                           <label htmlFor="email">Email <span className="required">*</span></label>
-                          <input id="email" type="email" value={formData.email || ""} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="email@example.com" required className="form-input" disabled={isSubmitting} />
+                          <input id="email" type="email" value={formData.email || ""} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@example.com" required className="form-input" disabled={isSubmitting} />
                         </div>
                         <div className="form-group">
                           <label htmlFor="phone">Phone (Optional)</label>
-                          <input id="phone" type="tel" value={formData.phone || ""} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="+60 12-345-6789" className="form-input" disabled={isSubmitting} />
+                          <input id="phone" type="tel" value={formData.phone || ""} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+60 12-345-6789" className="form-input" disabled={isSubmitting} />
                         </div>
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="committeeId">Committee <span className="required">*</span></label>
-                        <select id="committeeId" value={formData.committeeId || ""} onChange={(e) => setFormData({...formData, committeeId: e.target.value})} required className="form-input" disabled={isSubmitting}>
-                          <option value="">Select Committee</option>
-                          {committees.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                        </select>
                       </div>
                       <div className="form-group">
                         <label htmlFor="photo">Photo <span className="required">*</span></label>
                         <div className="upload-method-toggle">
-                          <button type="button" className={`toggle-btn ${uploadMethod === 'file' ? 'active' : ''}`} onClick={() => {setUploadMethod('file'); setFormData({...formData, photo: ''}); setPhotoPreview(''); setPhotoFile(null)}} disabled={isSubmitting}>📁 Upload File</button>
-                          <button type="button" className={`toggle-btn ${uploadMethod === 'url' ? 'active' : ''}`} onClick={() => {setUploadMethod('url'); setFormData({...formData, photo: ''}); setPhotoPreview(''); setPhotoFile(null)}} disabled={isSubmitting}>🔗 Enter URL</button>
+                          <button type="button" className={`toggle-btn ${uploadMethod === 'file' ? 'active' : ''}`} onClick={() => { setUploadMethod('file'); setFormData({ ...formData, photo: '' }); setPhotoPreview(''); setPhotoFile(null) }} disabled={isSubmitting}>📁 Upload File</button>
+                          <button type="button" className={`toggle-btn ${uploadMethod === 'url' ? 'active' : ''}`} onClick={() => { setUploadMethod('url'); setFormData({ ...formData, photo: '' }); setPhotoPreview(''); setPhotoFile(null) }} disabled={isSubmitting}>🔗 Enter URL</button>
                         </div>
                         <div className="photo-input-wrapper">
                           {uploadMethod === 'file' ? (
@@ -721,8 +708,8 @@ export default function AdminManageCommittees() {
                           )}
                           {photoPreview && (
                             <div className="photo-preview">
-                              <img src={photoPreview} alt="Preview" onError={(e) => {e.target.style.display = 'none'; const errorDiv = e.target.nextElementSibling; if (errorDiv) errorDiv.style.display = 'block'}} />
-                              <div className="photo-preview-error" style={{display: 'none'}}><span>⚠️ Invalid image</span></div>
+                              <img src={photoPreview} alt="Preview" onError={(e) => { e.target.style.display = 'none'; const errorDiv = e.target.nextElementSibling; if (errorDiv) errorDiv.style.display = 'block' }} />
+                              <div className="photo-preview-error" style={{ display: 'none' }}><span>⚠️ Invalid image</span></div>
                             </div>
                           )}
                         </div>
@@ -735,11 +722,11 @@ export default function AdminManageCommittees() {
                     <>
                       <div className="form-group">
                         <label htmlFor="name">Name <span className="required">*</span></label>
-                        <input id="name" type="text" value={formData.name || ""} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="e.g., Dr. Ahmed Hassan" required className="form-input" disabled={isSubmitting} />
+                        <input id="name" type="text" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Dr. Ahmed Hassan" required className="form-input" disabled={isSubmitting} />
                       </div>
                       <div className="form-group">
                         <label htmlFor="committeeId">Committee <span className="required">*</span></label>
-                        <select id="committeeId" value={formData.committeeId || ""} onChange={(e) => setFormData({...formData, committeeId: e.target.value})} required className="form-input" disabled={isSubmitting}>
+                        <select id="committeeId" value={formData.committeeId || ""} onChange={(e) => setFormData({ ...formData, committeeId: e.target.value })} required className="form-input" disabled={isSubmitting}>
                           <option value="">Select Committee</option>
                           {committees.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
                         </select>
@@ -747,18 +734,18 @@ export default function AdminManageCommittees() {
                       <div className="form-row">
                         <div className="form-group">
                           <label htmlFor="email">Email <span className="required">*</span></label>
-                          <input id="email" type="email" value={formData.email || ""} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="email@example.com" required className="form-input" disabled={isSubmitting} />
+                          <input id="email" type="email" value={formData.email || ""} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@example.com" required className="form-input" disabled={isSubmitting} />
                         </div>
                         <div className="form-group">
                           <label htmlFor="phone">Phone (Optional)</label>
-                          <input id="phone" type="tel" value={formData.phone || ""} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="+60 12-345-6789" className="form-input" disabled={isSubmitting} />
+                          <input id="phone" type="tel" value={formData.phone || ""} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+60 12-345-6789" className="form-input" disabled={isSubmitting} />
                         </div>
                       </div>
                       <div className="form-group">
                         <label htmlFor="photo">Photo <span className="required">*</span></label>
                         <div className="upload-method-toggle">
-                          <button type="button" className={`toggle-btn ${uploadMethod === 'file' ? 'active' : ''}`} onClick={() => {setUploadMethod('file'); setFormData({...formData, photo: ''}); setPhotoPreview(''); setPhotoFile(null)}} disabled={isSubmitting}>📁 Upload File</button>
-                          <button type="button" className={`toggle-btn ${uploadMethod === 'url' ? 'active' : ''}`} onClick={() => {setUploadMethod('url'); setFormData({...formData, photo: ''}); setPhotoPreview(''); setPhotoFile(null)}} disabled={isSubmitting}>🔗 Enter URL</button>
+                          <button type="button" className={`toggle-btn ${uploadMethod === 'file' ? 'active' : ''}`} onClick={() => { setUploadMethod('file'); setFormData({ ...formData, photo: '' }); setPhotoPreview(''); setPhotoFile(null) }} disabled={isSubmitting}>📁 Upload File</button>
+                          <button type="button" className={`toggle-btn ${uploadMethod === 'url' ? 'active' : ''}`} onClick={() => { setUploadMethod('url'); setFormData({ ...formData, photo: '' }); setPhotoPreview(''); setPhotoFile(null) }} disabled={isSubmitting}>🔗 Enter URL</button>
                         </div>
                         <div className="photo-input-wrapper">
                           {uploadMethod === 'file' ? (
@@ -778,8 +765,8 @@ export default function AdminManageCommittees() {
                           )}
                           {photoPreview && (
                             <div className="photo-preview">
-                              <img src={photoPreview} alt="Preview" onError={(e) => {e.target.style.display = 'none'; const errorDiv = e.target.nextElementSibling; if (errorDiv) errorDiv.style.display = 'block'}} />
-                              <div className="photo-preview-error" style={{display: 'none'}}><span>⚠️ Invalid image</span></div>
+                              <img src={photoPreview} alt="Preview" onError={(e) => { e.target.style.display = 'none'; const errorDiv = e.target.nextElementSibling; if (errorDiv) errorDiv.style.display = 'block' }} />
+                              <div className="photo-preview-error" style={{ display: 'none' }}><span>⚠️ Invalid image</span></div>
                             </div>
                           )}
                         </div>
@@ -792,27 +779,27 @@ export default function AdminManageCommittees() {
                     <>
                       <div className="form-group">
                         <label htmlFor="name">Name <span className="required">*</span></label>
-                        <input id="name" type="text" value={formData.name || ""} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="e.g., Sarah Ali" required className="form-input" disabled={isSubmitting} />
+                        <input id="name" type="text" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Sarah Ali" required className="form-input" disabled={isSubmitting} />
                       </div>
                       <div className="form-row">
                         <div className="form-group">
                           <label htmlFor="committeeId">Committee <span className="required">*</span></label>
-                          <select id="committeeId" value={formData.committeeId || ""} onChange={(e) => setFormData({...formData, committeeId: e.target.value})} required className="form-input" disabled={isSubmitting}>
+                          <select id="committeeId" value={formData.committeeId || ""} onChange={(e) => setFormData({ ...formData, committeeId: e.target.value })} required className="form-input" disabled={isSubmitting}>
                             <option value="">Select Committee</option>
                             {committees.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
                           </select>
                         </div>
                         <div className="form-group">
                           <label htmlFor="order">Display Order (Optional)</label>
-                          <input id="order" type="number" value={formData.order || 0} onChange={(e) => setFormData({...formData, order: parseInt(e.target.value) || 0})} min="0" className="form-input" disabled={isSubmitting} />
+                          <input id="order" type="number" value={formData.order || 0} onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })} min="0" className="form-input" disabled={isSubmitting} />
                           <small className="form-hint">Lower numbers appear first</small>
                         </div>
                       </div>
                       <div className="form-group">
                         <label htmlFor="photo">Photo <span className="required">*</span></label>
                         <div className="upload-method-toggle">
-                          <button type="button" className={`toggle-btn ${uploadMethod === 'file' ? 'active' : ''}`} onClick={() => {setUploadMethod('file'); setFormData({...formData, photo: ''}); setPhotoPreview(''); setPhotoFile(null)}} disabled={isSubmitting}>📁 Upload File</button>
-                          <button type="button" className={`toggle-btn ${uploadMethod === 'url' ? 'active' : ''}`} onClick={() => {setUploadMethod('url'); setFormData({...formData, photo: ''}); setPhotoPreview(''); setPhotoFile(null)}} disabled={isSubmitting}>🔗 Enter URL</button>
+                          <button type="button" className={`toggle-btn ${uploadMethod === 'file' ? 'active' : ''}`} onClick={() => { setUploadMethod('file'); setFormData({ ...formData, photo: '' }); setPhotoPreview(''); setPhotoFile(null) }} disabled={isSubmitting}>📁 Upload File</button>
+                          <button type="button" className={`toggle-btn ${uploadMethod === 'url' ? 'active' : ''}`} onClick={() => { setUploadMethod('url'); setFormData({ ...formData, photo: '' }); setPhotoPreview(''); setPhotoFile(null) }} disabled={isSubmitting}>🔗 Enter URL</button>
                         </div>
                         <div className="photo-input-wrapper">
                           {uploadMethod === 'file' ? (
@@ -832,8 +819,8 @@ export default function AdminManageCommittees() {
                           )}
                           {photoPreview && (
                             <div className="photo-preview">
-                              <img src={photoPreview} alt="Preview" onError={(e) => {e.target.style.display = 'none'; const errorDiv = e.target.nextElementSibling; if (errorDiv) errorDiv.style.display = 'block'}} />
-                              <div className="photo-preview-error" style={{display: 'none'}}><span>⚠️ Invalid image</span></div>
+                              <img src={photoPreview} alt="Preview" onError={(e) => { e.target.style.display = 'none'; const errorDiv = e.target.nextElementSibling; if (errorDiv) errorDiv.style.display = 'block' }} />
+                              <div className="photo-preview-error" style={{ display: 'none' }}><span>⚠️ Invalid image</span></div>
                             </div>
                           )}
                         </div>
