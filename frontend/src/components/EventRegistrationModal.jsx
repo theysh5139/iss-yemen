@@ -52,8 +52,11 @@ export default function EventRegistrationModal({ event, isOpen, onClose, onRegis
     return null
   }
 
-  // Only allow member role accounts to access registration
-  if (!user || user.role !== 'member') {
+  // STRICT ACCESS CONTROL: Only allow member or admin role accounts to access registration
+  // Non-logged-in users (user === null) will see nothing (return null)
+  // This prevents non-logged-in users from registering even if they somehow access the modal
+  if (!user || (user.role !== 'member' && user.role !== 'admin')) {
+    console.log('[EventRegistrationModal] Access denied - user:', user ? user.role : 'not logged in')
     return null
   }
 

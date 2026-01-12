@@ -14,7 +14,12 @@ import {
   cancelEvent,
   deleteEvent,
   getAllEvents,
+  getAllActivities,
+  createActivity,
+  updateActivity,
+  deleteActivity,
   syncEventPaymentFields,
+  getAllEventRegistrations,
   verifyPayments,
   approvePayment,
   rejectPayment
@@ -24,6 +29,7 @@ import { authenticate, requireRole } from '../middlewares/auth.middleware.js';
 import { validateBody, createAnnouncementSchema, updateAnnouncementSchema, createEventSchema, updateEventSchema } from '../middlewares/validators.js';
 import { uploadImage } from '../middlewares/uploadImage.middleware.js';
 import { uploadImageGridFS, processGridFSUpload } from '../middlewares/uploadImageGridFS.middleware.js';
+import { uploadQR } from '../middlewares/uploadQR.middleware.js';
 import { STORAGE_CONFIG } from '../config/storage.js';
 
 const router = Router();
@@ -54,8 +60,6 @@ if (STORAGE_CONFIG.useGridFS) {
 router.delete('/announcements/:id', deleteAnnouncement);
 
 // Event Management
-import { uploadQR } from '../middlewares/uploadQR.middleware.js';
-
 router.get('/events', getAllEvents);
 router.post('/events', uploadQR.single('qrCode'), validateBody(createEventSchema), createEvent);
 router.patch('/events/:id', uploadQR.single('qrCode'), validateBody(updateEventSchema), updateEvent);
@@ -63,8 +67,23 @@ router.patch('/events/:id/cancel', cancelEvent);
 router.delete('/events/:id', deleteEvent);
 router.post('/events/sync-payment-fields', syncEventPaymentFields);
 
+// Activity Management
+router.get('/activities', getAllActivities);
+// Use GridFS if enabled, otherwise use filesystem for activity images
+if (STORAGE_CONFIG.useGridFS) {
+  router.post('/activities', uploadImageGridFS, processGridFSUpload, validateBody(createAnnouncementSchema), createActivity);
+  router.patch('/activities/:id', uploadImageGridFS, processGridFSUpload, validateBody(updateAnnouncementSchema), updateActivity);
+} else {
+  router.post('/activities', uploadImage.single('image'), validateBody(createAnnouncementSchema), createActivity);
+  router.patch('/activities/:id', uploadImage.single('image'), validateBody(updateAnnouncementSchema), updateActivity);
+}
+router.delete('/activities/:id', deleteActivity);
 
-// Payment Verification 
+
+// Event Registrations Management
+router.get('/registrations', getAllEventRegistrations);
+
+// Payment Verification (only paid registrations with receipts)
 router.get('/payments', verifyPayments);
 router.patch('/payments/:eventId/:registrationIndex/approve', approvePayment);
 router.patch('/payments/:eventId/:registrationIndex/reject', rejectPayment);

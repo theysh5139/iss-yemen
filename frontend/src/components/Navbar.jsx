@@ -3,18 +3,43 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthProvider.jsx"
+import { logoutApi } from "../api/auth.js"
 import "../styles/navbar.css"
 import utmLogo from "../assets/utm-logo.png"
 
 export default function Navbar() {
-  const { user, setUser } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
 
   async function handleLogout() {
-    setUser(null)
-    navigate("/", { replace: true }) // Redirect to homepage
+    console.log('[Navbar] Logging out user...')
+    
+    // First, clear frontend state immediately to prevent any race conditions
+    logout() // This clears localStorage and sets user to null
+    
+    // Clear sessionStorage (redirect URLs, etc.)
+    sessionStorage.clear()
+    
+    // Clear any other localStorage items related to auth (double-check)
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('cookie-based-auth')
+    
+    // Then call backend logout API to clear cookies
+    // Do this after clearing frontend state to prevent re-authentication
+    try {
+      await logoutApi()
+      console.log('[Navbar] Backend logout successful')
+    } catch (err) {
+      console.error('[Navbar] Logout API error:', err)
+      // Continue with logout even if API call fails - frontend state is already cleared
+    }
+    
+    // Close menu and redirect to homepage
     setMenuOpen(false)
+    navigate("/", { replace: true })
+    
+    console.log('[Navbar] Logout complete - user should be logged out')
   }
 
   function toggleMenu() {

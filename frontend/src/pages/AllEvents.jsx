@@ -6,7 +6,9 @@ import "../styles/home.css"
 import "../styles/all-events.css"
 
 export default function AllEvents() {
-  const { user } = useAuth()
+  // Get user state from AuthProvider - this is read-only, never modify it here
+  // CRITICAL: This page NEVER modifies authentication state or localStorage
+  const { user, loading: authLoading } = useAuth()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -14,24 +16,57 @@ export default function AllEvents() {
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const isMember = user && user.role === 'member'
-  const isLoggedIn = !!user // Check if user is logged in (any role)
+  // Check if user is logged in and is a member (members can register)
+  // IMPORTANT: This page NEVER modifies authentication state
+  // It only reads the user state from AuthProvider
+  // AuthProvider only authenticates if localStorage has a token
+  // If user is null, they are NOT logged in - no exceptions
+  // CRITICAL: Only check user properties after auth has loaded to prevent errors
+  const isMember = !authLoading && user && user.role === 'member'
+  const isLoggedIn = !authLoading && !!user // Check if user is logged in (any role) and auth is loaded
+  
+  // Debug logging (remove in production)
+  useEffect(() => {
+    if (!authLoading) {
+      console.log('[AllEvents] Auth state - user:', user ? user.email : 'null', 'isLoggedIn:', isLoggedIn, 'isMember:', isMember)
+      console.log('[AllEvents] localStorage token:', localStorage.getItem('authToken') ? 'exists' : 'none')
+    }
+  }, [user, authLoading, isLoggedIn, isMember])
 
+  // Fetch events on mount (only once)
   useEffect(() => {
     fetchEvents()
-    // Check if URL has filter parameter (for non-logged-in users coming from homepage)
-    const urlParams = new URLSearchParams(window.location.search)
-    const filterParam = urlParams.get('filter')
-    const eventIdParam = urlParams.get('event')
-    
-    if (filterParam && ['all', 'upcoming', 'past'].includes(filterParam)) {
-      setFilter(filterParam)
-    } else if (!isMember) {
-      // For non-logged-in users, default to "upcoming" if no filter specified
-      setFilter("upcoming")
+  }, [])
+
+  // Set filter based on auth state and URL params (wait for auth to load)
+  useEffect(() => {
+    // CRITICAL: Wait for auth to fully load before setting filter
+    // This prevents errors when non-logged-in users navigate to the page
+    if (authLoading) {
+      console.log('[AllEvents] Waiting for auth to load...')
+      return // Don't run until auth is loaded
     }
     
-  }, [isMember])
+    console.log('[AllEvents] Auth loaded - user:', user ? user.email : 'null', 'isLoggedIn:', isLoggedIn)
+    
+    // Check if URL has filter parameter
+    const urlParams = new URLSearchParams(window.location.search)
+    const filterParam = urlParams.get('filter')
+    
+    if (filterParam && ['all', 'upcoming', 'past'].includes(filterParam)) {
+      console.log('[AllEvents] Setting filter from URL:', filterParam)
+      setFilter(filterParam)
+    } else if (!isLoggedIn) {
+      // For non-logged-in users, default to "upcoming" if no filter specified
+      console.log('[AllEvents] Non-logged-in user, defaulting to "upcoming" filter')
+      setFilter("upcoming")
+    } else {
+      // Logged-in users default to "all"
+      console.log('[AllEvents] Logged-in user, defaulting to "all" filter')
+      setFilter("all")
+    }
+    
+  }, [authLoading, isLoggedIn, user])
 
   // Scroll to event if event ID is in URL (after events are loaded)
   useEffect(() => {
@@ -105,10 +140,32 @@ export default function AllEvents() {
       console.error('Invalid event passed to handleEventClick:', event)
       return
     }
-    console.log('Setting selectedEvent and opening modal...')
+    
+    // CRITICAL: Wait for auth to load before checking
+    if (authLoading) {
+      console.log('[handleEventClick] Auth still loading, please wait...')
+      return
+    }
+    
+    // STRICT CHECK: Only allow logged-in members to open the registration modal
+    // This ensures non-logged-in users cannot register
+    // Backend also enforces authentication via 'authenticate' middleware
+    if (!user || !isLoggedIn || !isMember) {
+      console.log('[handleEventClick] User is not logged in or not a member, cannot open registration modal')
+      // Redirect to login if user tries to register without being logged in
+      if (!isLoggedIn) {
+        console.log('[handleEventClick] Redirecting non-logged-in user to login page')
+        window.location.href = '/login'
+      } else {
+        // User is logged in but not a member - show message
+        alert('Only members can register for events. Please contact admin if you believe this is an error.')
+      }
+      return
+    }
+    console.log('[handleEventClick] Setting selectedEvent and opening modal...')
     setSelectedEvent(event)
     setIsModalOpen(true)
-    console.log('Modal state updated - selectedEvent:', event._id, 'isModalOpen: true')
+    console.log('[handleEventClick] Modal state updated - selectedEvent:', event._id, 'isModalOpen: true')
   }
 
   async function handleModalClose() {
@@ -130,7 +187,12 @@ export default function AllEvents() {
   }
 
   function isRegistered(event) {
-    if (!isMember || !event.registeredUsers) return false
+    // Only check registration for logged-in members
+    // Non-logged-in users should never see registered status
+    // CRITICAL: Check authLoading first to prevent errors when auth is still loading
+    if (authLoading || !isLoggedIn || !isMember || !event.registeredUsers || !user) {
+      return false
+    }
     return event.registeredUsers.some(regUser => 
       typeof regUser === 'object' ? regUser._id === user?.id : regUser === user?.id
     )
@@ -161,7 +223,7 @@ export default function AllEvents() {
     return true // Show all for "all" filter
   })
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <main className="page all-events-page">
         <div className="loading-container">
@@ -186,7 +248,16 @@ export default function AllEvents() {
     <main className="page all-events-page">
       <div className="events-page-header">
         <h1 className="page-title">All Events</h1>
-        <p className="page-subtitle">Join events and activities organized by ISS Yemen</p>
+        {/* Show different subtitle based on user status - wait for auth to load */}
+        {authLoading ? (
+          <p className="page-subtitle">Loading...</p>
+        ) : isLoggedIn && isMember ? (
+          <p className="page-subtitle">Browse and register for events organized by ISS Yemen</p>
+        ) : isLoggedIn ? (
+          <p className="page-subtitle">View events and activities organized by ISS Yemen</p>
+        ) : (
+          <p className="page-subtitle">View events and activities organized by ISS Yemen. <a href="/login" style={{ color: 'var(--primary-dark)', textDecoration: 'underline' }}>Login</a> to register for events.</p>
+        )}
       </div>
 
       {/* Filter Tabs - Show for both non-logged-in users and members */}
@@ -215,7 +286,9 @@ export default function AllEvents() {
       {filteredEvents.length > 0 ? (
         <div className="all-events-grid">
           {filteredEvents.map(event => {
-            const registered = isRegistered(event)
+            // CRITICAL: Only check registration status if auth is loaded and user is logged in
+            // This prevents errors when non-logged-in users view events
+            const registered = authLoading ? false : isRegistered(event)
             const eventDate = new Date(event.date)
             const isUpcoming = eventDate >= now
 
@@ -288,7 +361,17 @@ export default function AllEvents() {
 
                 {!event.cancelled && (
                   <div className="event-actions">
-                    {isLoggedIn ? (
+                    {/* REGISTRATION ACCESS CONTROL:
+                        - Logged-in Members (role: 'member'): Can register - see "Register" button
+                        - Non-logged-in Users: Cannot register - see "Login to Register" link
+                        - Logged-in Admins: Can view but register button only shown if isMember is true
+                        - CRITICAL: Wait for auth to load before showing buttons
+                    */}
+                    {authLoading ? (
+                      <button className="btn btn-secondary btn-3d" disabled>
+                        Loading...
+                      </button>
+                    ) : isMember ? (
                       registered ? (
                         <button
                           className="btn btn-secondary btn-3d"
@@ -326,7 +409,21 @@ export default function AllEvents() {
                         </button>
                       )
                     ) : (
-                      <a href="/login" className="btn btn-primary btn-3d">
+                      /* Non-logged-in Users - View Only, Cannot Register
+                         - They can ONLY VIEW events
+                         - They CANNOT register
+                         - They must login first to register
+                         - After login, they will see "Register" button instead
+                      */
+                      <a 
+                        href="/login" 
+                        className="btn btn-primary btn-3d"
+                        onClick={(e) => {
+                          // Store the current page URL so user can return after login
+                          const currentUrl = window.location.pathname + window.location.search
+                          sessionStorage.setItem('redirectAfterLogin', currentUrl)
+                        }}
+                      >
                         Login to Register
                       </a>
                     )}

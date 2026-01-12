@@ -44,10 +44,23 @@ export default function Login() {
       // Store token if provided (for admin, token might be in cookie)
       if (res.token) {
         localStorage.setItem("authToken", res.token)
+      } else {
+        // If no token in response but user is returned, backend set cookie
+        // Store flag to indicate cookie-based authentication
+        localStorage.setItem("authToken", "cookie-based-auth")
       }
 
       // Set auth context
       setUser(res.user)
+
+      // Check if user was redirected from a specific page (e.g., events page)
+      const redirectUrl = sessionStorage.getItem('redirectAfterLogin')
+      if (redirectUrl) {
+        sessionStorage.removeItem('redirectAfterLogin')
+        // Redirect back to the page they came from (e.g., events page)
+        navigate(redirectUrl, { replace: true })
+        return
+      }
 
       // Redirect based on role
       if (res.user.role === "admin") {

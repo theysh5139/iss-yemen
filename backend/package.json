@@ -23,7 +23,8 @@
     "check-hods": "node src/scripts/check-hods.js",
     "fix-hods": "node src/scripts/fix-hods-display.js",
     "test-cloud-updates": "node src/scripts/test-cloud-updates.js",
-    "verify-data-sync": "node src/scripts/verify-data-sync.js"
+    "verify-data-sync": "node src/scripts/verify-data-sync.js",
+    "migrate-registrations": "node src/scripts/migrate-event-registrations.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

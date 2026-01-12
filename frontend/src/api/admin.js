@@ -104,6 +104,54 @@ export function deleteEvent(eventId) {
   })
 }
 
+// Event Registrations
+export function getAllEventRegistrations() {
+  return apiFetch('/api/admin/registrations')
+}
+
+// Activities
+export function getAllActivities() {
+  return apiFetch('/api/admin/activities')
+}
+
+export function createActivity(activityData) {
+  // Handle FormData (for file uploads) differently
+  if (activityData instanceof FormData) {
+    return apiFetch('/api/admin/activities', {
+      method: 'POST',
+      body: activityData,
+      headers: {} // Don't set Content-Type for FormData
+    })
+  }
+  // Handle regular JSON data
+  return apiFetch('/api/admin/activities', {
+    method: 'POST',
+    body: activityData
+  })
+}
+
+export function updateActivity(activityId, activityData) {
+  // Handle FormData (for file uploads) differently
+  if (activityData instanceof FormData) {
+    return apiFetch(`/api/admin/activities/${activityId}`, {
+      method: 'PATCH',
+      body: activityData,
+      headers: {} // Don't set Content-Type for FormData
+    })
+  }
+  // Handle regular JSON data
+  return apiFetch(`/api/admin/activities/${activityId}`, {
+    method: 'PATCH',
+    body: activityData
+  })
+}
+
+export function deleteActivity(activityId) {
+  return apiFetch(`/api/admin/activities/${activityId}`, {
+    method: 'DELETE'
+  })
+}
+
 // Payments
 export function getAllPayments() {
   return apiFetch('/api/admin/payments')

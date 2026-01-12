@@ -14,10 +14,65 @@ const __dirname = path.dirname(__filename)
 ================================ */
 export async function getAdminStats(req, res, next) {
   try {
-    const [totalUsers, totalEvents, activeAnnouncements] = await Promise.all([
+    const mongoose = await import('mongoose');
+    const db = mongoose.default.connection?.db || mongoose.default.connection.getClient().db();
+    
+    // Check if separate announcements collection exists
+    let hasAnnouncementsCollection = false;
+    try {
+      const collections = await db.listCollections().toArray();
+      const collectionNames = collections.map(c => c.name);
+      hasAnnouncementsCollection = collectionNames.includes('announcements');
+    } catch (err) {
+      console.warn('[getAdminStats] Could not list collections:', err.message);
+    }
+    
+    // Count active announcements from Event model
+    // Active means: type='announcement' OR (type='event' AND category='News'), not cancelled, and (no date or date in future or past but still relevant)
+    // For announcements, we consider them active if they're not cancelled, regardless of date (announcements can be ongoing)
+    const eventAnnouncementsCount = await Event.countDocuments({ 
+      $or: [
+        { type: 'announcement' },
+        { type: 'event', category: 'News' }
+      ],
+      cancelled: { $ne: true }
+      // Removed date restriction - announcements are active if not cancelled
+    });
+    
+    // Count from separate announcements collection if it exists
+    let separateAnnouncementsCount = 0;
+    if (hasAnnouncementsCollection) {
+      try {
+        const announcementsCollection = db.collection('announcements');
+        separateAnnouncementsCount = await announcementsCollection.countDocuments({
+          cancelled: { $ne: true }
+          // Removed date restriction - announcements are active if not cancelled
+        });
+      } catch (err) {
+        console.warn('[getAdminStats] Error counting separate announcements:', err.message);
+      }
+    }
+    
+    // Also count news items from separate news collection if they exist (news items are also announcements)
+    let newsAnnouncementsCount = 0;
+    try {
+      const collections = await db.listCollections().toArray();
+      const collectionNames = collections.map(c => c.name);
+      if (collectionNames.includes('news')) {
+        const newsCollection = db.collection('news');
+        newsAnnouncementsCount = await newsCollection.countDocuments({
+          cancelled: { $ne: true }
+        });
+      }
+    } catch (err) {
+      console.warn('[getAdminStats] Error counting news announcements:', err.message);
+    }
+    
+    const activeAnnouncements = eventAnnouncementsCount + separateAnnouncementsCount + newsAnnouncementsCount;
+    
+    const [totalUsers, totalEvents] = await Promise.all([
       User.countDocuments(),
-      Event.countDocuments({ type: 'event' }),
-      Event.countDocuments({ type: 'announcement', date: { $gte: new Date() } })
+      Event.countDocuments({ type: 'event' })
     ]);
 
     res.json({
@@ -394,7 +449,7 @@ export async function getAllAnnouncements(req, res, next) {
           { type: 'announcement' },
           { type: 'event', category: 'News' }
         ]
-      }).sort({ date: -1 }).lean();
+      }).sort({ createdAt: -1, updatedAt: -1, date: -1 }).lean(); // Sort by creation date first
       
       allAnnouncements.push(...eventAnnouncements);
     } catch (err) {
@@ -406,7 +461,7 @@ export async function getAllAnnouncements(req, res, next) {
       try {
         const announcementsCollection = db.collection('announcements');
         const separateAnnouncements = await announcementsCollection.find({})
-          .sort({ date: -1 })
+          .sort({ createdAt: -1, updatedAt: -1, date: -1 }) // Sort by creation date first
           .toArray();
         allAnnouncements.push(...separateAnnouncements);
       } catch (err) {
@@ -418,7 +473,7 @@ export async function getAllAnnouncements(req, res, next) {
       try {
         const newsCollection = db.collection('news');
         const separateNews = await newsCollection.find({})
-          .sort({ date: -1 })
+          .sort({ createdAt: -1, updatedAt: -1, date: -1 }) // Sort by creation date first
           .toArray();
         allAnnouncements.push(...separateNews);
       } catch (err) {
@@ -426,16 +481,17 @@ export async function getAllAnnouncements(req, res, next) {
       }
     }
     
-    // Remove duplicates based on _id and sort by date
+    // Remove duplicates based on _id and sort by creation date (newest first)
     const uniqueAnnouncements = Array.from(
       new Map(allAnnouncements.map(item => {
         const id = item._id?.toString() || String(item._id);
         return [id, item];
       })).values()
     ).sort((a, b) => {
-      const dateA = new Date(a.date || a.createdAt || 0);
-      const dateB = new Date(b.date || b.createdAt || 0);
-      return dateB - dateA;
+      // Prioritize createdAt, then updatedAt, then date
+      const dateA = new Date(a.createdAt || a.updatedAt || a.date || 0);
+      const dateB = new Date(b.createdAt || b.updatedAt || b.date || 0);
+      return dateB - dateA; // Descending order (newest first)
     });
     
     res.json({ announcements: uniqueAnnouncements });
@@ -451,12 +507,331 @@ export async function getAllEvents(req, res, next) {
       type: 'event', // Only actual events
       category: { $ne: 'News' } // Exclude news items
     })
-      .sort({ date: -1 })
+      .sort({ createdAt: -1, updatedAt: -1, date: -1 }) // Sort by creation date first, then update date, then event date
       .populate('registeredUsers', 'name email')
 
     res.json({ events })
   } catch (err) {
     next(err)
+  }
+}
+
+// Get all activities
+// Prioritizes separate 'activities' collection, falls back to Event model
+export async function getAllActivities(req, res, next) {
+  try {
+    const mongoose = await import('mongoose');
+    const db = mongoose.default.connection?.db || mongoose.default.connection.getClient().db();
+    
+    // Check if separate activities collection exists
+    let hasActivitiesCollection = false;
+    try {
+      const collections = await db.listCollections().toArray();
+      const collectionNames = collections.map(c => c.name);
+      hasActivitiesCollection = collectionNames.includes('activities');
+    } catch (err) {
+      console.warn('[getAllActivities] Could not list collections:', err.message);
+    }
+    
+    let activities = [];
+    
+    // Primary: Query from separate activities collection if it exists
+    if (hasActivitiesCollection) {
+      try {
+        const activitiesCollection = db.collection('activities');
+        const separateActivities = await activitiesCollection.find({})
+          .sort({ createdAt: -1, updatedAt: -1, date: -1 }) // Sort by creation date first, then update date, then event date
+          .toArray();
+        activities.push(...separateActivities);
+        console.log(`[getAllActivities] Found ${separateActivities.length} activities in separate collection`);
+      } catch (err) {
+        console.warn('[getAllActivities] Error querying activities collection:', err.message);
+      }
+    }
+    
+    // Fallback: Also query from Event model (for backward compatibility - only if no separate collection or to catch any missed activities)
+    if (!hasActivitiesCollection) {
+      const eventActivities = await Event.find({ 
+        type: 'activity'
+      })
+        .sort({ createdAt: -1, updatedAt: -1, date: -1 }) // Sort by creation date first, then update date, then event date
+        .lean();
+      activities.push(...eventActivities);
+      console.log(`[getAllActivities] Found ${eventActivities.length} activities in Event model (fallback)`);
+    }
+    
+    // Remove duplicates based on _id
+    const uniqueActivities = activities.filter((activity, index, self) =>
+      index === self.findIndex(a => a._id.toString() === activity._id.toString())
+    );
+    
+    // Sort by creation date (newest first), then by update date, then by event date
+    uniqueActivities.sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.updatedAt || a.date || 0);
+      const dateB = new Date(b.createdAt || b.updatedAt || b.date || 0);
+      return dateB - dateA; // Descending order (newest first)
+    });
+    
+    res.json({ activities: uniqueActivities });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Create activity
+// Stores directly in 'activities' collection if it exists, otherwise uses Event model
+export async function createActivity(req, res, next) {
+  try {
+    const mongoose = await import('mongoose');
+    const db = mongoose.default.connection?.db || mongoose.default.connection.getClient().db();
+    
+    // Check if separate activities collection exists
+    let hasActivitiesCollection = false;
+    try {
+      const collections = await db.listCollections().toArray();
+      const collectionNames = collections.map(c => c.name);
+      hasActivitiesCollection = collectionNames.includes('activities');
+    } catch (err) {
+      console.warn('[createActivity] Could not list collections:', err.message);
+    }
+    
+    // Determine image URL based on storage method
+    let imageUrl = undefined;
+    if (req.file) {
+      // Check if GridFS is being used (file has gridfsId)
+      if (req.file.gridfsId) {
+        imageUrl = req.file.gridfsUrl; // GridFS URL: /api/images/gridfs/{fileId}
+      } else {
+        imageUrl = `/uploads/images/${req.file.filename}`; // Filesystem URL
+      }
+    }
+    
+    const activityData = {
+      ...req.body,
+      type: 'activity',
+      date: req.body.date ? new Date(req.body.date) : new Date(),
+      isPublic: req.body.isPublic === 'true' || req.body.isPublic === true || req.body.isPublic === undefined,
+      imageUrl: imageUrl,
+      isRecurring: req.body.isRecurring === 'true' || req.body.isRecurring === true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    let activity;
+    
+    // Primary: Store directly in separate activities collection if it exists
+    if (hasActivitiesCollection) {
+      try {
+        const activitiesCollection = db.collection('activities');
+        const result = await activitiesCollection.insertOne(activityData);
+        activity = { ...activityData, _id: result.insertedId };
+        console.log(`[createActivity] Stored directly in activities collection`);
+      } catch (collectionError) {
+        console.warn('[createActivity] Failed to store in activities collection, falling back to Event model:', collectionError.message);
+        // Fallback to Event model
+        activity = await Event.create(activityData);
+      }
+    } else {
+      // Fallback: Use Event model if separate collection doesn't exist
+      activity = await Event.create(activityData);
+      console.log(`[createActivity] Stored in Event model (activities collection not found)`);
+    }
+
+    // Broadcast real-time update
+    try {
+      const { broadcastActivityUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      broadcastActivityUpdate(activity, 'created');
+      broadcastDataRefresh('activities');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
+
+    res.status(201).json({ success: true, activity });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Update activity
+// Updates in 'activities' collection if it exists, otherwise updates Event model
+export async function updateActivity(req, res, next) {
+  try {
+    const mongoose = await import('mongoose');
+    const db = mongoose.default.connection?.db || mongoose.default.connection.getClient().db();
+    
+    // Check if separate activities collection exists
+    let hasActivitiesCollection = false;
+    try {
+      const collections = await db.listCollections().toArray();
+      const collectionNames = collections.map(c => c.name);
+      hasActivitiesCollection = collectionNames.includes('activities');
+    } catch (err) {
+      console.warn('[updateActivity] Could not list collections:', err.message);
+    }
+    
+    // Handle image upload - support both GridFS and filesystem
+    if (req.file) {
+      // Check if GridFS is being used (file has gridfsId)
+      if (req.file.gridfsId) {
+        req.body.imageUrl = req.file.gridfsUrl; // GridFS URL: /api/images/gridfs/{fileId}
+      } else {
+        req.body.imageUrl = `/uploads/images/${req.file.filename}`; // Filesystem URL
+      }
+    }
+
+    // Ensure type remains 'activity'
+    req.body.type = 'activity';
+    req.body.updatedAt = new Date();
+    
+    // Handle boolean fields
+    if (req.body.isRecurring !== undefined) {
+      req.body.isRecurring = req.body.isRecurring === 'true' || req.body.isRecurring === true;
+    }
+    if (req.body.isPublic !== undefined) {
+      req.body.isPublic = req.body.isPublic === 'true' || req.body.isPublic === true;
+    }
+    
+    // Handle date field
+    if (req.body.date) {
+      req.body.date = new Date(req.body.date);
+    }
+
+    let activity;
+    
+    // Primary: Update in separate activities collection if it exists
+    if (hasActivitiesCollection) {
+      try {
+        const activitiesCollection = db.collection('activities');
+        const activityId = mongoose.default.Types.ObjectId.isValid(req.params.id) 
+          ? new mongoose.default.Types.ObjectId(req.params.id) 
+          : req.params.id;
+        const existingActivity = await activitiesCollection.findOne({ _id: activityId });
+        
+        if (!existingActivity) {
+          return res.status(404).json({ message: 'Activity not found' });
+        }
+        
+        await activitiesCollection.updateOne(
+          { _id: activityId },
+          { $set: req.body }
+        );
+        
+        activity = { ...existingActivity, ...req.body };
+        console.log(`[updateActivity] Updated in activities collection`);
+      } catch (collectionError) {
+        console.warn('[updateActivity] Failed to update in activities collection, trying Event model:', collectionError.message);
+        // Fallback to Event model
+        activity = await Event.findById(req.params.id);
+        if (!activity || activity.type !== 'activity') {
+          return res.status(404).json({ message: 'Activity not found' });
+        }
+        Object.assign(activity, req.body);
+        await activity.save();
+      }
+    } else {
+      // Fallback: Update in Event model if separate collection doesn't exist
+      activity = await Event.findById(req.params.id);
+      if (!activity || activity.type !== 'activity') {
+        return res.status(404).json({ message: 'Activity not found' });
+      }
+      Object.assign(activity, req.body);
+      await activity.save();
+      console.log(`[updateActivity] Updated in Event model (activities collection not found)`);
+    }
+
+    // Broadcast real-time update
+    try {
+      const { broadcastActivityUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      broadcastActivityUpdate(activity, 'updated');
+      broadcastDataRefresh('activities');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
+
+    res.json({ success: true, activity });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Delete activity
+// Deletes from 'activities' collection if it exists, otherwise deletes from Event model
+export async function deleteActivity(req, res, next) {
+  try {
+    const mongoose = await import('mongoose');
+    const db = mongoose.default.connection?.db || mongoose.default.connection.getClient().db();
+    
+    // Check if separate activities collection exists
+    let hasActivitiesCollection = false;
+    try {
+      const collections = await db.listCollections().toArray();
+      const collectionNames = collections.map(c => c.name);
+      hasActivitiesCollection = collectionNames.includes('activities');
+    } catch (err) {
+      console.warn('[deleteActivity] Could not list collections:', err.message);
+    }
+    
+    let activity;
+    
+    // Primary: Delete from separate activities collection if it exists
+    if (hasActivitiesCollection) {
+      try {
+        const activitiesCollection = db.collection('activities');
+        const activityId = mongoose.default.Types.ObjectId.isValid(req.params.id) 
+          ? new mongoose.default.Types.ObjectId(req.params.id) 
+          : req.params.id;
+        activity = await activitiesCollection.findOne({ _id: activityId });
+        
+        if (!activity) {
+          // Try Event model as fallback
+          activity = await Event.findById(req.params.id);
+          if (!activity || activity.type !== 'activity') {
+            return res.status(404).json({ message: 'Activity not found' });
+          }
+          await Event.deleteOne({ _id: req.params.id });
+          console.log(`[deleteActivity] Deleted from Event model (not found in activities collection)`);
+        } else {
+          await activitiesCollection.deleteOne({ _id: activityId });
+          console.log(`[deleteActivity] Deleted from activities collection`);
+          
+          // Also delete from Event model if it exists there (cleanup)
+          try {
+            await Event.deleteOne({ _id: req.params.id });
+          } catch (err) {
+            // Ignore if not found in Event model
+          }
+        }
+      } catch (collectionError) {
+        console.warn('[deleteActivity] Failed to delete from activities collection, trying Event model:', collectionError.message);
+        // Fallback to Event model
+        activity = await Event.findById(req.params.id);
+        if (!activity || activity.type !== 'activity') {
+          return res.status(404).json({ message: 'Activity not found' });
+        }
+        await Event.deleteOne({ _id: req.params.id });
+      }
+    } else {
+      // Fallback: Delete from Event model if separate collection doesn't exist
+      activity = await Event.findById(req.params.id);
+      if (!activity || activity.type !== 'activity') {
+        return res.status(404).json({ message: 'Activity not found' });
+      }
+      await Event.deleteOne({ _id: req.params.id });
+      console.log(`[deleteActivity] Deleted from Event model (activities collection not found)`);
+    }
+
+    // Broadcast real-time update
+    try {
+      const { broadcastActivityUpdate, broadcastDataRefresh } = await import('../utils/realtime.js');
+      broadcastActivityUpdate(activity, 'deleted');
+      broadcastDataRefresh('activities');
+    } catch (err) {
+      // Real-time not available, continue anyway
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -493,6 +868,149 @@ export async function syncEventPaymentFields(req, res, next) {
 /* ===============================
    PAYMENTS (FIXED)
 ================================ */
+// Get all event registrations (for admin management)
+// Checks both events.registrations and separate eventregistrations collection
+export async function getAllEventRegistrations(req, res, next) {
+  try {
+    const mongoose = await import('mongoose');
+    const db = mongoose.default.connection?.db || mongoose.default.connection.getClient().db();
+    
+    // Check if separate eventregistrations collection exists
+    let hasRegistrationsCollection = false;
+    try {
+      const collections = await db.listCollections().toArray();
+      const collectionNames = collections.map(c => c.name);
+      hasRegistrationsCollection = collectionNames.includes('eventregistrations');
+    } catch (err) {
+      console.warn('[getAllEventRegistrations] Could not list collections:', err.message);
+    }
+
+    const registrations = [];
+
+    // Query from separate eventregistrations collection if it exists
+    if (hasRegistrationsCollection) {
+      try {
+        const registrationsCollection = db.collection('eventregistrations');
+        const separateRegistrations = await registrationsCollection.find({})
+          .sort({ registeredAt: -1 })
+          .toArray();
+        
+        // Populate user info for separate collection registrations
+        const User = (await import('../models/User.model.js')).User;
+        for (const reg of separateRegistrations) {
+          let user = null;
+          if (reg.user) {
+            try {
+              user = await User.findById(reg.user).select('name email').lean();
+            } catch (err) {
+              console.warn(`[getAllEventRegistrations] Could not populate user ${reg.user}:`, err.message);
+            }
+          }
+          
+          registrations.push({
+            id: reg._id.toString(),
+            eventId: reg.eventId?.toString() || reg.eventId,
+            eventTitle: reg.eventTitle,
+            eventDate: reg.eventDate,
+            eventLocation: reg.eventLocation,
+            eventCategory: reg.eventCategory,
+            registrationIndex: reg.registrationIndex,
+            user: user ? {
+              id: user._id.toString(),
+              name: user.name || reg.registrationName || 'Unknown',
+              email: user.email || reg.registrationEmail || 'N/A'
+            } : {
+              id: reg.user?.toString() || reg.user,
+              name: reg.registrationName || 'Unknown',
+              email: reg.registrationEmail || 'N/A'
+            },
+            registrationName: reg.registrationName,
+            registrationEmail: reg.registrationEmail,
+            matricNumber: reg.matricNumber,
+            phone: reg.phone,
+            notes: reg.notes,
+            registeredAt: reg.registeredAt,
+            hasPayment: !!reg.paymentReceipt,
+            paymentReceipt: reg.paymentReceipt || null
+          });
+        }
+      } catch (err) {
+        console.warn('[getAllEventRegistrations] Error querying eventregistrations collection:', err.message);
+      }
+    }
+
+    // Also query from Event model (events.registrations) for backward compatibility
+    // Only if separate collection doesn't exist, or to get any new registrations not yet migrated
+    if (!hasRegistrationsCollection) {
+      // No separate collection - get all from events
+      const events = await Event.find({
+        'registrations': { $exists: true, $ne: [] }
+      })
+      .populate('registrations.user', 'name email')
+      .populate('registeredUsers', 'name email')
+      .sort({ date: -1 })
+      .lean();
+      
+      for (const event of events) {
+      if (!event.registrations || event.registrations.length === 0) continue;
+      
+      for (let index = 0; index < event.registrations.length; index++) {
+        const reg = event.registrations[index];
+        const user = reg.user && typeof reg.user === 'object' ? reg.user : 
+                     event.registeredUsers?.find(u => 
+                       (typeof u === 'object' ? u._id : u).toString() === (typeof reg.user === 'object' ? reg.user._id : reg.user)?.toString()
+                     );
+        
+        registrations.push({
+          id: `${event._id}-${index}`,
+          eventId: event._id.toString(),
+          eventTitle: event.title,
+          eventDate: event.date,
+          eventLocation: event.location,
+          eventCategory: event.category,
+          registrationIndex: index,
+          user: user ? {
+            id: typeof user === 'object' ? user._id : user,
+            name: typeof user === 'object' ? user.name : 'Unknown',
+            email: typeof user === 'object' ? user.email : 'N/A'
+          } : {
+            id: reg.user,
+            name: reg.registrationName || 'Unknown',
+            email: reg.registrationEmail || 'N/A'
+          },
+          registrationName: reg.registrationName,
+          registrationEmail: reg.registrationEmail,
+          matricNumber: reg.matricNumber,
+          phone: reg.phone,
+          notes: reg.notes,
+          registeredAt: reg.registeredAt,
+          hasPayment: !!reg.paymentReceipt,
+          paymentReceipt: reg.paymentReceipt ? {
+            receiptNumber: reg.paymentReceipt.receiptNumber,
+            receiptUrl: reg.paymentReceipt.receiptUrl,
+            amount: reg.paymentReceipt.amount,
+            paymentMethod: reg.paymentReceipt.paymentMethod,
+            paymentStatus: reg.paymentReceipt.paymentStatus,
+            generatedAt: reg.paymentReceipt.generatedAt,
+            verifiedAt: reg.paymentReceipt.verifiedAt,
+            rejectionReason: reg.paymentReceipt.rejectionReason
+          } : null
+        });
+      }
+    }
+    } // End of if (!hasRegistrationsCollection)
+    
+    // Sort by registration date (newest first)
+    registrations.sort((a, b) => new Date(b.registeredAt) - new Date(a.registeredAt));
+    
+    console.log(`[getAllEventRegistrations] Returning ${registrations.length} registrations (${hasRegistrationsCollection ? 'from separate collection' : 'from events only'})`);
+    
+    res.json({ registrations });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export const verifyPayments = async (req, res, next) => {
   try {
     const statusFilter = req.query.status || null;
@@ -500,23 +1018,51 @@ export const verifyPayments = async (req, res, next) => {
     console.log('[verifyPayments] Fetching payments with status filter:', statusFilter);
     console.log('[verifyPayments] Request query:', req.query);
     
+    // CRITICAL: Only fetch PAID events (events with fees > 0)
+    // Paid events = events where paymentAmount > 0 OR fee > 0
+    // Free events (paymentAmount = 0 AND fee = 0) should NOT appear in verify payments
+    // Also only include registrations with submitted receipts (receiptUrl exists)
     const events = await Event.find({
-      'registrations.paymentReceipt': { $exists: true }
+      $or: [
+        { paymentAmount: { $gt: 0 } },
+        { fee: { $gt: 0 } }
+      ],
+      'registrations.paymentReceipt': { $exists: true },
+      'registrations.paymentReceipt.receiptUrl': { $exists: true, $ne: null, $ne: '' }
     }).lean();
 
-    console.log('[verifyPayments] Found events with payments:', events.length);
+    console.log('[verifyPayments] Found paid events with submitted payment receipts:', events.length);
     
     if (!events || events.length === 0) {
-      console.log('[verifyPayments] No events with payment receipts found');
+      console.log('[verifyPayments] No paid events with submitted payment receipts found');
       return res.json({ receipts: [] });
     }
 
     const payments = [];
 
     for (const event of events) {
+      // Double-check: Only process events that are actually paid events (have fees > 0)
+      const paymentAmount = event.paymentAmount || event.fee || 0;
+      const isPaidEvent = paymentAmount > 0;
+      
+      if (!isPaidEvent) {
+        console.log(`[verifyPayments] Skipping free event (no fees): ${event.title}`);
+        continue; // Skip free events - they should not appear in verify payments
+      }
+      
       for (let index = 0; index < event.registrations.length; index++) {
         const reg = event.registrations[index];
-        if (!reg.paymentReceipt) continue;
+        // Only include registrations with payment receipts that have been submitted (have receiptUrl)
+        if (!reg.paymentReceipt || !reg.paymentReceipt.receiptUrl || reg.paymentReceipt.receiptUrl.trim() === '') {
+          continue; // Skip registrations without submitted receipts
+        }
+        
+        // Ensure the receipt has an amount > 0 (paid registration)
+        const receiptAmount = reg.paymentReceipt.amount || 0;
+        if (receiptAmount <= 0) {
+          console.log(`[verifyPayments] Skipping registration with zero amount: ${event.title}`);
+          continue; // Skip registrations with zero payment amount
+        }
         
         // Apply status filter if provided
         if (statusFilter && statusFilter !== 'all' && reg.paymentReceipt.paymentStatus !== statusFilter) {

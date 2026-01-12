@@ -31,6 +31,7 @@ import Profile from "./pages/Profile.jsx"
 // Admin Pages
 import AdminDashboard from "./pages/AdminDashboard.jsx"
 import AdminManageEvents from "./pages/AdminManageEvents.jsx"
+import AdminManageActivities from "./pages/AdminManageActivities.jsx"
 import AdminManageUsers from "./pages/AdminManageUsers.jsx"
 import AdminManageHODs from "./pages/AdminManageHODs.jsx"
 import AdminAboutUs from "./pages/AdminAboutUs.jsx"
@@ -38,6 +39,7 @@ import AdminNews from "./pages/AdminNews.jsx"
 import AdminSettings from "./pages/AdminSettings.jsx"
 import AdminChatbot from "./pages/AdminChatbot.jsx"
 import AdminVerifyPayments from "./pages/AdminVerifyPayments.jsx"
+import AdminEventRegistrations from "./pages/AdminEventRegistrations.jsx"
 
 import "./App.css"
 
@@ -101,6 +103,8 @@ export default function App() {
 <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
   <Route path="dashboard" element={<AdminDashboard />} />
   <Route path="events" element={<AdminManageEvents />} />
+  <Route path="activities" element={<AdminManageActivities />} />
+  <Route path="registrations" element={<AdminEventRegistrations />} />
   <Route path="users" element={<AdminManageUsers />} />
   <Route path="news" element={<AdminNews />} />
   <Route path="hods" element={<AdminManageHODs />} />

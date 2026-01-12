@@ -127,7 +127,7 @@ export default function AdminVerifyPayments() {
         {/* --- Top Header Section --- */}
         <div className="page-title">
           <h1>Verify Payments</h1>
-          <p>Review, approve, or reject payment receipts linked to registered events. Ensure payment records remain accurate.</p>
+          <p>Review, approve, or reject payment receipts for <strong>paid events only</strong> (events with fees). Only registrations with submitted receipts are displayed here. Free events are not shown.</p>
         </div>
 
         {/* Success/Error Messages */}

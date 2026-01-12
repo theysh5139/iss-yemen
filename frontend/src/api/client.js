@@ -2,8 +2,11 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 
 export async function apiFetch(path, { method = 'GET', body, headers } = {}) {
   try {
+    // Only get token if it exists - don't trigger any authentication
     const token = localStorage.getItem('authToken');
-    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    // Only send Authorization header if we have a token
+    // This prevents sending invalid tokens that might trigger backend authentication
+    const authHeaders = token && token !== 'cookie-based-auth' ? { 'Authorization': `Bearer ${token}` } : {};
 
     // Don't set Content-Type for FormData - let browser handle it
     const isFormData = body instanceof FormData;

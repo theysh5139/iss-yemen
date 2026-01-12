@@ -128,7 +128,25 @@ export default function VerifyOTP() {
     setLoading(true)
     try {
       const res = await verifyOtpApi({ email, otp })
+      // Store token if provided, or set a flag to indicate user is logged in
+      if (res.token) {
+        localStorage.setItem("authToken", res.token)
+      } else if (res.user) {
+        // Backend sets cookie, but no token in response - store a flag
+        // This ensures AuthProvider knows user is logged in
+        localStorage.setItem("authToken", "cookie-based-auth")
+      }
       setUser(res.user)
+      
+      // Check if user was redirected from a specific page (e.g., events page)
+      const redirectUrl = sessionStorage.getItem('redirectAfterLogin')
+      if (redirectUrl) {
+        sessionStorage.removeItem('redirectAfterLogin')
+        // Redirect back to the page they came from (e.g., events page)
+        navigate(redirectUrl, { replace: true })
+        return
+      }
+      
       navigate("/", { replace: true })
     } catch (err) {
       const errorMessage = err.message || "OTP verification failed"

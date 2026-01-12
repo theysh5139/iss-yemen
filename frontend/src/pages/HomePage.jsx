@@ -189,16 +189,7 @@ export default function HomePage() {
               </>
             ) : user && user.role === 'admin' ? (
               <>
-                {upcomingEvents.length > 0 ? (
-                  <button 
-                    className="btn btn-primary btn-3d" 
-                    onClick={() => handleEventClick(upcomingEvents[0])}
-                  >
-                    Join Event
-                  </button>
-                ) : (
-                  <a className="btn btn-primary btn-3d" href="/all-events">Join Event</a>
-                )}
+                <a className="btn btn-primary btn-3d" href="/all-events">Join Events</a>
                 <button 
                   className="btn btn-secondary btn-3d" 
                   onClick={() => setShowHODModal(true)}
@@ -363,31 +354,23 @@ export default function HomePage() {
                         </p>
                       )}
                     </div>
-                    <p className="event-description">{event.description}</p>
+                    <p className="event-description">
+                      {event.description && event.description.length > 150 
+                        ? `${event.description.substring(0, 150)}...` 
+                        : event.description}
+                    </p>
                     <div className="event-actions">
-                      {registered ? (
-                        <button
-                          className="btn btn-secondary btn-3d"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleEventClick(event)
-                          }}
-                        >
-                          View Details / Unregister
-                        </button>
-                      ) : (
-                        <a
-                          href={`/all-events?event=${event._id}`}
-                          className="btn btn-primary btn-3d"
-                          style={{ 
-                            textDecoration: 'none',
-                            display: 'inline-block',
-                            textAlign: 'center'
-                          }}
-                        >
-                          Join Event
-                        </a>
-                      )}
+                      <a
+                        href={`/all-events?event=${event._id}`}
+                        className="btn btn-primary btn-3d"
+                        style={{ 
+                          textDecoration: 'none',
+                          display: 'inline-block',
+                          textAlign: 'center'
+                        }}
+                      >
+                        View Details
+                      </a>
                     </div>
                   </div>
                 )
