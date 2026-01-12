@@ -17,6 +17,7 @@ import AboutUs from "./pages/AboutUs.jsx"
 import Members from "./pages/Members.jsx"
 import PastEvents from "./pages/PastEvents.jsx"
 import AllEvents from "./pages/AllEvents.jsx"
+import AllActivities from "./pages/AllActivities.jsx"
 import Signup from "./pages/Signup.jsx"
 import Login from "./pages/Login.jsx"
 import VerifyEmail from "./pages/VerifyEmail.jsx"
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/members" element={<Members />} />
           <Route path="/events" element={<PastEvents />} />
           <Route path="/all-events" element={<AllEvents />} />
+          <Route path="/activities" element={<AllActivities />} />
 
           {/* Protected User Pages */}
           <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>

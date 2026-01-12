@@ -100,6 +100,10 @@ export async function login(req, res, next) {
     const user = await User.findOne({ email: String(email).toLowerCase() });
     if (!user) return res.status(401).json({ message: 'Invalid email or password' });
 
+    if (!user.isActive) {
+      return res.status(403).json({ message: 'Account is deactivated' });
+    }
+
     const match = await bcrypt.compare(password, user.passwordHash);
     if (!match) return res.status(401).json({ message: 'Invalid email or password' });
 

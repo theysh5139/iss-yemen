@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useNavigate, Link } from "react-router-dom"
 import HODCard from "../components/HODCard.jsx"
 import HODModal from "../components/HODModal.jsx"
 import EventRegistrationModal from "../components/EventRegistrationModal.jsx"
@@ -9,6 +10,7 @@ import "../styles/home.css"
 
 export default function HomePage() {
   const { user, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [summary, setSummary] = useState({ news: 0, announcements: 0, activities: 0 })
@@ -361,18 +363,46 @@ export default function HomePage() {
                         ? `${event.description.substring(0, 150)}...` 
                         : event.description}
                     </p>
-                    <div className="event-actions">
-                      <a
-                        href={`/all-events?event=${event._id}`}
-                        className="btn btn-primary btn-3d"
-                        style={{ 
-                          textDecoration: 'none',
-                          display: 'inline-block',
-                          textAlign: 'center'
-                        }}
-                      >
-                        View Details
-                      </a>
+                    <div className="event-actions" style={{ position: 'relative', zIndex: 9999 }}>
+                      {event && event._id ? (
+                        <Link
+                          to={`/all-events?event=${event._id}`}
+                          className="btn btn-primary btn-3d"
+                          style={{ 
+                            textDecoration: 'none',
+                            display: 'inline-block',
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            width: '100%',
+                            position: 'relative',
+                            zIndex: 9999,
+                            pointerEvents: 'auto',
+                            touchAction: 'manipulation'
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            console.log('View Details clicked for event:', event._id)
+                          }}
+                        >
+                          View Details
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-3d"
+                          disabled
+                          style={{ 
+                            textDecoration: 'none',
+                            display: 'inline-block',
+                            textAlign: 'center',
+                            cursor: 'not-allowed',
+                            width: '100%',
+                            opacity: 0.6
+                          }}
+                        >
+                          View Details
+                        </button>
+                      )}
                     </div>
                   </div>
                 )
@@ -457,13 +487,16 @@ export default function HomePage() {
         {/* Sidebar */}
         <aside className="sidebar">
           <div className="section-card card-3d sticky-card">
-            <h3 className="section-title">Regular Activities</h3>
+            <div className="section-header">
+              <h3 className="section-title">Activities</h3>
+              <a href="/activities" className="view-all-btn btn-3d">View All</a>
+            </div>
             <p className="section-subtitle">
               Join ongoing programmes and gatherings.
             </p>
             {regularActivities.length > 0 ? (
               <div className="activities-list">
-                {regularActivities.map(act => (
+                {regularActivities.slice(0, 2).map(act => (
                   <div key={act._id} className="activity-item card-3d">
                     <div className="activity-icon">🎯</div>
                     <div className="activity-content">
@@ -471,15 +504,22 @@ export default function HomePage() {
                       <div className="activity-meta">
                         {act.schedule || formatDate(act.date)} • {act.location}
                       </div>
+                      {act.category && (
+                        <span className="activity-category">{act.category}</span>
+                      )}
                     </div>
                   </div>
                 ))}
-                <a href="/events" className="link-btn btn-3d">See all activities & events →</a>
+                {regularActivities.length > 2 && (
+                  <a href="/activities" className="link-btn btn-3d">
+                    View all {regularActivities.length} activities →
+                  </a>
+                )}
               </div>
             ) : (
               <>
-                <p className="empty-state">No regular activities scheduled.</p>
-                <a href="/events" className="link-btn btn-3d">See all activities & events →</a>
+                <p className="empty-state">No activities scheduled.</p>
+                <a href="/activities" className="link-btn btn-3d">View all activities →</a>
               </>
             )}
           </div>

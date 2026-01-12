@@ -513,6 +513,33 @@ async function queryNewsAndAnnouncements(publicQuery) {
   };
 }
 
+// Get all activities (public endpoint for users)
+export async function getAllActivities(req, res, next) {
+  try {
+    const userRole = req.user?.role;
+    const publicQuery = !userRole ? { isPublic: true } : {};
+
+    // Query activities from both sources
+    const { activities: allActivities } = await queryNewsAndAnnouncements(publicQuery);
+
+    // Filter out incomplete activities (missing required fields like title)
+    const validActivities = allActivities.filter(activity => {
+      return activity && activity.title && activity.title.trim() !== '';
+    });
+
+    // Sort by date (newest first)
+    validActivities.sort((a, b) => {
+      const dateA = new Date(a.date || a.createdAt || a.updatedAt || 0);
+      const dateB = new Date(b.date || b.createdAt || b.updatedAt || 0);
+      return dateB - dateA; // Descending order (newest first)
+    });
+
+    return res.json({ activities: validActivities });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Get homepage summary data
 export async function getHomepageData(req, res, next) {
   try {
@@ -544,11 +571,13 @@ export async function getHomepageData(req, res, next) {
       .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
       .slice(0, 4);
 
-    // Get regular activities
-    const regularActivities = allActivities
-      .filter(activity => activity.isRecurring === true)
-      .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
-      .slice(0, 5);
+    // Get all activities (not just recurring) - show at least 2
+    const allValidActivities = allActivities
+      .filter(activity => activity && activity.title && activity.title.trim() !== '')
+      .sort((a, b) => new Date(b.date || b.createdAt || b.updatedAt || 0) - new Date(a.date || a.createdAt || a.updatedAt || 0));
+    
+    // Show at least 2 activities (prioritize recurring, but include all)
+    const regularActivities = allValidActivities.slice(0, Math.max(2, allValidActivities.length));
 
     return res.json({
       summary: {

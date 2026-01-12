@@ -16,7 +16,8 @@ export default function AdminSidebar({ user, onLogout, isOpen, onClose }) {
     { id: 'verify-payments', label: 'Verify Payments', icon: '💰', path: '/admin/verify-payments' },
     { id: 'users', label: 'Manage Users', icon: '👥', path: '/admin/users' },
     { id: 'news', label: 'News & Announcements', icon: '📢', path: '/admin/news' },
-    { id: 'hods', label: 'Manage Committees', icon: '👔', path: '/admin/committees' },
+    { id: 'committees', label: 'Manage Committees', icon: '👔', path: '/admin/committees' },
+    { id: 'club-members', label: 'Manage Club Members & HODs', icon: '👥', path: '/admin/hods' },
     // A14: Added Chatbot Manager Link
     { id: 'chatbot', label: 'Chatbot Manager', icon: '🤖', path: '/admin/chatbot' },
     { id: 'aboutus', label: 'Edit About Us', icon: '📝', path: '/admin/aboutus' },

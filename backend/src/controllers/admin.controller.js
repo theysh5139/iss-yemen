@@ -99,7 +99,8 @@ export async function getAllUsers(req, res, next) {
     res.json({
       users: users.map(u => ({
         ...u,
-        emailVerified: Boolean(u.emailVerifiedAt)
+        emailVerified: Boolean(u.emailVerifiedAt),
+        isActive: u.isActive ?? true
       }))
     });
   } catch (err) {
@@ -143,18 +144,37 @@ export async function deleteUser(req, res, next) {
 
 export async function deactivateUser(req, res, next) {
   try {
-    if (req.user.id === req.params.id) {
+    const userId = req.params.id;
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    // Validate MongoDB ObjectId format
+    const mongoose = await import('mongoose');
+    if (!mongoose.default.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: 'Invalid user ID format' });
+    }
+
+    // Convert both IDs to strings for proper comparison
+    const currentUserId = String(req.user.id);
+    const targetUserId = String(userId);
+    
+    if (currentUserId === targetUserId) {
       return res.status(400).json({ message: 'Cannot deactivate yourself' });
     }
 
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    // Find the specific user by ID - this ensures we only get one user
+    // Using findOne with _id to be explicit about the query
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-    // Deactivate user by deleting their account
-    // Delete user account (non-logged-in users don't have accounts)
-    await User.findByIdAndDelete(req.params.id);
+    // Toggle active status for this specific user only
+    user.isActive = !user.isActive;
+    await user.save();
 
-    res.json({ success: true });
+    res.json({ success: true, isActive: user.isActive });
   } catch (err) {
     next(err);
   }
@@ -517,7 +537,7 @@ export async function getAllEvents(req, res, next) {
 }
 
 // Get all activities
-// Prioritizes separate 'activities' collection, falls back to Event model
+// Queries both separate 'activities' collection AND Event model to ensure all data is synchronized
 export async function getAllActivities(req, res, next) {
   try {
     const mongoose = await import('mongoose');
@@ -540,7 +560,7 @@ export async function getAllActivities(req, res, next) {
       try {
         const activitiesCollection = db.collection('activities');
         const separateActivities = await activitiesCollection.find({})
-          .sort({ createdAt: -1, updatedAt: -1, date: -1 }) // Sort by creation date first, then update date, then event date
+          .sort({ createdAt: -1, updatedAt: -1, date: -1 })
           .toArray();
         activities.push(...separateActivities);
         console.log(`[getAllActivities] Found ${separateActivities.length} activities in separate collection`);
@@ -549,15 +569,18 @@ export async function getAllActivities(req, res, next) {
       }
     }
     
-    // Fallback: Also query from Event model (for backward compatibility - only if no separate collection or to catch any missed activities)
-    if (!hasActivitiesCollection) {
+    // ALWAYS also query from Event model to ensure synchronization
+    // This ensures activities stored in Event model are also included
+    try {
       const eventActivities = await Event.find({ 
         type: 'activity'
       })
-        .sort({ createdAt: -1, updatedAt: -1, date: -1 }) // Sort by creation date first, then update date, then event date
+        .sort({ createdAt: -1, updatedAt: -1, date: -1 })
         .lean();
       activities.push(...eventActivities);
-      console.log(`[getAllActivities] Found ${eventActivities.length} activities in Event model (fallback)`);
+      console.log(`[getAllActivities] Found ${eventActivities.length} activities in Event model`);
+    } catch (err) {
+      console.warn('[getAllActivities] Error querying Event model:', err.message);
     }
     
     // Remove duplicates based on _id
@@ -565,14 +588,26 @@ export async function getAllActivities(req, res, next) {
       index === self.findIndex(a => a._id.toString() === activity._id.toString())
     );
     
+    // Filter out incomplete activities (missing required fields like title)
+    const validActivities = uniqueActivities.filter(activity => {
+      // Ensure activity has required fields
+      return activity && activity.title && activity.title.trim() !== '';
+    });
+    
+    // Log if any activities were filtered out
+    if (uniqueActivities.length !== validActivities.length) {
+      console.log(`[getAllActivities] Filtered out ${uniqueActivities.length - validActivities.length} incomplete activities`);
+    }
+    
     // Sort by creation date (newest first), then by update date, then by event date
-    uniqueActivities.sort((a, b) => {
+    validActivities.sort((a, b) => {
       const dateA = new Date(a.createdAt || a.updatedAt || a.date || 0);
       const dateB = new Date(b.createdAt || b.updatedAt || b.date || 0);
       return dateB - dateA; // Descending order (newest first)
     });
     
-    res.json({ activities: uniqueActivities });
+    console.log(`[getAllActivities] Returning ${validActivities.length} valid activities`);
+    res.json({ activities: validActivities });
   } catch (err) {
     next(err);
   }

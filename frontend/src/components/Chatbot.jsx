@@ -48,13 +48,15 @@ export default function Chatbot() {
         type: "bot",
         content: response.response,
         suggestions: response.suggestions || [],
-        matched: response.matched
+        matched: response.matched,
+        showSuggestions: false
       }]);
     } catch (err) {
       setMessages(prev => [...prev, {
         type: "bot",
         content: "Sorry, I'm having trouble connecting. Please try again later.",
-        error: true
+        error: true,
+        showSuggestions: false
       }]);
     } finally {
       setLoading(false);
@@ -74,7 +76,8 @@ export default function Chatbot() {
           type: "bot",
           content: response.response,
           suggestions: response.suggestions || [],
-          matched: response.matched
+          matched: response.matched,
+          showSuggestions: false
         }
       ]);
     } catch (err) {
@@ -83,7 +86,8 @@ export default function Chatbot() {
         {
           type: "bot",
           content: "Sorry, I'm having trouble connecting. Please try again later.",
-          error: true
+          error: true,
+          showSuggestions: false
         }
       ]);
     } finally {
@@ -103,17 +107,25 @@ export default function Chatbot() {
         type: "bot",
         content: response.response,
         suggestions: response.suggestions || [],
-        matched: response.matched
+        matched: response.matched,
+        showSuggestions: false
       }]);
     } catch (err) {
       setMessages(prev => [...prev, {
         type: "bot",
         content: "Sorry, I'm having trouble connecting. Please try again later.",
-        error: true
+        error: true,
+        showSuggestions: false
       }]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleSuggestions = (index) => {
+    setMessages(prev => prev.map((msg, i) => 
+      i === index ? { ...msg, showSuggestions: true } : msg
+    ));
   };
 
   return (
@@ -140,7 +152,7 @@ export default function Chatbot() {
               onClick={() => setIsOpen(false)}
               aria-label="Close chatbot"
             >
-              ×
+              X
             </button>
           </div>
 
@@ -176,7 +188,15 @@ export default function Chatbot() {
                   <div className="message-content">
                     {msg.content}
                   </div>
-                  {msg.suggestions && msg.suggestions.length > 0 && (
+                  {msg.suggestions && msg.suggestions.length > 0 && !msg.showSuggestions && (
+                    <button
+                      className="see-suggestions-btn"
+                      onClick={() => toggleSuggestions(index)}
+                    >
+                      See related questions
+                    </button>
+                  )}
+                  {msg.suggestions && msg.suggestions.length > 0 && msg.showSuggestions && (
                     <div className="message-suggestions">
                       <p className="suggestions-label">
                         {msg.matched === false ? "Here are some questions I can help with:" : "Related questions:"}
