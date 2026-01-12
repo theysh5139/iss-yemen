@@ -200,6 +200,42 @@ export async function registerForEvent(req, res, next) {
     event.registrations.push(registrationData);
     await event.save();
 
+    // Also save to separate eventregistrations collection if it exists
+    try {
+      const mongoose = await import('mongoose');
+      const db = mongoose.default.connection?.db || mongoose.default.connection.getClient().db();
+      const collections = await db.listCollections().toArray();
+      const collectionNames = collections.map(c => c.name);
+      
+      if (collectionNames.includes('eventregistrations')) {
+        const registrationsCollection = db.collection('eventregistrations');
+        const registrationIndex = event.registrations.length - 1;
+        
+        await registrationsCollection.insertOne({
+          eventId: event._id,
+          eventTitle: event.title,
+          eventDate: event.date,
+          eventLocation: event.location,
+          eventCategory: event.category,
+          registrationIndex: registrationIndex,
+          user: userId,
+          registeredAt: registrationData.registeredAt,
+          registrationName: registrationData.registrationName,
+          registrationEmail: registrationData.registrationEmail,
+          matricNumber: registrationData.matricNumber,
+          phone: registrationData.phone,
+          notes: registrationData.notes,
+          paymentReceipt: registrationData.paymentReceipt || null,
+          createdAt: registrationData.registeredAt,
+          updatedAt: new Date()
+        });
+        console.log(`[registerForEvent] Synced registration to eventregistrations collection`);
+      }
+    } catch (syncError) {
+      // Don't fail registration if sync to separate collection fails
+      console.warn('[registerForEvent] Could not sync to eventregistrations collection:', syncError.message);
+    }
+
     // Generate official PDF receipt for paid events
     let pdfReceiptGenerated = false;
     if (requiresPayment && paymentAmount > 0 && registrationData.paymentReceipt) {
@@ -266,11 +302,44 @@ export async function unregisterFromEvent(req, res, next) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
+    // Find the registration index before removing
+    const registrationIndex = event.registrations.findIndex(
+      reg => reg.user && reg.user.toString() === userId.toString()
+    );
+
     event.registeredUsers = event.registeredUsers.filter(
       (uid) => uid.toString() !== userId
     );
     event.attendees = event.registeredUsers.length;
+    
+    // Remove from registrations array
+    if (registrationIndex !== -1) {
+      event.registrations.splice(registrationIndex, 1);
+    }
+    
     await event.save();
+
+    // Also remove from separate eventregistrations collection if it exists
+    if (registrationIndex !== -1) {
+      try {
+        const mongoose = await import('mongoose');
+        const db = mongoose.default.connection?.db || mongoose.default.connection.getClient().db();
+        const collections = await db.listCollections().toArray();
+        const collectionNames = collections.map(c => c.name);
+        
+        if (collectionNames.includes('eventregistrations')) {
+          const registrationsCollection = db.collection('eventregistrations');
+          await registrationsCollection.deleteOne({
+            eventId: event._id.toString(),
+            registrationIndex: registrationIndex
+          });
+          console.log(`[unregisterFromEvent] Removed registration from eventregistrations collection`);
+        }
+      } catch (syncError) {
+        // Don't fail unregistration if sync fails
+        console.warn('[unregisterFromEvent] Could not sync deletion to eventregistrations collection:', syncError.message);
+      }
+    }
 
     return res.json({ message: 'Successfully unregistered from event', event });
   } catch (err) {
