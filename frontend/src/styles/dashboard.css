@@ -179,10 +179,19 @@
   padding: 1.25rem;
   border: 1px solid rgba(11, 107, 99, 0.1);
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .event-item:hover {
   /* Hover effect removed */
+}
+
+.event-item .btn-secondary,
+.event-item .btn-primary {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .event-item-header {

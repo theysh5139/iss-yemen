@@ -292,9 +292,9 @@ export default function AdminDashboard() {
                 </button>
                 <button 
                   className="quick-action-btn" 
-                  onClick={() => navigate("/admin/hods")}
+                  onClick={() => navigate("/admin/committees")}
                 >
-                  👔 Manage HODs +
+                  👔 Manage Committees +
                 </button>
                 <button 
                   className="quick-action-btn" 

@@ -270,13 +270,13 @@ export default function Dashboard() {
                           {registration?.paymentReceipt?.paymentStatus === 'Verified' && (
                             <button
                               className="btn btn-secondary"
-                              onClick={() => {
-                                // Download official receipt
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
                                 const downloadUrl = `${API_BASE_URL}/api/receipts/event/${event._id}/download?userId=${user?.id}&format=pdf`
                                 window.open(downloadUrl, '_blank')
                               }}
-                              style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                              style={{ fontSize: '0.9rem', padding: '0.5rem 1rem', position: 'relative', zIndex: 10, cursor: 'pointer' }}
                             >
                               📄 Download Official Receipt
                             </button>
