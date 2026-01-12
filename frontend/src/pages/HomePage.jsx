@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useNavigate, Link } from "react-router-dom"
 import HODCard from "../components/HODCard.jsx"
 import HODModal from "../components/HODModal.jsx"
 import EventRegistrationModal from "../components/EventRegistrationModal.jsx"
@@ -9,6 +10,7 @@ import "../styles/home.css"
 
 export default function HomePage() {
   const { user, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [summary, setSummary] = useState({ news: 0, announcements: 0, activities: 0 })
@@ -359,18 +361,46 @@ export default function HomePage() {
                         ? `${event.description.substring(0, 150)}...` 
                         : event.description}
                     </p>
-                    <div className="event-actions">
-                      <a
-                        href={`/all-events?event=${event._id}`}
-                        className="btn btn-primary btn-3d"
-                        style={{ 
-                          textDecoration: 'none',
-                          display: 'inline-block',
-                          textAlign: 'center'
-                        }}
-                      >
-                        View Details
-                      </a>
+                    <div className="event-actions" style={{ position: 'relative', zIndex: 9999 }}>
+                      {event && event._id ? (
+                        <Link
+                          to={`/all-events?event=${event._id}`}
+                          className="btn btn-primary btn-3d"
+                          style={{ 
+                            textDecoration: 'none',
+                            display: 'inline-block',
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            width: '100%',
+                            position: 'relative',
+                            zIndex: 9999,
+                            pointerEvents: 'auto',
+                            touchAction: 'manipulation'
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            console.log('View Details clicked for event:', event._id)
+                          }}
+                        >
+                          View Details
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-3d"
+                          disabled
+                          style={{ 
+                            textDecoration: 'none',
+                            display: 'inline-block',
+                            textAlign: 'center',
+                            cursor: 'not-allowed',
+                            width: '100%',
+                            opacity: 0.6
+                          }}
+                        >
+                          View Details
+                        </button>
+                      )}
                     </div>
                   </div>
                 )
