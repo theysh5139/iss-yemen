@@ -47,13 +47,15 @@ export default function AdminManageUsers() {
   }
 
   async function handleDeactivate(userId) {
-    if (!confirm("Are you sure you want to deactivate this user?")) return
+    const user = users.find(u => (u.id || u._id) === userId);
+    const action = user?.isActive ? 'deactivate' : 'reactivate';
+    if (!confirm(`Are you sure you want to ${action} this user?`)) return
 
     try {
       await deactivateUser(userId)
       await fetchUsers()
     } catch (err) {
-      alert(err.message || "Failed to deactivate user")
+      alert(err.message || `Failed to ${action} user`)
     }
   }
 
@@ -154,10 +156,10 @@ export default function AdminManageUsers() {
                         {u.id !== user?.id && u._id !== user?.id && (
                           <>
                             <button 
-                              className="btn-deactivate"
+                              className={u.isActive ? "btn-deactivate" : "btn-reactivate"}
                               onClick={() => handleDeactivate(u.id || u._id)}
                             >
-                              Deactivate
+                              {u.isActive ? 'Deactivate' : 'Reactivate'}
                             </button>
                             <button 
                               className="btn-delete"
