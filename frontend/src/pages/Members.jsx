@@ -1,34 +1,46 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getHODs } from "../api/hods.js"
+import { getHODs, getClubMembers } from "../api/hods.js"
 import "../styles/members.css"
 
 export default function Members() {
   const [searchTerm, setSearchTerm] = useState("")
   const [hods, setHods] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [clubMembers, setClubMembers] = useState([])
+  const [hodsLoading, setHodsLoading] = useState(true)
+  const [clubMembersLoading, setClubMembersLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    async function fetchHODs() {
+    async function fetchData() {
       try {
-        setLoading(true)
-        const response = await getHODs()
-        if (response && response.hods) {
-          setHods(response.hods)
+        setHodsLoading(true)
+        setClubMembersLoading(true)
+        
+        const [hodsResponse, clubMembersResponse] = await Promise.all([
+          getHODs().catch(() => ({ hods: [] })),
+          getClubMembers().catch(() => ({ clubMembers: [] }))
+        ])
+        
+        if (hodsResponse && hodsResponse.hods) {
+          setHods(hodsResponse.hods)
+        }
+        if (clubMembersResponse && clubMembersResponse.clubMembers) {
+          setClubMembers(clubMembersResponse.clubMembers)
         }
       } catch (err) {
-        console.error("Failed to fetch HODs:", err)
-        setError("Failed to load HOD profiles. Please try again later.")
+        console.error("Failed to fetch data:", err)
+        setError("Failed to load member profiles. Please try again later.")
       } finally {
-        setLoading(false)
+        setHodsLoading(false)
+        setClubMembersLoading(false)
       }
     }
-    fetchHODs()
+    fetchData()
   }, [])
 
-  // Filter HODs based on search
+  // Filter based on search
   const filteredHODs = hods.filter(hod => {
     const search = searchTerm.toLowerCase()
     return (
@@ -37,7 +49,16 @@ export default function Members() {
     )
   })
 
-  const totalCount = filteredHODs.length
+  const filteredClubMembers = clubMembers.filter(member => {
+    const search = searchTerm.toLowerCase()
+    return (
+      member.name?.toLowerCase().includes(search) ||
+      member.position?.toLowerCase().includes(search) ||
+      member.email?.toLowerCase().includes(search)
+    )
+  })
+
+  const totalCount = filteredHODs.length + filteredClubMembers.length
 
   return (
     <div className="members-container animate-fadeInUp">
@@ -63,8 +84,8 @@ export default function Members() {
           </div>
         </div>
 
-        {/* Heads of Department (HODs) Section - Connected to Admin Manage HOD */}
-        {loading ? (
+        {/* Heads of Department (HODs) Section - Main Department */}
+        {hodsLoading ? (
           <div className="members-section">
             <h2 className="section-group-title">Heads of Department</h2>
             <p className="section-description">Loading HOD profiles...</p>
@@ -111,6 +132,55 @@ export default function Members() {
           <div className="members-section">
             <h2 className="section-group-title">Heads of Department</h2>
             <p className="section-description">No HOD profiles available at this time.</p>
+          </div>
+        )}
+
+        {/* Club Members Section - Student Club Members from All Positions */}
+        {clubMembersLoading ? (
+          <div className="members-section">
+            <h2 className="section-group-title">Student Club Members</h2>
+            <p className="section-description">Loading club member profiles...</p>
+          </div>
+        ) : filteredClubMembers.length > 0 ? (
+          <div className="members-section">
+            <h2 className="section-group-title">Student Club Members</h2>
+            <p className="section-description">Meet our club members from all positions</p>
+            <div className="members-grid">
+              {filteredClubMembers.map((member) => {
+                const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+                const photoUrl = member.photo?.startsWith('http') 
+                  ? member.photo 
+                  : member.photo?.startsWith('/') 
+                    ? `${apiBaseUrl}${member.photo}` 
+                    : member.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&size=200&background=4a6fa5&color=fff`
+                
+                return (
+                  <div key={member._id || member.id} className="member-card committee-head-card animate-scaleIn">
+                    <div className="member-avatar" style={{ 
+                      backgroundImage: `url(${photoUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}>
+                      {!member.photo && member.name?.charAt(0)}
+                    </div>
+                    <div className="member-info">
+                      <h3 className="member-name">{member.name}</h3>
+                      <p className="member-role">{member.position}</p>
+                      {member.email && (
+                        <p className="member-email" style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.25rem' }}>
+                          {member.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="members-section">
+            <h2 className="section-group-title">Student Club Members</h2>
+            <p className="section-description">No club member profiles available at this time.</p>
           </div>
         )}
 
