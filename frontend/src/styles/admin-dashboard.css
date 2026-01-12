@@ -250,6 +250,8 @@
   border: 1px solid #e9ecef;
   transition: all 0.2s;
   gap: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .event-card:hover,
