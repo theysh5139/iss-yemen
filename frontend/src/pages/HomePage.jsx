@@ -306,19 +306,16 @@ export default function HomePage() {
                         </span>
                       )}
                       {registration?.paymentReceipt?.paymentStatus === 'Verified' && (
-                        <button
+                        <a
                           className="btn btn-secondary"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            // Download official receipt
-                            const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
-                            const downloadUrl = `${API_BASE_URL}/api/receipts/event/${event._id}/download?userId=${user?.id}&format=pdf`
-                            window.open(downloadUrl, '_blank')
-                          }}
-                          style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                          href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/receipts/event/${event._id}/download?userId=${user?.id}&format=pdf`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ fontSize: '0.9rem', padding: '0.5rem 1rem', textDecoration: 'none', display: 'inline-block' }}
                         >
                           📄 Download Official Receipt
-                        </button>
+                        </a>
                       )}
                     </div>
                   </div>
