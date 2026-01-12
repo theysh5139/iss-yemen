@@ -114,7 +114,7 @@ export async function login(req, res, next) {
     // Direct login for all users - bypassing OTP
     const token = signAccessToken({ sub: user._id.toString(), role: user.role });
     res.cookie('access_token', token, authCookieOptions());
-    
+
     // Clear any existing OTP data just in case
     if (user.otp || user.otpExpires || user.failedOtpAttempts > 0) {
       user.otp = undefined;
@@ -126,6 +126,7 @@ export async function login(req, res, next) {
 
     return res.json({
       message: 'Login successful',
+      token, // Return token for client-side storage
       user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role }
     });
 
@@ -206,6 +207,7 @@ export async function verifyOTP(req, res, next) {
 
     return res.json({
       message: 'Login successful',
+      token, // Return token for client-side storage
       user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role }
     });
   } catch (err) {

@@ -1,6 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
 export async function apiFetch(path, { method = 'GET', body, headers } = {}) {
+  console.log('API Fetch:', method, path, body ? 'with body' : 'no body')
   try {
     // Only get token if it exists - don't trigger any authentication
     const token = localStorage.getItem('authToken');
@@ -22,6 +23,8 @@ export async function apiFetch(path, { method = 'GET', body, headers } = {}) {
       credentials: 'include',
       body: body ? (isFormData ? body : JSON.stringify(body)) : undefined
     })
+
+    console.log('API Response:', res.status, res.statusText)
 
     // Don't show generic auth error for login/signup endpoints - let the actual error message through
     const isAuthEndpoint = path.includes('/auth/login') || path.includes('/auth/signup');

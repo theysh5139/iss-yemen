@@ -273,18 +273,24 @@ export default function AdminManageCommittees() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    console.log('handleSubmit called with formType:', formType)
+    console.log('formData:', formData)
     setError("")
     setSuccess("")
     setIsSubmitting(true)
 
     if (!validateForm()) {
+      console.log('Form validation failed')
       setIsSubmitting(false)
       return
     }
 
+    console.log('Form validation passed, proceeding with API call')
+
     try {
       let result
       if (formType === 'committee') {
+        console.log('Creating committee...')
         if (editingItem) {
           result = await updateCommittee(editingItem._id, formData)
           setSuccess("✓ Committee updated successfully!")
@@ -293,6 +299,7 @@ export default function AdminManageCommittees() {
           setSuccess("✓ Committee created successfully!")
         }
       } else if (formType === 'executive') {
+        console.log('Creating executive member...')
         if (editingItem) {
           result = await updateExecutiveMember(editingItem._id, formData)
           setSuccess("✓ Executive member updated successfully!")
@@ -301,6 +308,7 @@ export default function AdminManageCommittees() {
           setSuccess("✓ Executive member created successfully!")
         }
       } else if (formType === 'head') {
+        console.log('Creating committee head...')
         if (editingItem) {
           result = await updateCommitteeHead(editingItem._id, formData)
           setSuccess("✓ Committee head updated successfully!")
@@ -309,6 +317,7 @@ export default function AdminManageCommittees() {
           setSuccess("✓ Committee head created successfully!")
         }
       } else if (formType === 'member') {
+        console.log('Creating committee member...')
         if (editingItem) {
           result = await updateCommitteeMember(editingItem._id, formData)
           setSuccess("✓ Committee member updated successfully!")
@@ -318,6 +327,7 @@ export default function AdminManageCommittees() {
         }
       }
 
+      console.log('API call result:', result)
       await fetchAllData()
       setTimeout(() => {
         closeForm()

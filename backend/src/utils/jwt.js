@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me'
-const ACCESS_TTL = '30m'
+const ACCESS_TTL = '4h' // Set to 4 hours per user request
 
 export function signAccessToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TTL })
@@ -18,7 +18,7 @@ export function authCookieOptions() {
     secure: isProd,
     sameSite: isProd ? 'strict' : 'lax',
     path: '/',
-    maxAge: 30 * 60 * 1000 // 30 minutes
+    maxAge: 4 * 60 * 60 * 1000 // 4 hours
   }
 }
 

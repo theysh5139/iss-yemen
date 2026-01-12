@@ -31,6 +31,7 @@ export function getExecutiveMemberById(id) {
 }
 
 export function createExecutiveMember(payload) {
+  console.log('API: createExecutiveMember called with payload:', payload)
   return apiFetch('/api/committees/executive-members', { method: 'POST', body: payload })
 }
 

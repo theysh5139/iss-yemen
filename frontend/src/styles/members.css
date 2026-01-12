@@ -382,6 +382,7 @@
     font-size: 1.15rem;
     margin-bottom: 1rem;
   }
+
   .committee-title:not(:first-child) {
     margin-top: 2rem;
   }
@@ -403,6 +404,10 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-left: 4px solid #4a6fa5;
   width: 100%;
+  position: relative;
+  /* Removed overflow: hidden to prevent clipping contact info */
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 768px) {
@@ -443,6 +448,9 @@
 
 .member-info {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .member-name {
@@ -463,9 +471,56 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: #4a6fa5;
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.5rem 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+/* Updated Contact Info Styling */
+.member-contact-info {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.contact-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  text-decoration: none;
+  font-size: 0.875rem;
+  color: #555;
+  padding: 0.5rem 1rem;
+  background-color: #f8f9fa;
+  border-radius: 2rem;
+  transition: all 0.2s ease;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.contact-link:hover {
+  background-color: rgba(74, 111, 165, 0.1);
+  color: #4a6fa5;
+  transform: translateY(-2px);
+}
+
+.contact-icon {
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .member-details {
@@ -534,9 +589,9 @@
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
   }
 }
-

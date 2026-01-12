@@ -121,6 +121,22 @@ export default function Members() {
         <div className="member-info">
           <h3 className="member-name">{member.name}</h3>
           <p className="member-role">{role || member.role}</p>
+
+          {/* Display contact info for Executive Members and Committee Heads */}
+          {(isHead || member.role) && (
+            <div className="member-contact-info">
+              {member.email && (
+                <a href={`mailto:${member.email}`} className="contact-link" title={member.email}>
+                  <span className="contact-icon">📧</span> <span className="contact-text">{member.email}</span>
+                </a>
+              )}
+              {member.phone && (
+                <a href={`tel:${member.phone}`} className="contact-link" title={member.phone}>
+                  <span className="contact-icon">📞</span> <span className="contact-text">{member.phone}</span>
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </div>
     )
