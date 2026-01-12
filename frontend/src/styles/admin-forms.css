@@ -246,6 +246,7 @@
 .btn-edit,
 .btn-delete,
 .btn-deactivate,
+.btn-reactivate,
 .btn-cancel,
 .btn-view {
   padding: 0.5rem 1rem;
@@ -285,12 +286,21 @@
 }
 
 .btn-deactivate {
-  background: #f0ad4e;
+  background: #e74c3c;
   color: white;
 }
 
 .btn-deactivate:hover {
-  background: #ec971f;
+  background: #c0392b;
+}
+
+.btn-reactivate {
+  background: #27ae60;
+  color: white;
+}
+
+.btn-reactivate:hover {
+  background: #229954;
 }
 
 .btn-cancel {

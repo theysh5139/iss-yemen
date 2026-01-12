@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema(
     passwordResetTokenHash: { type: String },
     passwordResetTokenExpiresAt: { type: Date },
     role: { type: String, enum: ['member', 'admin'], default: 'member' },
+    isActive: { type: Boolean, default: true },
     // MFA/OTP fields
     otp: { type: String }, // Hashed OTP
     otpExpires: { type: Date },
