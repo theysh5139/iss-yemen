@@ -202,8 +202,60 @@
   font-size: 1rem;
 }
 
+.form-input.password-input {
+  text-align: center;
+  letter-spacing: 0.1em; /* Less spacing when visible */
+  font-size: 1rem;
+}
+
+.form-input.password-input[type="text"] {
+  letter-spacing: 0.05em; /* Normal spacing when password is visible */
+}
+
 .form-input[type="email"] {
   text-align: center;
+}
+
+/* Password input wrapper with eye icon */
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-input-wrapper .password-input {
+  padding-right: 3rem; /* Space for eye icon */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7f8c8d;
+  transition: color 0.2s ease;
+  z-index: 10;
+}
+
+.password-toggle:hover {
+  color: #4a6fa5;
+}
+
+.password-toggle:focus {
+  outline: none;
+  color: #4a6fa5;
+}
+
+.password-toggle svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
 }
 
 /* OTP specific styles */
