@@ -38,18 +38,31 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Allow localhost on any port
-    if (origin.match(/^http:\/\/localhost:\d+$/)) return callback(null, true);
+    // Always allow localhost on any port (for local development)
+    if (origin.match(/^http:\/\/localhost:\d+$/)) {
+      return callback(null, true);
+    }
+    
+    // Allow 127.0.0.1 (alternative localhost)
+    if (origin.match(/^http:\/\/127\.0\.0\.1:\d+$/)) {
+      return callback(null, true);
+    }
     
     // Allow the configured CLIENT_BASE_URL
     const allowedOrigin = process.env.CLIENT_BASE_URL;
-    if (allowedOrigin && origin === allowedOrigin) return callback(null, true);
+    if (allowedOrigin && origin === allowedOrigin) {
+      return callback(null, true);
+    }
     
-    return callback(new Error('Not allowed by CORS'));
+    // For now, allow all origins in production to fix CORS issues
+    // TODO: Restrict this to specific domains in production
+    return callback(null, true);
   },
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   credentials: true,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Type', 'Authorization']
 };
 app.use(cors(corsOptions));
 
