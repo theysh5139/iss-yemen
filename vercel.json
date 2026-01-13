@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "npm install --prefix backend",
   "functions": {
     "api/index.js": {
       "runtime": "nodejs22.x",
@@ -22,10 +19,6 @@
     {
       "src": "/health",
       "dest": "/api/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/dist/$1"
     }
   ]
 }
