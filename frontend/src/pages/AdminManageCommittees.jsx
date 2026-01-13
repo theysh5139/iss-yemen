@@ -131,7 +131,13 @@ export default function AdminManageCommittees() {
     setPhotoPreview(item.photo || "")
     setPhotoFile(null)
     setUploadMethod("url")
-    setFormData(item)
+    // Normalize committee field to use committeeId (backend expects committeeId)
+    const normalized = { ...item }
+    if ((type === 'head' || type === 'member')) {
+      // Keep committeeId if present, and also populate committee text for the input
+      normalized.committee = normalized.committeeId?.name || normalized.committee || ""
+    }
+    setFormData(normalized)
     setShowForm(true)
     setActiveTab(type === 'committee' ? 'committees' : type === 'executive' ? 'executive' : type === 'head' ? 'heads' : 'members')
   }
@@ -204,24 +210,18 @@ export default function AdminManageCommittees() {
     }
     
     // Simple validation - HTML5 required attributes should handle most cases
-    // Just double-check critical fields
-    if (formType === 'head' || formType === 'member') {
-      const committeeValue = formData.committee
-      console.log('Committee validation check:', { 
-        committeeValue, 
-        type: typeof committeeValue, 
-        isEmpty: !committeeValue,
-        isWhitespace: typeof committeeValue === 'string' && committeeValue.trim() === ""
-      })
-      
-      if (!committeeValue || (typeof committeeValue === 'string' && committeeValue.trim() === "")) {
-        setError("Committee is required. Please enter the committee name.")
-        return
-      }
-    }
 
     setIsSubmitting(true)
-    console.log('Validation passed, submitting with data:', formData)
+    // Prepare payload: prefer sending committeeId if available, otherwise send committee name
+    const payload = { ...formData }
+    if (formType === 'head' || formType === 'member') {
+      if (formData.committeeId) {
+        payload.committeeId = formData.committeeId
+      } else if (formData.committee) {
+        payload.committee = formData.committee
+      }
+    }
+    console.log('Validation passed, submitting with payload:', payload)
 
     try {
       let result
@@ -243,10 +243,10 @@ export default function AdminManageCommittees() {
         }
       } else if (formType === 'head') {
         if (editingItem) {
-          result = await updateCommitteeHead(editingItem._id, formData)
+          result = await updateCommitteeHead(editingItem._id, payload)
           setSuccess("✓ Committee head updated successfully!")
         } else {
-          result = await createCommitteeHead(formData)
+          result = await createCommitteeHead(payload)
           setSuccess("✓ Committee head created successfully!")
         }
       } else if (formType === 'member') {
@@ -537,7 +537,7 @@ export default function AdminManageCommittees() {
                         )}
                         <div className="hod-admin-info">
                           <h3>{head.name}</h3>
-                          <p>{head.committee}</p>
+                          <p>{head.committeeId?.name || head.committee || ''}</p>
                           {head.email && <p style={{ fontSize: '0.875rem', color: '#666' }}>{head.email}</p>}
                           <div className="hod-admin-actions">
                             <button
@@ -721,26 +721,24 @@ export default function AdminManageCommittees() {
                             </select>
                           </div>
                         )}
-                        {(formType === 'head' || formType === 'member') && (
+                          {(formType === 'head' || formType === 'member') && (
                           <div className="form-group">
                             <label>Committee <span className="required">*</span></label>
-                            <input
-                              type="text"
-                              name="committee"
-                              value={formData.committee || ""}
-                              onChange={(e) => {
-                                const committeeValue = e.target.value
-                                setFormData({ ...formData, committee: committeeValue })
-                                // Clear error if committee is entered
-                                if (committeeValue && error && error.includes("Committee")) {
-                                  setError("")
-                                }
-                              }}
-                              placeholder="e.g., Head of Academic, Head of Social, etc."
-                              required
-                              className="form-input"
-                              disabled={isSubmitting}
-                            />
+                              <input
+                                type="text"
+                                name="committee"
+                                value={formData.committee || ""}
+                                onChange={(e) => {
+                                  const committeeValue = e.target.value
+                                  setFormData({ ...formData, committee: committeeValue })
+                                  if (committeeValue && error && error.includes("Committee")) {
+                                    setError("")
+                                  }
+                                }}
+                                placeholder="e.g., Head of Academic, Head of Social, etc."
+                                className="form-input"
+                                disabled={isSubmitting}
+                              />
                             <small className="form-hint" style={{ marginTop: '0.5rem', color: '#666' }}>
                               Suggested: Head of Academic, Head of Social, Head of Culture, Head of Sports, Head of Logistics, Head of YSAG
                             </small>

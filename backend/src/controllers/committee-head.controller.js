@@ -70,12 +70,25 @@ export async function getCommitteeHeadsByCommittee(req, res, next) {
 // Create Committee Head (admin only)
 export async function createCommitteeHead(req, res, next) {
   try {
-    const { name, committeeId, email, phone, photo } = req.body;
+    const { name, committeeId, committee, email, phone, photo } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ message: 'Name is required' });
     }
-    if (!committeeId) {
+    // Allow frontend to send either `committeeId` (ObjectId) or `committee` (string name).
+    let resolvedCommitteeId = committeeId;
+    if (!resolvedCommitteeId && committee && typeof committee === 'string') {
+      // Find existing committee by name (case-insensitive)
+      const existing = await Committee.findOne({ name: { $regex: `^${committee.trim()}$`, $options: 'i' } });
+      if (existing) {
+        resolvedCommitteeId = existing._id;
+      } else {
+        // Create new committee when not found
+        const newCommittee = await Committee.create({ name: committee.trim() });
+        resolvedCommitteeId = newCommittee._id;
+      }
+    }
+    if (!resolvedCommitteeId) {
       return res.status(400).json({ message: 'Committee is required' });
     }
     if (!email || !email.trim()) {
@@ -83,8 +96,8 @@ export async function createCommitteeHead(req, res, next) {
     }
 
     // Verify committee exists
-    const committee = await Committee.findById(committeeId);
-    if (!committee) {
+    const committeeObj = await Committee.findById(resolvedCommitteeId);
+    if (!committeeObj) {
       return res.status(400).json({ message: 'Committee not found' });
     }
 
@@ -96,7 +109,7 @@ export async function createCommitteeHead(req, res, next) {
 
     const head = await CommitteeHead.create({
       name: name.trim(),
-      committeeId,
+      committeeId: resolvedCommitteeId,
       email: email.trim().toLowerCase(),
       phone: phone ? phone.trim() : undefined,
       photo
@@ -119,7 +132,7 @@ export async function createCommitteeHead(req, res, next) {
 export async function updateCommitteeHead(req, res, next) {
   try {
     const { id } = req.params;
-    const { name, committeeId, email, phone, photo } = req.body;
+    const { name, committeeId, committee, email, phone, photo } = req.body;
 
     const head = await CommitteeHead.findById(id);
     if (!head) {
@@ -132,12 +145,21 @@ export async function updateCommitteeHead(req, res, next) {
       }
       head.name = name.trim();
     }
-    if (committeeId !== undefined) {
-      const committee = await Committee.findById(committeeId);
-      if (!committee) {
+    if (committeeId !== undefined || committee !== undefined) {
+      let resolved = committeeId;
+      if (!resolved && committee && typeof committee === 'string') {
+        const existing = await Committee.findOne({ name: { $regex: `^${committee.trim()}$`, $options: 'i' } });
+        if (existing) resolved = existing._id;
+        else {
+          const newCommittee = await Committee.create({ name: committee.trim() });
+          resolved = newCommittee._id;
+        }
+      }
+      const committeeObj = await Committee.findById(resolved);
+      if (!committeeObj) {
         return res.status(400).json({ message: 'Committee not found' });
       }
-      head.committeeId = committeeId;
+      head.committeeId = resolved;
     }
     if (email !== undefined) {
       if (!email || !email.trim()) {
