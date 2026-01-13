@@ -1,4 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+// In production (Vercel), use empty string for same-domain requests
+// In development, use localhost:5000
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? 'http://localhost:5000' : '')
 
 export async function apiFetch(path, { method = 'GET', body, headers } = {}) {
   console.log('API Fetch:', method, path, body ? 'with body' : 'no body')
