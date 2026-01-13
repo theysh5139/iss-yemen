@@ -10,11 +10,12 @@ import { connectToDatabase } from '../backend/src/startup/db.js';
   try {
     if (mongoose.connection.readyState !== 1) {
       await connectToDatabase();
+      console.log('[API] Database connection initialized');
     }
   } catch (err) {
-    console.error('[API] Initial database connection error:', err.message);
+    console.error('[API] Database connection error:', err.message);
   }
 })();
 
-// Export Express app directly - Vercel automatically wraps it
+// Export Express app - Vercel automatically wraps it for serverless
 export default app;
