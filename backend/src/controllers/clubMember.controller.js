@@ -70,7 +70,7 @@ export async function createClubMember(req, res, next) {
     // Broadcast real-time update
     try {
       const { broadcastDataRefresh } = await import('../utils/realtime.js');
-      broadcastDataRefresh('clubMembers');
+      broadcastDataRefresh('committee');
     } catch (err) {
       // Real-time not available, continue anyway
     }
@@ -137,7 +137,7 @@ export async function updateClubMember(req, res, next) {
     // Broadcast real-time update
     try {
       const { broadcastDataRefresh } = await import('../utils/realtime.js');
-      broadcastDataRefresh('clubMembers');
+      broadcastDataRefresh('committee');
     } catch (err) {
       // Real-time not available, continue anyway
     }
@@ -165,7 +165,7 @@ export async function deleteClubMember(req, res, next) {
     // Broadcast real-time update
     try {
       const { broadcastDataRefresh } = await import('../utils/realtime.js');
-      broadcastDataRefresh('clubMembers');
+      broadcastDataRefresh('committee');
     } catch (err) {
       // Real-time not available, continue anyway
     }

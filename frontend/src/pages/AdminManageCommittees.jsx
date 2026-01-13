@@ -15,6 +15,14 @@ import "../styles/admin-forms.css"
 import "../styles/admin-settings.css"
 
 const EXECUTIVE_ROLES = ['President', 'VP', 'General Secretary', 'Treasurer']
+const COMMITTEE_OPTIONS = [
+  'Head of Academic',
+  'Head of Social',
+  'Head of Culture',
+  'Head of Sports',
+  'Head of Logistics',
+  'Head of YSAG'
+]
 
 export default function AdminManageCommittees() {
   const { user, setUser } = useAuth()
@@ -180,9 +188,40 @@ export default function AdminManageCommittees() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    e.stopPropagation()
+    
+    console.log('Form submitted:', { formType, formData, editingItem })
+    
     setError("")
     setSuccess("")
+    
+    // Get form element and check HTML5 validation
+    const form = e.target
+    if (!form.checkValidity()) {
+      // HTML5 validation failed, let it show native messages
+      form.reportValidity()
+      return
+    }
+    
+    // Simple validation - HTML5 required attributes should handle most cases
+    // Just double-check critical fields
+    if (formType === 'head' || formType === 'member') {
+      const committeeValue = formData.committee
+      console.log('Committee validation check:', { 
+        committeeValue, 
+        type: typeof committeeValue, 
+        isEmpty: !committeeValue,
+        isWhitespace: typeof committeeValue === 'string' && committeeValue.trim() === ""
+      })
+      
+      if (!committeeValue || (typeof committeeValue === 'string' && committeeValue.trim() === "")) {
+        setError("Committee is required. Please enter the committee name.")
+        return
+      }
+    }
+
     setIsSubmitting(true)
+    console.log('Validation passed, submitting with data:', formData)
 
     try {
       let result
@@ -656,6 +695,7 @@ export default function AdminManageCommittees() {
                           <label>Name <span className="required">*</span></label>
                           <input
                             type="text"
+                            name="name"
                             value={formData.name || ""}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             required
@@ -667,6 +707,7 @@ export default function AdminManageCommittees() {
                           <div className="form-group">
                             <label>Role <span className="required">*</span></label>
                             <select
+                              name="role"
                               value={formData.role || ""}
                               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                               required
@@ -683,18 +724,26 @@ export default function AdminManageCommittees() {
                         {(formType === 'head' || formType === 'member') && (
                           <div className="form-group">
                             <label>Committee <span className="required">*</span></label>
-                            <select
+                            <input
+                              type="text"
+                              name="committee"
                               value={formData.committee || ""}
-                              onChange={(e) => setFormData({ ...formData, committee: e.target.value })}
+                              onChange={(e) => {
+                                const committeeValue = e.target.value
+                                setFormData({ ...formData, committee: committeeValue })
+                                // Clear error if committee is entered
+                                if (committeeValue && error && error.includes("Committee")) {
+                                  setError("")
+                                }
+                              }}
+                              placeholder="e.g., Head of Academic, Head of Social, etc."
                               required
                               className="form-input"
                               disabled={isSubmitting}
-                            >
-                              <option value="">Select Committee</option>
-                              {committees.map(c => (
-                                <option key={c._id} value={c.name}>{c.name}</option>
-                              ))}
-                            </select>
+                            />
+                            <small className="form-hint" style={{ marginTop: '0.5rem', color: '#666' }}>
+                              Suggested: Head of Academic, Head of Social, Head of Culture, Head of Sports, Head of Logistics, Head of YSAG
+                            </small>
                           </div>
                         )}
                       </div>
@@ -703,6 +752,7 @@ export default function AdminManageCommittees() {
                           <label>Position</label>
                           <input
                             type="text"
+                            name="position"
                             value={formData.position || ""}
                             onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                             className="form-input"
@@ -715,6 +765,7 @@ export default function AdminManageCommittees() {
                           <label>Email</label>
                           <input
                             type="email"
+                            name="email"
                             value={formData.email || ""}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             className="form-input"
@@ -725,6 +776,7 @@ export default function AdminManageCommittees() {
                           <label>Phone</label>
                           <input
                             type="tel"
+                            name="phone"
                             value={formData.phone || ""}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             className="form-input"
@@ -766,13 +818,21 @@ export default function AdminManageCommittees() {
                           {uploadMethod === 'file' ? (
                             <div className="file-upload-area">
                               <input
+                                id={`photo-file-input-${formType}-${editingItem?._id || 'new'}`}
                                 type="file"
                                 accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                                 onChange={handleFileSelect}
                                 className="file-input"
                                 disabled={isSubmitting}
                               />
-                              <label className="file-upload-label">
+                              <label 
+                                htmlFor={`photo-file-input-${formType}-${editingItem?._id || 'new'}`}
+                                className="file-upload-label"
+                                style={{ 
+                                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                                  pointerEvents: isSubmitting ? 'none' : 'auto'
+                                }}
+                              >
                                 <div className="file-upload-content">
                                   <span className="file-upload-icon">📤</span>
                                   <div>
@@ -828,6 +888,16 @@ export default function AdminManageCommittees() {
                       type="submit"
                       className="btn btn-primary"
                       disabled={isSubmitting}
+                      onClick={(e) => {
+                        console.log('Create/Update button clicked')
+                        if (!e.defaultPrevented) {
+                          // Form will handle submission via onSubmit
+                        }
+                      }}
+                      style={{
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                        pointerEvents: isSubmitting ? 'none' : 'auto'
+                      }}
                     >
                       {isSubmitting ? "Saving..." : (editingItem ? "Update" : "Create")}
                     </button>
