@@ -35,6 +35,7 @@ import AdminManageEvents from "./pages/AdminManageEvents.jsx"
 import AdminManageActivities from "./pages/AdminManageActivities.jsx"
 import AdminManageUsers from "./pages/AdminManageUsers.jsx"
 import AdminManageCommittees from "./pages/AdminManageCommittees.jsx"
+import AdminManageHODs from "./pages/AdminManageHODs.jsx"
 import AdminAboutUs from "./pages/AdminAboutUs.jsx"
 import AdminNews from "./pages/AdminNews.jsx"
 import AdminSettings from "./pages/AdminSettings.jsx"
@@ -109,7 +110,7 @@ export default function App() {
   <Route path="registrations" element={<AdminEventRegistrations />} />
   <Route path="users" element={<AdminManageUsers />} />
   <Route path="news" element={<AdminNews />} />
-  <Route path="hods" element={<AdminManageCommittees />} />
+  <Route path="hods" element={<AdminManageHODs />} />
   <Route path="committees" element={<AdminManageCommittees />} />
   <Route path="aboutus" element={<AdminAboutUs />} />
   <Route path="settings" element={<AdminSettings />} />

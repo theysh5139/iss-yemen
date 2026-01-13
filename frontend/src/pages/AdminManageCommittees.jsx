@@ -99,22 +99,20 @@ export default function AdminManageCommittees() {
     setPhotoPreview("")
     setPhotoFile(null)
     setUploadMethod("url")
-
-    switch (type) {
-      case 'committee':
-        setFormData({ name: "", priority: null })
-        break
-      case 'executive':
-        setFormData({ name: "", role: "", email: "", phone: "", photo: "" })
-        break
-      case 'head':
-        setFormData({ name: "", committeeId: "", email: "", phone: "", photo: "" })
-        break
-      case 'member':
-        setFormData({ name: "", committeeId: "", photo: "", order: 0 })
-        break
+    
+    // Initialize form data based on type
+    if (type === 'committee') {
+      setFormData({ name: "", description: "" })
+    } else if (type === 'executive') {
+      setFormData({ name: "", role: "", photo: "", email: "", phone: "", order: 0 })
+    } else if (type === 'head') {
+      setFormData({ name: "", committee: "", photo: "", email: "", phone: "", order: 0 })
+    } else if (type === 'member') {
+      setFormData({ name: "", committee: "", position: "", photo: "", email: "", phone: "", order: 0 })
     }
+    
     setShowForm(true)
+    setActiveTab(type === 'committee' ? 'committees' : type === 'executive' ? 'executive' : type === 'head' ? 'heads' : 'members')
   }
 
   function openEditForm(item, type) {
@@ -125,44 +123,13 @@ export default function AdminManageCommittees() {
     setPhotoPreview(item.photo || "")
     setPhotoFile(null)
     setUploadMethod("url")
-
-    switch (type) {
-      case 'committee':
-        setFormData({ name: item.name || "", priority: item.priority !== undefined ? item.priority : null })
-        break
-      case 'executive':
-        setFormData({
-          name: item.name || "",
-          role: item.role || "",
-          email: item.email || "",
-          phone: item.phone || "",
-          photo: item.photo || ""
-        })
-        break
-      case 'head':
-        setFormData({
-          name: item.name || "",
-          committeeId: item.committeeId?._id || item.committeeId || "",
-          email: item.email || "",
-          phone: item.phone || "",
-          photo: item.photo || ""
-        })
-        break
-      case 'member':
-        setFormData({
-          name: item.name || "",
-          committeeId: item.committeeId?._id || item.committeeId || "",
-          photo: item.photo || "",
-          order: item.order || 0
-        })
-        break
-    }
+    setFormData(item)
     setShowForm(true)
+    setActiveTab(type === 'committee' ? 'committees' : type === 'executive' ? 'executive' : type === 'head' ? 'heads' : 'members')
   }
 
   function closeForm() {
     setShowForm(false)
-    setFormType(null)
     setEditingItem(null)
     setFormData({})
     setError("")
@@ -178,9 +145,6 @@ export default function AdminManageCommittees() {
     setFormData({ ...formData, photo: url })
     setPhotoPreview(url)
     setPhotoFile(null)
-    if (error && error.includes("Photo")) {
-      setError("")
-    }
   }
 
   function handleFileSelect(e) {
@@ -214,83 +178,15 @@ export default function AdminManageCommittees() {
     reader.readAsDataURL(file)
   }
 
-  function validateForm() {
-    if (formType === 'committee') {
-      if (!formData.name || !formData.name.trim()) {
-        setError("Committee name is required")
-        return false
-      }
-    } else if (formType === 'executive') {
-      if (!formData.name || !formData.name.trim()) {
-        setError("Name is required")
-        return false
-      }
-      if (!formData.role || !EXECUTIVE_ROLES.includes(formData.role)) {
-        setError("Valid role is required")
-        return false
-      }
-      if (!formData.email || !formData.email.trim()) {
-        setError("Email is required")
-        return false
-      }
-      if (!formData.photo || !formData.photo.trim()) {
-        setError("Photo is required")
-        return false
-      }
-    } else if (formType === 'head') {
-      if (!formData.name || !formData.name.trim()) {
-        setError("Name is required")
-        return false
-      }
-      if (!formData.committeeId) {
-        setError("Committee is required")
-        return false
-      }
-      if (!formData.email || !formData.email.trim()) {
-        setError("Email is required")
-        return false
-      }
-      if (!formData.photo || !formData.photo.trim()) {
-        setError("Photo is required")
-        return false
-      }
-    } else if (formType === 'member') {
-      if (!formData.name || !formData.name.trim()) {
-        setError("Name is required")
-        return false
-      }
-      if (!formData.committeeId) {
-        setError("Committee is required")
-        return false
-      }
-      if (!formData.photo || !formData.photo.trim()) {
-        setError("Photo is required")
-        return false
-      }
-    }
-    return true
-  }
-
   async function handleSubmit(e) {
     e.preventDefault()
-    console.log('handleSubmit called with formType:', formType)
-    console.log('formData:', formData)
     setError("")
     setSuccess("")
     setIsSubmitting(true)
 
-    if (!validateForm()) {
-      console.log('Form validation failed')
-      setIsSubmitting(false)
-      return
-    }
-
-    console.log('Form validation passed, proceeding with API call')
-
     try {
       let result
       if (formType === 'committee') {
-        console.log('Creating committee...')
         if (editingItem) {
           result = await updateCommittee(editingItem._id, formData)
           setSuccess("✓ Committee updated successfully!")
@@ -299,7 +195,6 @@ export default function AdminManageCommittees() {
           setSuccess("✓ Committee created successfully!")
         }
       } else if (formType === 'executive') {
-        console.log('Creating executive member...')
         if (editingItem) {
           result = await updateExecutiveMember(editingItem._id, formData)
           setSuccess("✓ Executive member updated successfully!")
@@ -308,7 +203,6 @@ export default function AdminManageCommittees() {
           setSuccess("✓ Executive member created successfully!")
         }
       } else if (formType === 'head') {
-        console.log('Creating committee head...')
         if (editingItem) {
           result = await updateCommitteeHead(editingItem._id, formData)
           setSuccess("✓ Committee head updated successfully!")
@@ -317,7 +211,6 @@ export default function AdminManageCommittees() {
           setSuccess("✓ Committee head created successfully!")
         }
       } else if (formType === 'member') {
-        console.log('Creating committee member...')
         if (editingItem) {
           result = await updateCommitteeMember(editingItem._id, formData)
           setSuccess("✓ Committee member updated successfully!")
@@ -327,7 +220,6 @@ export default function AdminManageCommittees() {
         }
       }
 
-      console.log('API call result:', result)
       await fetchAllData()
       setTimeout(() => {
         closeForm()
@@ -403,110 +295,284 @@ export default function AdminManageCommittees() {
             )}
 
             {/* Tabs */}
-            <div className="settings-tabs">
+            <div className="tabs-container" style={{ marginBottom: '2rem', borderBottom: '2px solid #e0e0e0', display: 'flex', gap: '0' }}>
               <button
-                className={`settings-tab ${activeTab === 'committees' ? 'active' : ''}`}
+                className={`tab-button ${activeTab === 'committees' ? 'active' : ''}`}
                 onClick={() => setActiveTab('committees')}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: activeTab === 'committees' ? '#4a6fa5' : 'transparent',
+                  color: activeTab === 'committees' ? 'white' : '#666',
+                  border: 'none',
+                  borderBottom: activeTab === 'committees' ? '3px solid #4a6fa5' : '3px solid transparent',
+                  cursor: 'pointer',
+                  fontWeight: activeTab === 'committees' ? '600' : '400',
+                  transition: 'all 0.3s ease'
+                }}
               >
                 📋 Committees
               </button>
               <button
-                className={`settings-tab ${activeTab === 'executive' ? 'active' : ''}`}
+                className={`tab-button ${activeTab === 'executive' ? 'active' : ''}`}
                 onClick={() => setActiveTab('executive')}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: activeTab === 'executive' ? '#4a6fa5' : 'transparent',
+                  color: activeTab === 'executive' ? 'white' : '#666',
+                  border: 'none',
+                  borderBottom: activeTab === 'executive' ? '3px solid #4a6fa5' : '3px solid transparent',
+                  cursor: 'pointer',
+                  fontWeight: activeTab === 'executive' ? '600' : '400',
+                  transition: 'all 0.3s ease'
+                }}
               >
                 👔 Executive Members
               </button>
               <button
-                className={`settings-tab ${activeTab === 'heads' ? 'active' : ''}`}
+                className={`tab-button ${activeTab === 'heads' ? 'active' : ''}`}
                 onClick={() => setActiveTab('heads')}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: activeTab === 'heads' ? '#4a6fa5' : 'transparent',
+                  color: activeTab === 'heads' ? 'white' : '#666',
+                  border: 'none',
+                  borderBottom: activeTab === 'heads' ? '3px solid #4a6fa5' : '3px solid transparent',
+                  cursor: 'pointer',
+                  fontWeight: activeTab === 'heads' ? '600' : '400',
+                  transition: 'all 0.3s ease'
+                }}
               >
-                🎯 Committee Heads
+                ⚙️ Committee Heads
               </button>
               <button
-                className={`settings-tab ${activeTab === 'members' ? 'active' : ''}`}
+                className={`tab-button ${activeTab === 'members' ? 'active' : ''}`}
                 onClick={() => setActiveTab('members')}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: activeTab === 'members' ? '#4a6fa5' : 'transparent',
+                  color: activeTab === 'members' ? 'white' : '#666',
+                  border: 'none',
+                  borderBottom: activeTab === 'members' ? '3px solid #4a6fa5' : '3px solid transparent',
+                  cursor: 'pointer',
+                  fontWeight: activeTab === 'members' ? '600' : '400',
+                  transition: 'all 0.3s ease'
+                }}
               >
                 👥 Committee Members
               </button>
             </div>
 
-            {/* Tab Content */}
-            <div className="settings-content">
-              {loading ? (
-                <div style={{ textAlign: 'center', padding: '2rem' }}>
-                  <div className="spinner" style={{ margin: '0 auto 1rem', width: '40px', height: '40px', borderWidth: '3px' }}></div>
-                  <p>Loading...</p>
+            {/* Committees Tab */}
+            {activeTab === 'committees' && (
+              <div className="content-section">
+                <div className="section-header">
+                  <h2 className="section-title">Committees</h2>
+                  <button className="btn btn-primary" onClick={() => openCreateForm('committee')}>
+                    + Add Committee
+                  </button>
                 </div>
-              ) : (
-                <>
-                  {/* Committees Tab */}
-                  {activeTab === 'committees' && (
-                    <div className="content-section">
-                      <div className="section-header">
-                        <h2 className="section-title">Committees</h2>
-                        <button className="btn btn-primary" onClick={() => openCreateForm('committee')}>
-                          + Add Committee
-                        </button>
-                      </div>
-                      {committees.length > 0 ? (
-                        <div className="admin-list">
-                          {committees.map(committee => (
-                            <div key={committee._id} className="admin-list-item">
-                              <div className="item-content">
-                                <h3 className="item-title">{committee.name}</h3>
-                                {committee.priority !== null && committee.priority !== undefined && (
-                                  <p className="item-description">Priority: {committee.priority}</p>
-                                )}
-                              </div>
-                              <div className="item-actions">
-                                <button className="btn-edit" onClick={() => openEditForm(committee, 'committee')}>
-                                  Edit
-                                </button>
-                                <button className="btn-delete" onClick={() => handleDelete(committee._id, 'committee')}>
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="empty-state">No committees yet. <button onClick={() => openCreateForm('committee')} className="link-btn">Create one now</button></p>
-                      )}
-                    </div>
-                  )}
 
-                  {/* Executive Members Tab */}
-                  {activeTab === 'executive' && (
-                    <div className="content-section">
-                      <div className="section-header">
-                        <h2 className="section-title">Executive Committee Members</h2>
-                        <button className="btn btn-primary" onClick={() => openCreateForm('executive')}>
-                          + Add Executive Member
-                        </button>
+                {loading ? (
+                  <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <div className="spinner" style={{ margin: '0 auto 1rem', width: '40px', height: '40px', borderWidth: '3px' }}></div>
+                    <p>Loading committees...</p>
+                  </div>
+                ) : committees.length > 0 ? (
+                  <div className="hods-grid">
+                    {committees.map(committee => (
+                      <div key={committee._id} className="hod-admin-card">
+                        <div className="hod-admin-info">
+                          <h3>{committee.name}</h3>
+                          {committee.description && <p>{committee.description}</p>}
+                          <div className="hod-admin-actions">
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => openEditForm(committee, 'committee')}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDelete(committee._id, 'committee')}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      {executiveMembers.length > 0 ? (
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-state">No committees yet. <button onClick={() => openCreateForm('committee')} className="link-btn">Create one now</button></p>
+                )}
+              </div>
+            )}
+
+            {/* Executive Members Tab */}
+            {activeTab === 'executive' && (
+              <div className="content-section">
+                <div className="section-header">
+                  <h2 className="section-title">Executive Members</h2>
+                  <button className="btn btn-primary" onClick={() => openCreateForm('executive')}>
+                    + Add Executive Member
+                  </button>
+                </div>
+
+                {loading ? (
+                  <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <div className="spinner" style={{ margin: '0 auto 1rem', width: '40px', height: '40px', borderWidth: '3px' }}></div>
+                    <p>Loading executive members...</p>
+                  </div>
+                ) : executiveMembers.length > 0 ? (
+                  <div className="hods-grid">
+                    {executiveMembers.map(member => (
+                      <div key={member._id} className="hod-admin-card">
+                        {member.photo && (
+                          <div className="hod-admin-photo">
+                            <img
+                              src={member.photo}
+                              alt={member.name}
+                              onError={(e) => {
+                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&size=200&background=4a6fa5&color=fff`
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="hod-admin-info">
+                          <h3>{member.name}</h3>
+                          <p>{member.role}</p>
+                          {member.email && <p style={{ fontSize: '0.875rem', color: '#666' }}>{member.email}</p>}
+                          <div className="hod-admin-actions">
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => openEditForm(member, 'executive')}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDelete(member._id, 'executive')}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-state">No executive members yet. <button onClick={() => openCreateForm('executive')} className="link-btn">Create one now</button></p>
+                )}
+              </div>
+            )}
+
+            {/* Committee Heads Tab */}
+            {activeTab === 'heads' && (
+              <div className="content-section">
+                <div className="section-header">
+                  <h2 className="section-title">Committee Heads</h2>
+                  <button className="btn btn-primary" onClick={() => openCreateForm('head')}>
+                    + Add Committee Head
+                  </button>
+                </div>
+
+                {loading ? (
+                  <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <div className="spinner" style={{ margin: '0 auto 1rem', width: '40px', height: '40px', borderWidth: '3px' }}></div>
+                    <p>Loading committee heads...</p>
+                  </div>
+                ) : committeeHeads.length > 0 ? (
+                  <div className="hods-grid">
+                    {committeeHeads.map(head => (
+                      <div key={head._id} className="hod-admin-card">
+                        {head.photo && (
+                          <div className="hod-admin-photo">
+                            <img
+                              src={head.photo}
+                              alt={head.name}
+                              onError={(e) => {
+                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(head.name)}&size=200&background=4a6fa5&color=fff`
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="hod-admin-info">
+                          <h3>{head.name}</h3>
+                          <p>{head.committee}</p>
+                          {head.email && <p style={{ fontSize: '0.875rem', color: '#666' }}>{head.email}</p>}
+                          <div className="hod-admin-actions">
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => openEditForm(head, 'head')}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDelete(head._id, 'head')}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-state">No committee heads yet. <button onClick={() => openCreateForm('head')} className="link-btn">Create one now</button></p>
+                )}
+              </div>
+            )}
+
+            {/* Committee Members Tab */}
+            {activeTab === 'members' && (
+              <div className="content-section">
+                <div className="section-header">
+                  <h2 className="section-title">Committee Members</h2>
+                  <button className="btn btn-primary" onClick={() => openCreateForm('member')}>
+                    + Add Committee Member
+                  </button>
+                </div>
+
+                {loading ? (
+                  <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <div className="spinner" style={{ margin: '0 auto 1rem', width: '40px', height: '40px', borderWidth: '3px' }}></div>
+                    <p>Loading committee members...</p>
+                  </div>
+                ) : committeeMembersGrouped.length > 0 ? (
+                  <div>
+                    {committeeMembersGrouped.map(group => (
+                      <div key={group.committee} style={{ marginBottom: '2rem' }}>
+                        <h3 style={{ marginBottom: '1rem', color: '#4a6fa5' }}>{group.committee}</h3>
                         <div className="hods-grid">
-                          {executiveMembers.map(member => (
+                          {group.members.map(member => (
                             <div key={member._id} className="hod-admin-card">
-                              <div className="hod-admin-photo">
-                                <img
-                                  src={member.photo}
-                                  alt={member.name}
-                                  onError={(e) => {
-                                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&size=200&background=0b6b63&color=fff`
-                                  }}
-                                />
-                              </div>
+                              {member.photo && (
+                                <div className="hod-admin-photo">
+                                  <img
+                                    src={member.photo}
+                                    alt={member.name}
+                                    onError={(e) => {
+                                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&size=200&background=4a6fa5&color=fff`
+                                    }}
+                                  />
+                                </div>
+                              )}
                               <div className="hod-admin-info">
                                 <h3>{member.name}</h3>
-                                <p><strong>{member.role}</strong></p>
-                                <p style={{ fontSize: '0.85rem', color: '#666' }}>{member.email}</p>
-                                {member.phone && <p style={{ fontSize: '0.85rem', color: '#666' }}>{member.phone}</p>}
+                                <p>{member.position}</p>
+                                {member.email && <p style={{ fontSize: '0.875rem', color: '#666' }}>{member.email}</p>}
                                 <div className="hod-admin-actions">
-                                  <button className="btn btn-secondary btn-sm" onClick={() => openEditForm(member, 'executive')}>
+                                  <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => openEditForm(member, 'member')}
+                                  >
                                     Edit
                                   </button>
-                                  <button className="btn btn-danger btn-sm" onClick={() => handleDelete(member._id, 'executive')}>
+                                  <button
+                                    className="btn btn-danger btn-sm"
+                                    onClick={() => handleDelete(member._id, 'member')}
+                                  >
                                     Delete
                                   </button>
                                 </div>
@@ -514,110 +580,14 @@ export default function AdminManageCommittees() {
                             </div>
                           ))}
                         </div>
-                      ) : (
-                        <p className="empty-state">No executive members yet. <button onClick={() => openCreateForm('executive')} className="link-btn">Create one now</button></p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Committee Heads Tab */}
-                  {activeTab === 'heads' && (
-                    <div className="content-section">
-                      <div className="section-header">
-                        <h2 className="section-title">Committee Heads</h2>
-                        <button className="btn btn-primary" onClick={() => openCreateForm('head')}>
-                          + Add Committee Head
-                        </button>
                       </div>
-                      {committeeHeads.length > 0 ? (
-                        <div className="hods-grid">
-                          {committeeHeads.map(head => (
-                            <div key={head._id} className="hod-admin-card">
-                              <div className="hod-admin-photo">
-                                <img
-                                  src={head.photo}
-                                  alt={head.name}
-                                  onError={(e) => {
-                                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(head.name)}&size=200&background=0b6b63&color=fff`
-                                  }}
-                                />
-                              </div>
-                              <div className="hod-admin-info">
-                                <h3>{head.name}</h3>
-                                {head.committeeId?.name && <p><strong>{head.committeeId.name}</strong></p>}
-                                <p style={{ fontSize: '0.85rem', color: '#666' }}>{head.email}</p>
-                                {head.phone && <p style={{ fontSize: '0.85rem', color: '#666' }}>{head.phone}</p>}
-                                <div className="hod-admin-actions">
-                                  <button className="btn btn-secondary btn-sm" onClick={() => openEditForm(head, 'head')}>
-                                    Edit
-                                  </button>
-                                  <button className="btn btn-danger btn-sm" onClick={() => handleDelete(head._id, 'head')}>
-                                    Delete
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="empty-state">No committee heads yet. <button onClick={() => openCreateForm('head')} className="link-btn">Create one now</button></p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Committee Members Tab */}
-                  {activeTab === 'members' && (
-                    <div className="content-section">
-                      <div className="section-header">
-                        <h2 className="section-title">Committee Members</h2>
-                        <button className="btn btn-primary" onClick={() => openCreateForm('member')}>
-                          + Add Member
-                        </button>
-                      </div>
-                      {committeeMembersGrouped.length > 0 ? (
-                        <div>
-                          {committeeMembersGrouped.map(group => (
-                            <div key={group.committee._id} style={{ marginBottom: '2rem' }}>
-                              <h3 style={{ marginBottom: '1rem', color: '#1a2a4a', fontSize: '1.25rem' }}>
-                                {group.committee.name}
-                              </h3>
-                              <div className="hods-grid">
-                                {group.members.map(member => (
-                                  <div key={member._id} className="hod-admin-card">
-                                    <div className="hod-admin-photo">
-                                      <img
-                                        src={member.photo}
-                                        alt={member.name}
-                                        onError={(e) => {
-                                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&size=200&background=0b6b63&color=fff`
-                                        }}
-                                      />
-                                    </div>
-                                    <div className="hod-admin-info">
-                                      <h3>{member.name}</h3>
-                                      <div className="hod-admin-actions">
-                                        <button className="btn btn-secondary btn-sm" onClick={() => openEditForm(member, 'member')}>
-                                          Edit
-                                        </button>
-                                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(member._id, 'member')}>
-                                          Delete
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="empty-state">No committee members yet. <button onClick={() => openCreateForm('member')} className="link-btn">Create one now</button></p>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-state">No committee members yet. <button onClick={() => openCreateForm('member')} className="link-btn">Create one now</button></p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -628,21 +598,19 @@ export default function AdminManageCommittees() {
               <div className="modal-header">
                 <div>
                   <h2>
-                    {editingItem
-                      ? `Edit ${formType === 'committee' ? 'Committee' : formType === 'executive' ? 'Executive Member' : formType === 'head' ? 'Committee Head' : 'Committee Member'}`
-                      : `Create ${formType === 'committee' ? 'Committee' : formType === 'executive' ? 'Executive Member' : formType === 'head' ? 'Committee Head' : 'Committee Member'}`}
+                    {editingItem ? `Edit ${formType === 'committee' ? 'Committee' : formType === 'executive' ? 'Executive Member' : formType === 'head' ? 'Committee Head' : 'Committee Member'}` : 
+                     `Create ${formType === 'committee' ? 'Committee' : formType === 'executive' ? 'Executive Member' : formType === 'head' ? 'Committee Head' : 'Committee Member'}`}
                   </h2>
                 </div>
-                <button className="modal-close" onClick={closeForm} aria-label="Close">×</button>
+                <button className="modal-close" onClick={closeForm}>×</button>
               </div>
 
               <div className="modal-body">
-                <form onSubmit={handleSubmit} className="admin-form hod-form">
+                <form onSubmit={handleSubmit} className="admin-form">
                   {error && (
-                    <div className="alert alert-error" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div className="alert alert-error">
                       <span className="alert-icon">⚠️</span>
-                      <span style={{ flex: 1 }}>{error}</span>
-                      <button type="button" onClick={() => setError("")} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#c33', padding: '0', lineHeight: '1', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Dismiss error">×</button>
+                      <span>{error}</span>
                     </div>
                   )}
 
@@ -657,201 +625,211 @@ export default function AdminManageCommittees() {
                   {formType === 'committee' && (
                     <>
                       <div className="form-group">
-                        <label htmlFor="name">Committee Name <span className="required">*</span></label>
-                        <input id="name" type="text" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Academic Committee" required className="form-input" disabled={isSubmitting} />
+                        <label>Name <span className="required">*</span></label>
+                        <input
+                          type="text"
+                          value={formData.name || ""}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          required
+                          className="form-input"
+                          disabled={isSubmitting}
+                        />
                       </div>
                       <div className="form-group">
-                        <label htmlFor="priority">Priority (Optional)</label>
-                        <input id="priority" type="number" value={formData.priority !== null && formData.priority !== undefined ? formData.priority : ""} onChange={(e) => setFormData({ ...formData, priority: e.target.value ? parseInt(e.target.value) : null })} placeholder="Lower number = higher priority" className="form-input" disabled={isSubmitting} />
-                        <small className="form-hint">Lower numbers appear first. Leave empty for no priority.</small>
+                        <label>Description</label>
+                        <textarea
+                          value={formData.description || ""}
+                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                          rows="3"
+                          className="form-input"
+                          disabled={isSubmitting}
+                        />
                       </div>
                     </>
                   )}
 
-                  {/* Executive Member Form */}
-                  {formType === 'executive' && (
+                  {/* Executive/Head/Member Form */}
+                  {(formType === 'executive' || formType === 'head' || formType === 'member') && (
                     <>
                       <div className="form-row">
                         <div className="form-group">
-                          <label htmlFor="name">Name <span className="required">*</span></label>
-                          <input id="name" type="text" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Ahmed Hassan" required className="form-input" disabled={isSubmitting} />
+                          <label>Name <span className="required">*</span></label>
+                          <input
+                            type="text"
+                            value={formData.name || ""}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            required
+                            className="form-input"
+                            disabled={isSubmitting}
+                          />
                         </div>
-                        <div className="form-group">
-                          <label htmlFor="role">Role <span className="required">*</span></label>
-                          <select id="role" value={formData.role || ""} onChange={(e) => setFormData({ ...formData, role: e.target.value })} required className="form-input" disabled={isSubmitting}>
-                            <option value="">Select Role</option>
-                            {EXECUTIVE_ROLES.map(role => <option key={role} value={role}>{role}</option>)}
-                          </select>
-                        </div>
+                        {formType === 'executive' && (
+                          <div className="form-group">
+                            <label>Role <span className="required">*</span></label>
+                            <select
+                              value={formData.role || ""}
+                              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                              required
+                              className="form-input"
+                              disabled={isSubmitting}
+                            >
+                              <option value="">Select Role</option>
+                              {EXECUTIVE_ROLES.map(role => (
+                                <option key={role} value={role}>{role}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        {(formType === 'head' || formType === 'member') && (
+                          <div className="form-group">
+                            <label>Committee <span className="required">*</span></label>
+                            <select
+                              value={formData.committee || ""}
+                              onChange={(e) => setFormData({ ...formData, committee: e.target.value })}
+                              required
+                              className="form-input"
+                              disabled={isSubmitting}
+                            >
+                              <option value="">Select Committee</option>
+                              {committees.map(c => (
+                                <option key={c._id} value={c.name}>{c.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
                       </div>
+                      {formType === 'member' && (
+                        <div className="form-group">
+                          <label>Position</label>
+                          <input
+                            type="text"
+                            value={formData.position || ""}
+                            onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                            className="form-input"
+                            disabled={isSubmitting}
+                          />
+                        </div>
+                      )}
                       <div className="form-row">
                         <div className="form-group">
-                          <label htmlFor="email">Email <span className="required">*</span></label>
-                          <input id="email" type="email" value={formData.email || ""} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@example.com" required className="form-input" disabled={isSubmitting} />
+                          <label>Email</label>
+                          <input
+                            type="email"
+                            value={formData.email || ""}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className="form-input"
+                            disabled={isSubmitting}
+                          />
                         </div>
                         <div className="form-group">
-                          <label htmlFor="phone">Phone (Optional)</label>
-                          <input id="phone" type="tel" value={formData.phone || ""} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+60 12-345-6789" className="form-input" disabled={isSubmitting} />
+                          <label>Phone</label>
+                          <input
+                            type="tel"
+                            value={formData.phone || ""}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            className="form-input"
+                            disabled={isSubmitting}
+                          />
                         </div>
                       </div>
                       <div className="form-group">
-                        <label htmlFor="photo">Photo <span className="required">*</span></label>
+                        <label>Photo</label>
                         <div className="upload-method-toggle">
-                          <button type="button" className={`toggle-btn ${uploadMethod === 'file' ? 'active' : ''}`} onClick={() => { setUploadMethod('file'); setFormData({ ...formData, photo: '' }); setPhotoPreview(''); setPhotoFile(null) }} disabled={isSubmitting}>📁 Upload File</button>
-                          <button type="button" className={`toggle-btn ${uploadMethod === 'url' ? 'active' : ''}`} onClick={() => { setUploadMethod('url'); setFormData({ ...formData, photo: '' }); setPhotoPreview(''); setPhotoFile(null) }} disabled={isSubmitting}>🔗 Enter URL</button>
+                          <button
+                            type="button"
+                            className={`toggle-btn ${uploadMethod === 'file' ? 'active' : ''}`}
+                            onClick={() => {
+                              setUploadMethod('file')
+                              setFormData({ ...formData, photo: '' })
+                              setPhotoPreview('')
+                              setPhotoFile(null)
+                            }}
+                            disabled={isSubmitting}
+                          >
+                            📁 Upload File
+                          </button>
+                          <button
+                            type="button"
+                            className={`toggle-btn ${uploadMethod === 'url' ? 'active' : ''}`}
+                            onClick={() => {
+                              setUploadMethod('url')
+                              setFormData({ ...formData, photo: '' })
+                              setPhotoPreview('')
+                              setPhotoFile(null)
+                            }}
+                            disabled={isSubmitting}
+                          >
+                            🔗 Enter URL
+                          </button>
                         </div>
                         <div className="photo-input-wrapper">
                           {uploadMethod === 'file' ? (
                             <div className="file-upload-area">
-                              <input id="photo-file" type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleFileSelect} className="file-input" disabled={isSubmitting} />
-                              <label htmlFor="photo-file" className="file-upload-label">
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                onChange={handleFileSelect}
+                                className="file-input"
+                                disabled={isSubmitting}
+                              />
+                              <label className="file-upload-label">
                                 <div className="file-upload-content">
                                   <span className="file-upload-icon">📤</span>
-                                  <div><strong>Click to select image</strong><p>or drag and drop</p></div>
+                                  <div>
+                                    <strong>Click to select image</strong>
+                                    <p>or drag and drop</p>
+                                  </div>
                                   <small>JPG, PNG, GIF, or WEBP (max 5MB)</small>
                                 </div>
                               </label>
-                              {photoFile && <div className="file-selected"><span className="file-name">✓ {photoFile.name}</span><span className="file-size">({(photoFile.size / 1024 / 1024).toFixed(2)} MB)</span></div>}
                             </div>
                           ) : (
-                            <input id="photo" type="url" value={formData.photo || ""} onChange={handlePhotoUrlChange} placeholder="https://example.com/photo.jpg" required className="form-input" disabled={isSubmitting} />
+                            <input
+                              type="url"
+                              value={formData.photo || ""}
+                              onChange={handlePhotoUrlChange}
+                              placeholder="https://example.com/photo.jpg"
+                              className="form-input"
+                              disabled={isSubmitting}
+                            />
                           )}
                           {photoPreview && (
                             <div className="photo-preview">
-                              <img src={photoPreview} alt="Preview" onError={(e) => { e.target.style.display = 'none'; const errorDiv = e.target.nextElementSibling; if (errorDiv) errorDiv.style.display = 'block' }} />
-                              <div className="photo-preview-error" style={{ display: 'none' }}><span>⚠️ Invalid image</span></div>
+                              <img src={photoPreview} alt="Preview" onError={(e) => e.target.style.display = 'none'} />
                             </div>
                           )}
                         </div>
                       </div>
-                    </>
-                  )}
-
-                  {/* Committee Head Form */}
-                  {formType === 'head' && (
-                    <>
                       <div className="form-group">
-                        <label htmlFor="name">Name <span className="required">*</span></label>
-                        <input id="name" type="text" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Dr. Ahmed Hassan" required className="form-input" disabled={isSubmitting} />
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="committeeId">Committee <span className="required">*</span></label>
-                        <select id="committeeId" value={formData.committeeId || ""} onChange={(e) => setFormData({ ...formData, committeeId: e.target.value })} required className="form-input" disabled={isSubmitting}>
-                          <option value="">Select Committee</option>
-                          {committees.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                        </select>
-                      </div>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label htmlFor="email">Email <span className="required">*</span></label>
-                          <input id="email" type="email" value={formData.email || ""} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@example.com" required className="form-input" disabled={isSubmitting} />
-                        </div>
-                        <div className="form-group">
-                          <label htmlFor="phone">Phone (Optional)</label>
-                          <input id="phone" type="tel" value={formData.phone || ""} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+60 12-345-6789" className="form-input" disabled={isSubmitting} />
-                        </div>
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="photo">Photo <span className="required">*</span></label>
-                        <div className="upload-method-toggle">
-                          <button type="button" className={`toggle-btn ${uploadMethod === 'file' ? 'active' : ''}`} onClick={() => { setUploadMethod('file'); setFormData({ ...formData, photo: '' }); setPhotoPreview(''); setPhotoFile(null) }} disabled={isSubmitting}>📁 Upload File</button>
-                          <button type="button" className={`toggle-btn ${uploadMethod === 'url' ? 'active' : ''}`} onClick={() => { setUploadMethod('url'); setFormData({ ...formData, photo: '' }); setPhotoPreview(''); setPhotoFile(null) }} disabled={isSubmitting}>🔗 Enter URL</button>
-                        </div>
-                        <div className="photo-input-wrapper">
-                          {uploadMethod === 'file' ? (
-                            <div className="file-upload-area">
-                              <input id="photo-file" type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleFileSelect} className="file-input" disabled={isSubmitting} />
-                              <label htmlFor="photo-file" className="file-upload-label">
-                                <div className="file-upload-content">
-                                  <span className="file-upload-icon">📤</span>
-                                  <div><strong>Click to select image</strong><p>or drag and drop</p></div>
-                                  <small>JPG, PNG, GIF, or WEBP (max 5MB)</small>
-                                </div>
-                              </label>
-                              {photoFile && <div className="file-selected"><span className="file-name">✓ {photoFile.name}</span><span className="file-size">({(photoFile.size / 1024 / 1024).toFixed(2)} MB)</span></div>}
-                            </div>
-                          ) : (
-                            <input id="photo" type="url" value={formData.photo || ""} onChange={handlePhotoUrlChange} placeholder="https://example.com/photo.jpg" required className="form-input" disabled={isSubmitting} />
-                          )}
-                          {photoPreview && (
-                            <div className="photo-preview">
-                              <img src={photoPreview} alt="Preview" onError={(e) => { e.target.style.display = 'none'; const errorDiv = e.target.nextElementSibling; if (errorDiv) errorDiv.style.display = 'block' }} />
-                              <div className="photo-preview-error" style={{ display: 'none' }}><span>⚠️ Invalid image</span></div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Committee Member Form */}
-                  {formType === 'member' && (
-                    <>
-                      <div className="form-group">
-                        <label htmlFor="name">Name <span className="required">*</span></label>
-                        <input id="name" type="text" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Sarah Ali" required className="form-input" disabled={isSubmitting} />
-                      </div>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label htmlFor="committeeId">Committee <span className="required">*</span></label>
-                          <select id="committeeId" value={formData.committeeId || ""} onChange={(e) => setFormData({ ...formData, committeeId: e.target.value })} required className="form-input" disabled={isSubmitting}>
-                            <option value="">Select Committee</option>
-                            {committees.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                          </select>
-                        </div>
-                        <div className="form-group">
-                          <label htmlFor="order">Display Order (Optional)</label>
-                          <input id="order" type="number" value={formData.order || 0} onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })} min="0" className="form-input" disabled={isSubmitting} />
-                          <small className="form-hint">Lower numbers appear first</small>
-                        </div>
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="photo">Photo <span className="required">*</span></label>
-                        <div className="upload-method-toggle">
-                          <button type="button" className={`toggle-btn ${uploadMethod === 'file' ? 'active' : ''}`} onClick={() => { setUploadMethod('file'); setFormData({ ...formData, photo: '' }); setPhotoPreview(''); setPhotoFile(null) }} disabled={isSubmitting}>📁 Upload File</button>
-                          <button type="button" className={`toggle-btn ${uploadMethod === 'url' ? 'active' : ''}`} onClick={() => { setUploadMethod('url'); setFormData({ ...formData, photo: '' }); setPhotoPreview(''); setPhotoFile(null) }} disabled={isSubmitting}>🔗 Enter URL</button>
-                        </div>
-                        <div className="photo-input-wrapper">
-                          {uploadMethod === 'file' ? (
-                            <div className="file-upload-area">
-                              <input id="photo-file" type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleFileSelect} className="file-input" disabled={isSubmitting} />
-                              <label htmlFor="photo-file" className="file-upload-label">
-                                <div className="file-upload-content">
-                                  <span className="file-upload-icon">📤</span>
-                                  <div><strong>Click to select image</strong><p>or drag and drop</p></div>
-                                  <small>JPG, PNG, GIF, or WEBP (max 5MB)</small>
-                                </div>
-                              </label>
-                              {photoFile && <div className="file-selected"><span className="file-name">✓ {photoFile.name}</span><span className="file-size">({(photoFile.size / 1024 / 1024).toFixed(2)} MB)</span></div>}
-                            </div>
-                          ) : (
-                            <input id="photo" type="url" value={formData.photo || ""} onChange={handlePhotoUrlChange} placeholder="https://example.com/photo.jpg" required className="form-input" disabled={isSubmitting} />
-                          )}
-                          {photoPreview && (
-                            <div className="photo-preview">
-                              <img src={photoPreview} alt="Preview" onError={(e) => { e.target.style.display = 'none'; const errorDiv = e.target.nextElementSibling; if (errorDiv) errorDiv.style.display = 'block' }} />
-                              <div className="photo-preview-error" style={{ display: 'none' }}><span>⚠️ Invalid image</span></div>
-                            </div>
-                          )}
-                        </div>
+                        <label>Display Order</label>
+                        <input
+                          type="number"
+                          value={formData.order || 0}
+                          onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+                          min="0"
+                          className="form-input"
+                          disabled={isSubmitting}
+                        />
+                        <small className="form-hint">Lower numbers appear first</small>
                       </div>
                     </>
                   )}
 
                   <div className="form-actions">
-                    <button type="button" className="btn btn-secondary" onClick={closeForm} disabled={isSubmitting}>Cancel</button>
-                    <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                      {isSubmitting ? (
-                        <>
-                          <span className="spinner"></span>
-                          {editingItem ? "Saving..." : "Creating..."}
-                        </>
-                      ) : (
-                        <>
-                          <span className="btn-icon">{editingItem ? "✏️" : "➕"}</span>
-                          {editingItem ? "Update" : "Create"}
-                        </>
-                      )}
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={closeForm}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Saving..." : (editingItem ? "Update" : "Create")}
                     </button>
                   </div>
                 </form>

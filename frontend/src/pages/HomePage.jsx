@@ -339,6 +339,7 @@ export default function HomePage() {
                   <div 
                     key={event._id} 
                     className="event-card card-3d"
+                    style={{ position: 'relative', overflow: 'visible' }}
                   >
                     <div className="event-card-header">
                       <h3 className="event-title">{event.title}</h3>
@@ -363,7 +364,7 @@ export default function HomePage() {
                         ? `${event.description.substring(0, 150)}...` 
                         : event.description}
                     </p>
-                    <div className="event-actions" style={{ position: 'relative', zIndex: 9999 }}>
+                    <div className="event-actions" onClick={(e) => e.stopPropagation()}>
                       {event && event._id ? (
                         <Link
                           to={`/all-events?event=${event._id}`}
@@ -375,13 +376,13 @@ export default function HomePage() {
                             cursor: 'pointer',
                             width: '100%',
                             position: 'relative',
-                            zIndex: 9999,
+                            zIndex: 10002,
                             pointerEvents: 'auto',
                             touchAction: 'manipulation'
                           }}
                           onClick={(e) => {
                             e.stopPropagation()
-                            console.log('View Details clicked for event:', event._id)
+                            console.log('View Details clicked for event:', event._id, 'Navigating to:', `/all-events?event=${event._id}`)
                           }}
                         >
                           View Details

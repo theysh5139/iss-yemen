@@ -19,7 +19,8 @@ export default function AdminHeaderIcons({ user }) {
     { label: "Verify Payments", path: "/admin/verify-payments", keywords: ["payments", "verify", "receipts", "payment verification"] },
     { label: "Manage Users", path: "/admin/users", keywords: ["users", "manage users", "user management", "members"] },
     { label: "News & Announcements", path: "/admin/news", keywords: ["news", "announcements", "posts", "articles"] },
-    { label: "Manage Committees", path: "/admin/committees", keywords: ["committees", "hods", "heads", "department", "heads of department", "executive", "members"] },
+    { label: "Manage Committees", path: "/admin/committees", keywords: ["committees", "executive", "committee heads", "committee members", "manage committees"] },
+    { label: "Manage HODs", path: "/admin/hods", keywords: ["hods", "heads of department", "heads", "department", "manage hods"] },
     { label: "Chatbot Manager", path: "/admin/chatbot", keywords: ["chatbot", "ai", "assistant", "faq", "rules"] },
     { label: "Edit About Us", path: "/admin/aboutus", keywords: ["about", "about us", "information"] },
     { label: "Settings & Help", path: "/admin/settings", keywords: ["settings", "help", "configuration", "preferences"] }
