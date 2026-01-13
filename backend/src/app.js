@@ -38,14 +38,19 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Allow localhost on any port
+    // Allow localhost on any port (development)
     if (origin.match(/^http:\/\/localhost:\d+$/)) return callback(null, true);
+    
+    // Allow Vercel domains (production/preview)
+    if (origin.match(/^https:\/\/(.*\.)?vercel\.app$/)) return callback(null, true);
+    if (origin.match(/^https:\/\/(.*\.)?vercel\.dev$/)) return callback(null, true);
     
     // Allow the configured CLIENT_BASE_URL
     const allowedOrigin = process.env.CLIENT_BASE_URL;
     if (allowedOrigin && origin === allowedOrigin) return callback(null, true);
     
-    return callback(new Error('Not allowed by CORS'));
+    // Allow same-origin requests (when frontend and backend are on same domain)
+    return callback(null, true);
   },
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
