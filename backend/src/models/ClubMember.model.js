@@ -10,7 +10,7 @@ const clubMemberSchema = new mongoose.Schema(
     bio: { type: String, trim: true }, // Optional bio/description
     isActive: { type: Boolean, default: true } // To mark inactive members
   },
-  { timestamps: true }
+  { timestamps: true, collection: 'committee' }
 );
 
 export const ClubMember = mongoose.model('ClubMember', clubMemberSchema);
