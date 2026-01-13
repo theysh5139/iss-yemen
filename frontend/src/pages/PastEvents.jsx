@@ -207,7 +207,21 @@ export default function PastEvents() {
                     </div>
                     <p className="event-description">{event.description}</p>
                     <div className="event-actions">
-                      <a href={`/all-events#${event._id}`} className="btn btn-secondary" style={{ textDecoration: 'none' }}>
+                      <a 
+                        href={`/all-events?event=${event._id}`} 
+                        className="btn btn-secondary" 
+                        style={{ 
+                          textDecoration: 'none',
+                          pointerEvents: 'auto',
+                          cursor: 'pointer',
+                          position: 'relative',
+                          zIndex: 10002
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          console.log('View Details clicked for event:', event._id)
+                        }}
+                      >
                         View Details →
                       </a>
                     </div>
