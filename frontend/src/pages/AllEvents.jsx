@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { getEvents } from "../api/events.js"
 import { useAuth } from "../context/AuthProvider.jsx"
 import EventRegistrationModal from "../components/EventRegistrationModal.jsx"
@@ -13,8 +13,11 @@ export default function AllEvents() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [filter, setFilter] = useState("all") // all, upcoming, past
+  const [categoryFilter, setCategoryFilter] = useState("All") // Category filter
+  const [dateFilter, setDateFilter] = useState("All Time") // Date filter
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const processedEventIdRef = useRef(null) // Track processed event IDs to avoid infinite loops
 
   // Check if user is logged in and is a member (members can register)
   // IMPORTANT: This page NEVER modifies authentication state
@@ -68,14 +71,95 @@ export default function AllEvents() {
     
   }, [authLoading, isLoggedIn, user])
 
-  // Scroll to event if event ID is in URL (after events are loaded)
+  // Adjust filters to show event if event ID is in URL (runs once when events load)
+  useEffect(() => {
+    if (events.length > 0 && !loading) {
+      const urlParams = new URLSearchParams(window.location.search)
+      const eventIdParam = urlParams.get('event')
+      
+      if (eventIdParam && processedEventIdRef.current !== eventIdParam) {
+        // Find the event in the events array
+        const targetEvent = events.find(e => e._id === eventIdParam)
+        
+        if (targetEvent) {
+          processedEventIdRef.current = eventIdParam
+          
+          // If event exists but might be filtered out, adjust filters to show it
+          const eventDate = new Date(targetEvent.date)
+          const now = new Date()
+          const isUpcoming = eventDate >= now
+          
+          // Adjust date filter if needed to show the event
+          if (filter === "upcoming" && !isUpcoming) {
+            setFilter("all")
+          } else if (filter === "past" && isUpcoming) {
+            setFilter("all")
+          }
+          
+          // Adjust category filter if needed
+          if (categoryFilter !== "All" && targetEvent.category !== categoryFilter) {
+            setCategoryFilter("All")
+          }
+          
+          // Adjust date range filter if needed - check if event matches current date filter
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
+          
+          let shouldResetDateFilter = false
+          if (dateFilter !== "All Time") {
+            // Check if event matches current date filter
+            const matches = (() => {
+              if (dateFilter === "Today") return eventDateOnly.getTime() === today.getTime()
+              if (dateFilter === "This Week") {
+                const weekStart = new Date(today)
+                weekStart.setDate(today.getDate() - today.getDay())
+                const weekEnd = new Date(weekStart)
+                weekEnd.setDate(weekStart.getDate() + 6)
+                return eventDateOnly >= weekStart && eventDateOnly <= weekEnd
+              }
+              if (dateFilter === "This Month") {
+                const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+                const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+                return eventDateOnly >= monthStart && eventDateOnly <= monthEnd
+              }
+              if (dateFilter === "Next Month") {
+                const nextMonthStart = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+                const nextMonthEnd = new Date(today.getFullYear(), today.getMonth() + 2, 0)
+                return eventDateOnly >= nextMonthStart && eventDateOnly <= nextMonthEnd
+              }
+              if (dateFilter === "Next 3 Months") {
+                const threeMonthsEnd = new Date(today.getFullYear(), today.getMonth() + 3, 0)
+                return eventDateOnly >= today && eventDateOnly <= threeMonthsEnd
+              }
+              if (dateFilter === "Next 6 Months") {
+                const sixMonthsEnd = new Date(today.getFullYear(), today.getMonth() + 6, 0)
+                return eventDateOnly >= today && eventDateOnly <= sixMonthsEnd
+              }
+              return true
+            })()
+            
+            if (!matches) {
+              shouldResetDateFilter = true
+            }
+          }
+          
+          if (shouldResetDateFilter) {
+            setDateFilter("All Time")
+          }
+        }
+      }
+    }
+  }, [events, loading]) // Only depend on events and loading, not on filter states
+
+  // Scroll to event after filters are applied and filtered events are rendered
   useEffect(() => {
     if (events.length > 0 && !loading) {
       const urlParams = new URLSearchParams(window.location.search)
       const eventIdParam = urlParams.get('event')
       
       if (eventIdParam) {
-        setTimeout(() => {
+        // Wait a bit for filters to apply and DOM to update
+        const scrollTimeout = setTimeout(() => {
           const eventElement = document.getElementById(`event-${eventIdParam}`)
           if (eventElement) {
             eventElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -86,10 +170,12 @@ export default function AllEvents() {
               eventElement.style.boxShadow = ''
             }, 3000)
           }
-        }, 300)
+        }, 600)
+        
+        return () => clearTimeout(scrollTimeout)
       }
     }
-  }, [events, loading])
+  }, [events, loading, filter, categoryFilter, dateFilter]) // Scroll when filters or events change
 
   async function fetchEvents() {
     try {
@@ -210,6 +296,64 @@ export default function AllEvents() {
     return colors[category] || "#7f8c8d"
   }
 
+  // Get unique categories from events
+  const getUniqueCategories = () => {
+    const categories = new Set()
+    events.forEach(event => {
+      if (event.category && !event.cancelled) {
+        categories.add(event.category)
+      }
+    })
+    return Array.from(categories).sort()
+  }
+
+  // Check if event matches date filter
+  const matchesDateFilter = (eventDate) => {
+    if (dateFilter === "All Time") return true
+    
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
+    
+    switch (dateFilter) {
+      case "Today":
+        return eventDateOnly.getTime() === today.getTime()
+      
+      case "This Week": {
+        const weekStart = new Date(today)
+        weekStart.setDate(today.getDate() - today.getDay()) // Start of week (Sunday)
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekStart.getDate() + 6) // End of week (Saturday)
+        return eventDateOnly >= weekStart && eventDateOnly <= weekEnd
+      }
+      
+      case "This Month": {
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+        const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+        return eventDateOnly >= monthStart && eventDateOnly <= monthEnd
+      }
+      
+      case "Next Month": {
+        const nextMonthStart = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+        const nextMonthEnd = new Date(today.getFullYear(), today.getMonth() + 2, 0)
+        return eventDateOnly >= nextMonthStart && eventDateOnly <= nextMonthEnd
+      }
+      
+      case "Next 3 Months": {
+        const threeMonthsEnd = new Date(today.getFullYear(), today.getMonth() + 3, 0)
+        return eventDateOnly >= today && eventDateOnly <= threeMonthsEnd
+      }
+      
+      case "Next 6 Months": {
+        const sixMonthsEnd = new Date(today.getFullYear(), today.getMonth() + 6, 0)
+        return eventDateOnly >= today && eventDateOnly <= sixMonthsEnd
+      }
+      
+      default:
+        return true
+    }
+  }
+
   const now = new Date()
   const filteredEvents = events.filter(event => {
     // Skip cancelled events
@@ -217,10 +361,17 @@ export default function AllEvents() {
     
     const eventDate = new Date(event.date)
     
-    // Apply filter for both non-logged-in users and members
-    if (filter === "upcoming") return eventDate >= now
-    if (filter === "past") return eventDate < now
-    return true // Show all for "all" filter
+    // Apply date filter for both non-logged-in users and members
+    if (filter === "upcoming" && eventDate < now) return false
+    if (filter === "past" && eventDate >= now) return false
+    
+    // Apply category filter
+    if (categoryFilter !== "All" && event.category !== categoryFilter) return false
+    
+    // Apply date range filter
+    if (!matchesDateFilter(eventDate)) return false
+    
+    return true
   })
 
   if (loading || authLoading) {
@@ -258,6 +409,46 @@ export default function AllEvents() {
         ) : (
           <p className="page-subtitle">View events and activities organized by ISS Yemen. <a href="/login" style={{ color: 'var(--primary-dark)', textDecoration: 'underline' }}>Login</a> to register for events.</p>
         )}
+      </div>
+
+      {/* Filter Section */}
+      <div className="events-filters-container">
+        <div className="events-filter-row">
+          <div className="filter-group">
+            <label htmlFor="category-filter" className="filter-label">Filter by Category:</label>
+            <select
+              id="category-filter"
+              className="filter-select"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="All">All</option>
+              {getUniqueCategories().map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <label htmlFor="date-filter" className="filter-label">Filter by Date:</label>
+            <select
+              id="date-filter"
+              className="filter-select"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            >
+              <option value="All Time">All Time</option>
+              <option value="Today">Today</option>
+              <option value="This Week">This Week</option>
+              <option value="This Month">This Month</option>
+              <option value="Next Month">Next Month</option>
+              <option value="Next 3 Months">Next 3 Months</option>
+              <option value="Next 6 Months">Next 6 Months</option>
+            </select>
+          </div>
+          <div className="events-count">
+            Showing {filteredEvents.length} of {events.filter(e => !e.cancelled).length} events
+          </div>
+        </div>
       </div>
 
       {/* Filter Tabs - Show for both non-logged-in users and members */}

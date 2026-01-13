@@ -378,7 +378,8 @@ export default function HomePage() {
                             position: 'relative',
                             zIndex: 10002,
                             pointerEvents: 'auto',
-                            touchAction: 'manipulation'
+                            touchAction: 'manipulation',
+                            userSelect: 'none'
                           }}
                           onClick={(e) => {
                             e.stopPropagation()
