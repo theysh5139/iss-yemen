@@ -6,7 +6,12 @@ export async function getHODs(req, res, next) {
     const hods = await HOD.find()
       .sort({ order: 1, createdAt: 1 })
       .lean();
-    return res.json({ hods });
+    
+    // Ensure consistent response format
+    return res.json({ 
+      hods: hods || [],
+      count: hods?.length || 0
+    });
   } catch (err) {
     next(err);
   }
@@ -31,7 +36,13 @@ export async function createHOD(req, res, next) {
   try {
     const { name, designation, photo, order } = req.body;
 
-    // Validate image URL/path or base64 data URL
+    // Validate required fields
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: 'Name is required' });
+    }
+    if (!designation || !designation.trim()) {
+      return res.status(400).json({ message: 'Designation is required' });
+    }
     if (!photo || typeof photo !== 'string') {
       return res.status(400).json({ message: 'Valid photo URL/path or uploaded image is required' });
     }
@@ -59,10 +70,10 @@ export async function createHOD(req, res, next) {
     }
 
     const hod = await HOD.create({
-      name,
-      designation,
+      name: name.trim(),
+      designation: designation.trim(),
       photo,
-      order: order || 0
+      order: order !== undefined ? parseInt(order) || 0 : 0
     });
 
     // Broadcast real-time update
@@ -124,9 +135,9 @@ export async function updateHOD(req, res, next) {
       hod.photo = photo;
     }
 
-    if (name !== undefined) hod.name = name;
-    if (designation !== undefined) hod.designation = designation;
-    if (order !== undefined) hod.order = order;
+    if (name !== undefined) hod.name = name.trim();
+    if (designation !== undefined) hod.designation = designation.trim();
+    if (order !== undefined) hod.order = parseInt(order) || 0;
 
     await hod.save();
     

@@ -3,7 +3,7 @@ import AdminSidebar from "../components/AdminSidebar.jsx"
 import AdminHeaderIcons from "../components/AdminHeaderIcons.jsx"
 import { useAuth } from "../context/AuthProvider.jsx"
 import { logoutApi } from "../api/auth.js"
-import { getHODs, createHOD, updateHOD, deleteHOD, getClubMembers, createClubMember, updateClubMember, deleteClubMember } from "../api/hods.js"
+import { getHODs, createHOD, updateHOD, deleteHOD } from "../api/hods.js"
 import { useNavigate } from "react-router-dom"
 import "../styles/admin-dashboard.css"
 import "../styles/admin-forms.css"
@@ -19,20 +19,6 @@ export default function AdminManageHODs() {
   const [editingHOD, setEditingHOD] = useState(null)
   const [hodFormData, setHodFormData] = useState({ name: "", designation: "", photo: "", order: 0 })
   
-  // Club Members state
-  const [clubMembers, setClubMembers] = useState([])
-  const [clubMembersLoading, setClubMembersLoading] = useState(true)
-  const [showClubMemberForm, setShowClubMemberForm] = useState(false)
-  const [editingClubMember, setEditingClubMember] = useState(null)
-  const [clubMemberFormData, setClubMemberFormData] = useState({ 
-    name: "", 
-    position: "", 
-    photo: "", 
-    order: 0, 
-    email: "", 
-    bio: "" 
-  })
-  
   // Common state
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
@@ -40,7 +26,6 @@ export default function AdminManageHODs() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [photoFile, setPhotoFile] = useState(null)
   const [uploadMethod, setUploadMethod] = useState("url")
-  const [activeTab, setActiveTab] = useState("hods") // "hods" or "clubMembers"
 
   useEffect(() => {
     if (user?.role !== 'admin') {
@@ -48,19 +33,16 @@ export default function AdminManageHODs() {
       return
     }
     fetchHODs()
-    fetchClubMembers()
     
     // Auto-refresh every 30 seconds to sync with cloud DB
     const pollInterval = setInterval(() => {
       fetchHODs()
-      fetchClubMembers()
     }, 30000)
     
     // Refresh when page becomes visible
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchHODs()
-        fetchClubMembers()
       }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -92,25 +74,6 @@ export default function AdminManageHODs() {
     }
   }
 
-  // Club Member Functions
-  async function fetchClubMembers() {
-    try {
-      setClubMembersLoading(true)
-      const res = await getClubMembers()
-      if (res && res.clubMembers) {
-        setClubMembers(res.clubMembers)
-      } else {
-        setClubMembers([])
-      }
-    } catch (err) {
-      console.error("Failed to fetch club members:", err)
-      if (!showClubMemberForm) {
-        setError(err.message || "Failed to load club members")
-      }
-    } finally {
-      setClubMembersLoading(false)
-    }
-  }
 
   // HOD Form Functions
   function openCreateHODForm() {
@@ -122,7 +85,6 @@ export default function AdminManageHODs() {
     setPhotoFile(null)
     setUploadMethod("url")
     setShowHODForm(true)
-    setActiveTab("hods")
   }
 
   function openEditHODForm(hod) {
@@ -139,7 +101,6 @@ export default function AdminManageHODs() {
     setPhotoFile(null)
     setUploadMethod("url")
     setShowHODForm(true)
-    setActiveTab("hods")
   }
 
   function closeHODForm() {
@@ -154,58 +115,10 @@ export default function AdminManageHODs() {
     setIsSubmitting(false)
   }
 
-  // Club Member Form Functions
-  function openCreateClubMemberForm() {
-    setEditingClubMember(null)
-    setClubMemberFormData({ name: "", position: "", photo: "", order: 0, email: "", bio: "" })
-    setError("")
-    setSuccess("")
-    setPhotoPreview("")
-    setPhotoFile(null)
-    setUploadMethod("url")
-    setShowClubMemberForm(true)
-    setActiveTab("clubMembers")
-  }
-
-  function openEditClubMemberForm(member) {
-    setEditingClubMember(member)
-    setClubMemberFormData({
-      name: member.name || "",
-      position: member.position || "",
-      photo: member.photo || "",
-      order: member.order || 0,
-      email: member.email || "",
-      bio: member.bio || ""
-    })
-    setError("")
-    setSuccess("")
-    setPhotoPreview(member.photo || "")
-    setPhotoFile(null)
-    setUploadMethod("url")
-    setShowClubMemberForm(true)
-    setActiveTab("clubMembers")
-  }
-
-  function closeClubMemberForm() {
-    setShowClubMemberForm(false)
-    setEditingClubMember(null)
-    setClubMemberFormData({ name: "", position: "", photo: "", order: 0, email: "", bio: "" })
-    setError("")
-    setSuccess("")
-    setPhotoPreview("")
-    setPhotoFile(null)
-    setUploadMethod("url")
-    setIsSubmitting(false)
-  }
-
-  // Photo handling (shared) - use activeTab to determine which form
-  function handlePhotoUrlChange(e, formType) {
+  // Photo handling
+  function handlePhotoUrlChange(e) {
     const url = e.target.value
-    if (formType === 'hod' || (!formType && showHODForm)) {
-      setHodFormData({ ...hodFormData, photo: url })
-    } else {
-      setClubMemberFormData({ ...clubMemberFormData, photo: url })
-    }
+    setHodFormData({ ...hodFormData, photo: url })
     setPhotoPreview(url)
     setPhotoFile(null)
     if (error && error.includes("Photo")) {
@@ -213,7 +126,7 @@ export default function AdminManageHODs() {
     }
   }
 
-  function handleFileSelect(e, formType) {
+  function handleFileSelect(e) {
     const file = e.target.files[0]
     if (!file) return
 
@@ -236,11 +149,7 @@ export default function AdminManageHODs() {
     reader.onload = (event) => {
       const base64String = event.target.result
       setPhotoPreview(base64String)
-      if (formType === 'hod' || (!formType && showHODForm)) {
-        setHodFormData({ ...hodFormData, photo: base64String })
-      } else {
-        setClubMemberFormData({ ...clubMemberFormData, photo: base64String })
-      }
+      setHodFormData({ ...hodFormData, photo: base64String })
     }
     reader.onerror = () => {
       setError("Failed to read the image file. Please try again.")
@@ -304,57 +213,6 @@ export default function AdminManageHODs() {
     }
   }
 
-  // Club Member Submit
-  async function handleClubMemberSubmit(e) {
-    e.preventDefault()
-    setError("")
-    setSuccess("")
-    setIsSubmitting(true)
-
-    if (!clubMemberFormData.name?.trim() || !clubMemberFormData.position?.trim() || !clubMemberFormData.photo?.trim()) {
-      setError("Name, position, and photo are required")
-      setIsSubmitting(false)
-      return
-    }
-
-    if (clubMemberFormData.photo.length > 10 * 1024 * 1024) {
-      setError("Image is too large. Please use a smaller image file (max 5MB).")
-      setIsSubmitting(false)
-      return
-    }
-
-    try {
-      let result
-      if (editingClubMember) {
-        result = await updateClubMember(editingClubMember._id, clubMemberFormData)
-        setSuccess("✓ Club member profile updated successfully!")
-      } else {
-        result = await createClubMember(clubMemberFormData)
-        setSuccess("✓ Club member profile created successfully!")
-      }
-      
-      await fetchClubMembers()
-      window.dispatchEvent(new CustomEvent('clubMemberDataUpdated'))
-      
-      setTimeout(() => {
-        closeClubMemberForm()
-      }, 2500)
-    } catch (err) {
-      setError(err.message || "Failed to save club member")
-      setIsSubmitting(false)
-    }
-  }
-
-  async function handleClubMemberDelete(memberId) {
-    if (!confirm("Are you sure you want to delete this club member profile?")) return
-    try {
-      await deleteClubMember(memberId)
-      await fetchClubMembers()
-      window.dispatchEvent(new CustomEvent('clubMemberDataUpdated'))
-    } catch (err) {
-      alert(err.message || "Failed to delete club member")
-    }
-  }
 
   async function onLogout() {
     try {
@@ -375,7 +233,7 @@ export default function AdminManageHODs() {
       <div className="admin-main-content">
         <header className="admin-header">
           <div className="breadcrumbs">
-            <span>Dashboard &gt; Manage Club Members & HODs</span>
+            <span>Dashboard &gt; Manage HODs</span>
           </div>
           <AdminHeaderIcons user={user} />
         </header>
@@ -383,48 +241,12 @@ export default function AdminManageHODs() {
         <div className="admin-content">
           <div className="main-section">
             <div className="page-title">
-              <h1>Manage Club Members & HODs</h1>
-              <p>Create, edit, and delete Head of Department profiles and Club Member profiles</p>
-            </div>
-
-            {/* Tabs */}
-            <div className="tabs-container" style={{ marginBottom: '2rem', borderBottom: '2px solid #e0e0e0', display: 'flex', gap: '0' }}>
-              <button
-                className={`tab-button ${activeTab === 'hods' ? 'active' : ''}`}
-                onClick={() => setActiveTab('hods')}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: activeTab === 'hods' ? '#4a6fa5' : 'transparent',
-                  color: activeTab === 'hods' ? 'white' : '#666',
-                  border: 'none',
-                  borderBottom: activeTab === 'hods' ? '3px solid #4a6fa5' : '3px solid transparent',
-                  cursor: 'pointer',
-                  fontWeight: activeTab === 'hods' ? '600' : '400',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                👔 Heads of Department
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'clubMembers' ? 'active' : ''}`}
-                onClick={() => setActiveTab('clubMembers')}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: activeTab === 'clubMembers' ? '#4a6fa5' : 'transparent',
-                  color: activeTab === 'clubMembers' ? 'white' : '#666',
-                  border: 'none',
-                  borderBottom: activeTab === 'clubMembers' ? '3px solid #4a6fa5' : '3px solid transparent',
-                  cursor: 'pointer',
-                  fontWeight: activeTab === 'clubMembers' ? '600' : '400',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                👥 Club Members
-              </button>
+              <h1>Manage HODs</h1>
+              <p>Create, edit, and delete Head of Department profiles. <a href="/" style={{ color: '#4a6fa5', textDecoration: 'underline' }}>View HODs on homepage</a></p>
             </div>
 
             {/* HODs Section */}
-            {activeTab === 'hods' && (
+            <div>
             <div className="content-section">
               <div className="section-header">
                   <h2 className="section-title">Heads of Department</h2>
@@ -483,70 +305,7 @@ export default function AdminManageHODs() {
                   <p className="empty-state">No HOD profiles yet. <button onClick={openCreateHODForm} className="link-btn">Create one now</button></p>
                 )}
               </div>
-            )}
-
-            {/* Club Members Section */}
-            {activeTab === 'clubMembers' && (
-              <div className="content-section">
-                <div className="section-header">
-                  <h2 className="section-title">Club Members</h2>
-                  <button className="btn btn-primary" onClick={openCreateClubMemberForm}>
-                    + Add New Club Member
-                  </button>
-                </div>
-
-                {error && !showClubMemberForm && (
-                  <div className="alert alert-error" style={{marginBottom: '1rem'}}>
-                    <span className="alert-icon">⚠️</span>
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                {clubMembersLoading ? (
-                  <div style={{textAlign: 'center', padding: '2rem'}}>
-                    <div className="spinner" style={{margin: '0 auto 1rem', width: '40px', height: '40px', borderWidth: '3px'}}></div>
-                    <p>Loading club members...</p>
-                  </div>
-                ) : clubMembers.length > 0 ? (
-                  <div className="hods-grid">
-                    {clubMembers.map(member => (
-                      <div key={member._id} className="hod-admin-card">
-                        <div className="hod-admin-photo">
-                          <img 
-                            src={member.photo} 
-                            alt={member.name}
-                            onError={(e) => {
-                              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&size=200&background=4a6fa5&color=fff`
-                            }}
-                          />
-                        </div>
-                        <div className="hod-admin-info">
-                          <h3>{member.name}</h3>
-                          <p>{member.position}</p>
-                          {member.email && <p style={{fontSize: '0.875rem', color: '#666'}}>{member.email}</p>}
-                          <div className="hod-admin-actions">
-                            <button 
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => openEditClubMemberForm(member)}
-                            >
-                              Edit
-                            </button>
-                            <button 
-                              className="btn btn-danger btn-sm"
-                              onClick={() => handleClubMemberDelete(member._id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="empty-state">No club member profiles yet. <button onClick={openCreateClubMemberForm} className="link-btn">Create one now</button></p>
-              )}
             </div>
-            )}
           </div>
         </div>
 
@@ -684,7 +443,7 @@ export default function AdminManageHODs() {
                             id="hod-photo-file"
                             type="file"
                             accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                            onChange={(e) => handleFileSelect(e, 'hod')}
+                            onChange={handleFileSelect}
                             className="file-input"
                             disabled={isSubmitting}
                           />
@@ -704,7 +463,7 @@ export default function AdminManageHODs() {
                           id="hod-photo"
                           type="url"
                           value={hodFormData.photo}
-                          onChange={(e) => handlePhotoUrlChange(e, 'hod')}
+                          onChange={handlePhotoUrlChange}
                           placeholder="https://example.com/photo.jpg or /assets/hods/hod1.jpg"
                           required
                           className="form-input"
@@ -747,205 +506,6 @@ export default function AdminManageHODs() {
           </div>
         )}
 
-        {/* Club Member Form Modal */}
-        {showClubMemberForm && (
-          <div className="modal-overlay" onClick={closeClubMemberForm}>
-            <div className="modal-content hod-form-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <div>
-                  <h2>{editingClubMember ? "Edit Club Member Profile" : "Create New Club Member Profile"}</h2>
-                  <p className="modal-subtitle">Fill in the details below to {editingClubMember ? "update" : "create"} a club member profile</p>
-                </div>
-                <button className="modal-close" onClick={closeClubMemberForm}>×</button>
-              </div>
-              
-              <div className="modal-body">
-                <form onSubmit={handleClubMemberSubmit} className="admin-form hod-form">
-                  {error && (
-                    <div className="alert alert-error">
-                      <span className="alert-icon">⚠️</span>
-                      <span>{error}</span>
-                    </div>
-                  )}
-                  
-                  {success && (
-                    <div className="alert alert-success">
-                      <span className="alert-icon">✓</span>
-                      <span>{success}</span>
-                    </div>
-                  )}
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="member-name">Full Name <span className="required">*</span></label>
-                      <input
-                        id="member-name"
-                        type="text"
-                        value={clubMemberFormData.name}
-                        onChange={(e) => setClubMemberFormData({ ...clubMemberFormData, name: e.target.value })}
-                        placeholder="e.g., Ahmed Al-Hashimi"
-                        required
-                        className="form-input"
-                        disabled={isSubmitting}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="member-order">Display Order</label>
-                      <input
-                        id="member-order"
-                        type="number"
-                        value={clubMemberFormData.order}
-                        onChange={(e) => setClubMemberFormData({ ...clubMemberFormData, order: parseInt(e.target.value) || 0 })}
-                        min="0"
-                        className="form-input"
-                        disabled={isSubmitting}
-                      />
-                      <small className="form-hint">Lower numbers appear first</small>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="member-position">Position <span className="required">*</span></label>
-                    <input
-                      id="member-position"
-                      type="text"
-                      value={clubMemberFormData.position}
-                      onChange={(e) => setClubMemberFormData({ ...clubMemberFormData, position: e.target.value })}
-                      placeholder="e.g., President, Vice President, Secretary, Treasurer"
-                      required
-                      className="form-input"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="member-email">Email (Optional)</label>
-                    <input
-                      id="member-email"
-                      type="email"
-                      value={clubMemberFormData.email}
-                      onChange={(e) => setClubMemberFormData({ ...clubMemberFormData, email: e.target.value })}
-                      placeholder="member@example.com"
-                      className="form-input"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="member-bio">Bio (Optional)</label>
-                    <textarea
-                      id="member-bio"
-                      value={clubMemberFormData.bio}
-                      onChange={(e) => setClubMemberFormData({ ...clubMemberFormData, bio: e.target.value })}
-                      placeholder="Brief description about the member..."
-                      rows="3"
-                      className="form-input"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="member-photo">Photo <span className="required">*</span></label>
-                    
-                    <div className="upload-method-toggle">
-                      <button
-                        type="button"
-                        className={`toggle-btn ${uploadMethod === 'file' ? 'active' : ''}`}
-                        onClick={() => {
-                          setUploadMethod('file')
-                          setClubMemberFormData({ ...clubMemberFormData, photo: '' })
-                          setPhotoPreview('')
-                          setPhotoFile(null)
-                        }}
-                        disabled={isSubmitting}
-                      >
-                        📁 Upload File
-                      </button>
-                      <button
-                        type="button"
-                        className={`toggle-btn ${uploadMethod === 'url' ? 'active' : ''}`}
-                        onClick={() => {
-                          setUploadMethod('url')
-                          setClubMemberFormData({ ...clubMemberFormData, photo: '' })
-                          setPhotoPreview('')
-                          setPhotoFile(null)
-                        }}
-                        disabled={isSubmitting}
-                      >
-                        🔗 Enter URL
-                      </button>
-                    </div>
-
-                    <div className="photo-input-wrapper">
-                      {uploadMethod === 'file' ? (
-                        <div className="file-upload-area">
-                          <input
-                            id="member-photo-file"
-                            type="file"
-                            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                            onChange={(e) => handleFileSelect(e, 'member')}
-                            className="file-input"
-                            disabled={isSubmitting}
-                          />
-                          <label htmlFor="member-photo-file" className="file-upload-label">
-                            <div className="file-upload-content">
-                              <span className="file-upload-icon">📤</span>
-                              <div>
-                                <strong>Click to select image</strong>
-                                <p>or drag and drop</p>
-                              </div>
-                              <small>JPG, PNG, GIF, or WEBP (max 5MB)</small>
-                            </div>
-                          </label>
-                        </div>
-                      ) : (
-                        <input
-                          id="member-photo"
-                          type="url"
-                          value={clubMemberFormData.photo}
-                          onChange={(e) => handlePhotoUrlChange(e, 'member')}
-                          placeholder="https://example.com/photo.jpg or /assets/members/member1.jpg"
-                          required
-                          className="form-input"
-                          disabled={isSubmitting}
-                        />
-                      )}
-                      
-                      {photoPreview && (
-                        <div className="photo-preview">
-                          <img 
-                            src={photoPreview} 
-                            alt="Preview" 
-                            onError={(e) => e.target.style.display = 'none'}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="form-actions">
-                    <button 
-                      type="button" 
-                      className="btn btn-secondary" 
-                      onClick={closeClubMemberForm}
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      type="submit" 
-                      className="btn btn-primary"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? "Saving..." : (editingClubMember ? "Update Profile" : "Create Profile")}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

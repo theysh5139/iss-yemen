@@ -334,12 +334,24 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: visible;
 }
 
 .event-card:hover {
   border-color: var(--primary-dark);
   transform: translateY(-6px) rotateX(3deg) scale(1.03);
   box-shadow: var(--shadow-lg);
+}
+
+.event-card:hover .event-actions {
+  z-index: 10001;
+  pointer-events: none;
+}
+
+.event-card:hover .event-actions .btn,
+.event-card:hover .event-actions a {
+  z-index: 10002;
+  pointer-events: auto;
 }
 
 .event-card .btn-secondary,
@@ -433,10 +445,12 @@
   gap: 0.75rem;
   justify-content: center;
   position: relative;
-  z-index: 9999;
+  z-index: 10001;
+  pointer-events: none;
 }
 
-.event-actions .btn {
+.event-actions .btn,
+.event-actions a {
   flex: 0 0 auto;
   padding: 0.875rem 2rem;
   font-size: 1rem;
@@ -445,8 +459,9 @@
   transition: all 0.3s ease;
   min-width: 180px;
   position: relative;
-  z-index: 9999;
+  z-index: 10002;
   pointer-events: auto;
+  cursor: pointer;
 }
 
 .event-actions .btn:hover {
